@@ -1,0 +1,14 @@
+{
+  "servermod.settings.title": "서버 전용 모드",
+  "servermod.settings.clearcache": "스킨 캐시 초기화",
+
+  "key.clearcache.desc" : "스킨 캐시 초기화",
+  "key.servermod.category" : "서버 전용 모드",
+
+  "servermod.message.cachecleared": "스킨 캐시가 삭제되고, 리로드되었습니다.",
+  "servermod.command.reloaded": "모든 유저들의 스킨 캐시가 초기화되었습니다.",
+
+  "block.servermod.block_industrial_alarm": "사이렌",
+
+  "sound_event.servermod.tile.industrial_alarm": "알람 소리"
+}

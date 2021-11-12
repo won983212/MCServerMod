@@ -1,0 +1,14 @@
+{
+  "servermod.settings.title": "Server Mod",
+  "servermod.settings.clearcache": "Clear skin cache",
+
+  "key.clearcache.desc" : "Clear skin cache",
+  "key.servermod.category" : "Server Mod",
+
+  "servermod.message.cachecleared": "Skin cache cleared and reloaded all loaded skin.",
+  "servermod.command.reloaded": "All player refreshed all cached skin.",
+
+  "block.servermod.block_industrial_alarm": "Industrial Alarm",
+
+  "sound_event.servermod.tile.industrial_alarm": "Industrial Alarm"
+}

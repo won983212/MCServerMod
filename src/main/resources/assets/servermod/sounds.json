@@ -1,0 +1,8 @@
+{
+  "tile.industrial_alarm": {
+    "subtitle": "sound_event.servermod.tile.industrial_alarm",
+    "sounds": [
+      "servermod:tile/industrial_alarm"
+    ]
+  }
+}

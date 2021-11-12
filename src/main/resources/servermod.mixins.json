@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.won983212.servermod.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "refmap": "servermod.refmap.json",
+  "mixins": [
+  ],
+  "client": [
+    "MixinSkinManager"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
