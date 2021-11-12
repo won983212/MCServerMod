@@ -1,5 +1,6 @@
 package com.won983212.servermod;
 
+/** Gson Object **/
 public class SkinTextureInfo {
     private String username;
     private String skin;

@@ -9,9 +9,11 @@ import com.won983212.servermod.tile.ModTiles;
 import net.minecraftforge.fml.ExtensionPoint;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 
 public class ClientDist implements ModDist {
-    public ClientDist() {
+    @Override
+    public void onCommonSetup(FMLCommonSetupEvent event) {
         ModLoadingContext.get().registerExtensionPoint(ExtensionPoint.CONFIGGUIFACTORY,
                 () -> (mc, screen) -> new ConfigScreen()
         );
