@@ -34,7 +34,7 @@ public class ConfigScreen extends Screen {
     protected void init() {
         this.addButton(new Button(
                 (this.width - BUTTON_WIDTH) / 2,
-                TITLE_HEIGHT + font.FONT_HEIGHT + 30,
+                TITLE_HEIGHT + font.lineHeight + 30,
                 BUTTON_WIDTH, BUTTON_HEIGHT,
                 new TranslationTextComponent("servermod.settings.clearcache"),
                 button -> ForgeEventHandler.clearSkinCache()
@@ -44,7 +44,7 @@ public class ConfigScreen extends Screen {
                 this.height - DONE_BUTTON_TOP_OFFSET,
                 BUTTON_WIDTH, BUTTON_HEIGHT,
                 new TranslationTextComponent("gui.done"),
-                button -> this.closeScreen()
+                button -> this.onClose()
         ));
     }
 

@@ -21,13 +21,13 @@ public class MixinSkinManager {
         wrapper = new SkinRedirector();
     }
 
-    @Inject(method = "loadProfileTextures", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "registerSkins", at = @At("HEAD"), cancellable = true)
     private void loadProfileTextures(GameProfile profile, SkinManager.ISkinAvailableCallback skinAvailableCallback, boolean requireSecure, CallbackInfo ci) {
         wrapper.loadProfileTexture(profile, skinAvailableCallback);
         ci.cancel();
     }
 
-    @Inject(method = "loadSkinFromCache", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "getInsecureSkinInformation", at = @At("RETURN"), cancellable = true)
     private void loadSkinFromCache(GameProfile profile, CallbackInfoReturnable<Map<MinecraftProfileTexture.Type, MinecraftProfileTexture>> ci) {
         ci.setReturnValue(wrapper.loadSkinFromCache(profile));
     }

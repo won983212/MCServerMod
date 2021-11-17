@@ -9,8 +9,8 @@ public class RepeatPlaySound extends TickableSound {
 
     public RepeatPlaySound(SoundEvent sound, SoundCategory category, int x, int y, int z, float volume) {
         super(sound, category);
-        this.repeat = true;
-        this.repeatDelay = 0;
+        this.looping = true;
+        this.delay = 0;
         this.volume = volume;
         this.x = x;
         this.y = y;
@@ -25,8 +25,8 @@ public class RepeatPlaySound extends TickableSound {
         return false;
     }
 
-    public void stop() {
-        finishPlaying();
+    public void stopSound() {
+        stop();
     }
 
     public void tick() {

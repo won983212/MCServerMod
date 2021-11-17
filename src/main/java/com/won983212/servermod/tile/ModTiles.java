@@ -10,7 +10,7 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = ServerMod.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ModTiles {
     public static final TileEntityType<TileEntityIndustrialAlarm> tileEntityIndustrialAlarm =
-            TileEntityType.Builder.create(TileEntityIndustrialAlarm::new, ModBlocks.blockIndustrialAlarm).build(null);
+            TileEntityType.Builder.of(TileEntityIndustrialAlarm::new, ModBlocks.blockIndustrialAlarm).build(null);
 
     @SubscribeEvent
     public static void onTileEntityTypeRegistration(final RegistryEvent.Register<TileEntityType<?>> event) {

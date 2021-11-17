@@ -17,18 +17,18 @@ public class SoundHandlerHelper {
         RepeatPlaySound activeSound = new RepeatPlaySound(sound, category, x, y, z, volume);
         if (!isClientPlayerInRange(activeSound))
             return null;
-        Minecraft.getInstance().getSoundHandler().play(activeSound);
+        Minecraft.getInstance().getSoundManager().play(activeSound);
         return activeSound;
     }
 
     public static void stop(ISound sound) {
         if (sound instanceof RepeatPlaySound) {
-            ((RepeatPlaySound) sound).stop();
+            ((RepeatPlaySound) sound).stopSound();
         }
     }
 
     public static boolean isClientPlayerInRange(ISound sound) {
-        if (sound.isGlobal() || sound.getAttenuationType() == ISound.AttenuationType.NONE) {
+        if (sound.isRelative() || sound.getAttenuation() == ISound.AttenuationType.NONE) {
             //If the sound is global or has no attenuation, then return that the player is in range
             return true;
         }
@@ -40,7 +40,7 @@ public class SoundHandlerHelper {
         Sound s = sound.getSound();
         if (s == null) {
             //If the sound hasn't been initialized yet for some reason try initializing it
-            sound.createAccessor(Minecraft.getInstance().getSoundHandler());
+            sound.resolve(Minecraft.getInstance().getSoundManager());
             s = sound.getSound();
         }
         //Attenuation distance, defaults to 16 blocks
@@ -48,6 +48,6 @@ public class SoundHandlerHelper {
         //Scale the distance based on the sound's volume
         float scaledDistance = Math.max(sound.getVolume(), 1) * attenuationDistance;
         //Check if the player is within range of hearing the sound
-        return player.getPositionVec().squareDistanceTo(sound.getX(), sound.getY(), sound.getZ()) < scaledDistance * scaledDistance;
+        return player.position().distanceToSqr(sound.getX(), sound.getY(), sound.getZ()) < scaledDistance * scaledDistance;
     }
 }

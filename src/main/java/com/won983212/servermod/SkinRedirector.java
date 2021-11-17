@@ -48,13 +48,13 @@ public class SkinRedirector {
                 RenderSystem.recordRenderCall(() -> {
                     ImmutableList.of(MinecraftProfileTexture.Type.SKIN, MinecraftProfileTexture.Type.CAPE).forEach((p_229296_3_) -> {
                         if (map.containsKey(p_229296_3_)) {
-                            mc.getSkinManager().loadSkin(map.get(p_229296_3_), p_229296_3_, skinAvailableCallback);
+                            mc.getSkinManager().registerTexture(map.get(p_229296_3_), p_229296_3_, skinAvailableCallback);
                         }
                     });
                 });
             });
         };
-        Util.getServerExecutor().execute(runnable);
+        Util.backgroundExecutor().execute(runnable);
     }
 
     /**

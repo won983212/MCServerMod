@@ -22,42 +22,42 @@ public class RenderIndustrialAlarm extends TileEntityRenderer<TileEntityIndustri
     public void render(TileEntityIndustrialAlarm tile, float partialTicks, MatrixStack matrix, IRenderTypeBuffer bufferIn, int combinedLightIn, int combinedOverlayIn) {
         Direction dir = tile.getDirection();
 
-        matrix.push();
+        matrix.pushPose();
         matrix.translate(0.5, 0, 0.5);
         if (dir != null) {
             switch (dir) {
                 case DOWN:
                     matrix.translate(0, 1, 0);
-                    matrix.rotate(Vector3f.XP.rotationDegrees(180));
+                    matrix.mulPose(Vector3f.XP.rotationDegrees(180));
                     break;
                 case NORTH:
                     matrix.translate(0, 0.5, 0.5);
-                    matrix.rotate(Vector3f.XN.rotationDegrees(90));
+                    matrix.mulPose(Vector3f.XN.rotationDegrees(90));
                     break;
                 case SOUTH:
                     matrix.translate(0, 0.5, -0.5);
-                    matrix.rotate(Vector3f.XP.rotationDegrees(90));
+                    matrix.mulPose(Vector3f.XP.rotationDegrees(90));
                     break;
                 case EAST:
                     matrix.translate(-0.5, 0.5, 0);
-                    matrix.rotate(Vector3f.ZN.rotationDegrees(90));
+                    matrix.mulPose(Vector3f.ZN.rotationDegrees(90));
                     break;
                 case WEST:
                     matrix.translate(0.5, 0.5, 0);
-                    matrix.rotate(Vector3f.ZP.rotationDegrees(90));
+                    matrix.mulPose(Vector3f.ZP.rotationDegrees(90));
                     break;
                 default:
                     break;
             }
         }
 
-        float rotation = (tile.getWorld().getGameTime() + partialTicks) * ROTATE_SPEED % 360;
+        float rotation = (tile.getLevel().getGameTime() + partialTicks) * ROTATE_SPEED % 360;
         model.render(matrix, bufferIn, combinedLightIn, combinedOverlayIn, tile.isActive(), rotation, false, false);
-        matrix.pop();
+        matrix.popPose();
     }
 
     @Override
-    public boolean isGlobalRenderer(TileEntityIndustrialAlarm tile) {
+    public boolean shouldRenderOffScreen(TileEntityIndustrialAlarm tile) {
         return true;
     }
 }

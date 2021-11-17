@@ -53,7 +53,7 @@ public class ForgeEventHandler {
 
     @SubscribeEvent
     public static void onKeyInput(InputEvent.KeyInputEvent e) {
-        if (Key.KEY_CLEAR_CACHE.isPressed()) {
+        if (Key.KEY_CLEAR_CACHE.isDown()) {
             clearSkinCache();
         }
     }
@@ -64,7 +64,7 @@ public class ForgeEventHandler {
             String key = Registry.ITEM.getKey(e.getItemStack().getItem()).toString();
             String legacyId = LEGACY_ID_MAP.get(key);
             if (legacyId != null) {
-                e.getToolTip().add((new StringTextComponent("# " + legacyId).mergeStyle(TextFormatting.DARK_GRAY)));
+                e.getToolTip().add((new StringTextComponent("# " + legacyId).withStyle(TextFormatting.DARK_GRAY)));
             }
         }
     }
@@ -73,17 +73,17 @@ public class ForgeEventHandler {
         removeCacheFolder();
         ClientPlayNetHandler connection = MC_INST.getConnection();
         if (connection == null) {
-            MC_INST.ingameGUI.getChatGUI().printChatMessage(new TranslationTextComponent("servermod.message.cachecleared"));
+            MC_INST.gui.getChat().addMessage(new TranslationTextComponent("servermod.message.cachecleared"));
             return;
         }
-        for (NetworkPlayerInfo info : connection.getPlayerInfoMap()) {
+        for (NetworkPlayerInfo info : connection.getOnlinePlayers()) {
             clearPlayerSkin(info);
         }
-        MC_INST.ingameGUI.getChatGUI().printChatMessage(new TranslationTextComponent("servermod.message.cachecleared"));
+        MC_INST.gui.getChat().addMessage(new TranslationTextComponent("servermod.message.cachecleared"));
     }
 
     private static void removeCacheFolder(){
-        File cacheFolder = MC_INST.getSkinManager().skinCacheDir;
+        File cacheFolder = MC_INST.getSkinManager().skinsDirectory;
         if (cacheFolder.isDirectory()) {
             try {
                 FileUtils.deleteDirectory(cacheFolder);
@@ -94,18 +94,18 @@ public class ForgeEventHandler {
     }
 
     private static void clearPlayerSkin(NetworkPlayerInfo info){
-        ResourceLocation location = info.getLocationSkin();
-        MC_INST.textureManager.deleteTexture(location);
+        ResourceLocation location = info.getSkinLocation();
+        MC_INST.textureManager.release(location);
 
-        location = info.getLocationCape();
+        location = info.getCapeLocation();
         if (location != null)
-            MC_INST.textureManager.deleteTexture(location);
+            MC_INST.textureManager.release(location);
 
-        location = info.getLocationElytra();
+        location = info.getElytraLocation();
         if (location != null)
-            MC_INST.textureManager.deleteTexture(location);
+            MC_INST.textureManager.release(location);
 
-        info.playerTexturesLoaded = false;
-        info.playerTextures.clear();
+        info.pendingTextures = false;
+        info.textureLocations.clear();
     }
 }

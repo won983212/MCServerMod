@@ -26,12 +26,12 @@ public class BlockIndustrialAlarm extends Block {
     private static final VoxelShape[] MIN_SHAPES = new VoxelShape[VoxelShapeUtils.DIRECTIONS.length];
 
     static {
-        VoxelShapeUtils.setShape(makeCuboidShape(5, 11, 5, 11, 16, 11), MIN_SHAPES, true);
+        VoxelShapeUtils.setShape(box(5, 11, 5, 11, 16, 11), MIN_SHAPES, true);
     }
 
     public BlockIndustrialAlarm() {
-        super(AbstractBlock.Properties.create(Material.GLASS).hardnessAndResistance(2, 2.4F));
-        setDefaultState(Attributes.ACTIVE.getDefaultState(this.getStateContainer().getBaseState()));
+        super(AbstractBlock.Properties.of(Material.GLASS).strength(2, 2.4F));
+        registerDefaultState(Attributes.ACTIVE.getDefaultState(this.getStateDefinition().any()));
     }
 
     @Override
@@ -46,29 +46,29 @@ public class BlockIndustrialAlarm extends Block {
 
     @Override
     public BlockState getStateForPlacement(BlockItemUseContext context) {
-        return Attributes.FACING.set(this.getDefaultState(), context.getFace());
+        return Attributes.FACING.set(this.defaultBlockState(), context.getClickedFace());
     }
 
     @Override
-    protected void fillStateContainer(@Nonnull StateContainer.Builder<Block, BlockState> builder) {
+    protected void createBlockStateDefinition(@Nonnull StateContainer.Builder<Block, BlockState> builder) {
         Attributes.fillStateContainer(builder);
     }
 
     @Override
-    public BlockRenderType getRenderType(@Nonnull BlockState iBlockState) {
+    public BlockRenderType getRenderShape(@Nonnull BlockState iBlockState) {
         return BlockRenderType.MODEL;
     }
 
     @Override
     public VoxelShape getShape(@Nonnull BlockState state, @Nonnull IBlockReader worldIn, @Nonnull BlockPos pos, @Nonnull ISelectionContext context) {
-        return MIN_SHAPES[Attributes.FACING.get(state).getIndex()];
+        return MIN_SHAPES[Attributes.FACING.get(state).get3DDataValue()];
     }
 
     @Override
-    public void onBlockPlacedBy(@Nonnull World world, @Nonnull BlockPos pos, @Nonnull BlockState state, @Nullable LivingEntity placer, @Nonnull ItemStack stack) {
-        super.onBlockPlacedBy(world, pos, state, placer, stack);
-        if (!world.isRemote) {
-            TileEntity te = world.getTileEntity(pos);
+    public void setPlacedBy(@Nonnull World world, @Nonnull BlockPos pos, @Nonnull BlockState state, @Nullable LivingEntity placer, @Nonnull ItemStack stack) {
+        super.setPlacedBy(world, pos, state, placer, stack);
+        if (!world.isClientSide) {
+            TileEntity te = world.getBlockEntity(pos);
             if (te instanceof TileEntityIndustrialAlarm) {
                 ((TileEntityIndustrialAlarm) te).onAdded();
             }
@@ -79,8 +79,8 @@ public class BlockIndustrialAlarm extends Block {
     public void neighborChanged(@Nonnull BlockState state, @Nonnull World world, @Nonnull BlockPos pos, @Nonnull Block blockIn,
                                 @Nonnull BlockPos neighborPos, boolean isMoving) {
         super.neighborChanged(state, world, pos, blockIn, neighborPos, isMoving);
-        if (!world.isRemote) {
-            TileEntity te = world.getTileEntity(pos);
+        if (!world.isClientSide) {
+            TileEntity te = world.getBlockEntity(pos);
             if (te instanceof TileEntityIndustrialAlarm) {
                 ((TileEntityIndustrialAlarm) te).onNeighborChange(state, neighborPos);
             }

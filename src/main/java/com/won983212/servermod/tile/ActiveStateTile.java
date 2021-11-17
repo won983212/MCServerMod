@@ -21,7 +21,7 @@ public class ActiveStateTile extends TileEntity implements ITickableTileEntity {
     }
 
     public void onNeighborChange(BlockState block, BlockPos neighborPos) {
-        if (getWorld() != null && !getWorld().isRemote()) {
+        if (level != null && !level.isClientSide()) {
             updatePower();
         }
     }
@@ -35,13 +35,13 @@ public class ActiveStateTile extends TileEntity implements ITickableTileEntity {
     }
 
     @Override
-    public double getMaxRenderDistanceSquared() {
+    public double getViewDistance() {
         final int MAXIMUM_DISTANCE_IN_BLOCKS = 128;
         return MAXIMUM_DISTANCE_IN_BLOCKS * MAXIMUM_DISTANCE_IN_BLOCKS;
     }
 
     protected boolean isClient() {
-        return world != null && world.isRemote;
+        return level != null && level.isClientSide;
     }
 
     // active state manage
@@ -49,15 +49,14 @@ public class ActiveStateTile extends TileEntity implements ITickableTileEntity {
         if (this.activeCache != activeCache) {
             this.activeCache = activeCache;
             if (getActiveState() != activeCache) {
-                getWorld().setBlockState(getPos(), Attributes.ACTIVE.set(getBlockState(), activeCache));
+                level.setBlockAndUpdate(getBlockPos(), Attributes.ACTIVE.set(getBlockState(), activeCache));
             }
         }
     }
 
     public boolean isActive() {
-        World world = getWorld();
-        if (world != null) {
-            if (world.isRemote()) {
+        if (level != null) {
+            if (level.isClientSide()) {
                 return getActiveState();
             } else {
                 return activeCache;
@@ -67,8 +66,8 @@ public class ActiveStateTile extends TileEntity implements ITickableTileEntity {
     }
 
     private boolean getActiveState() {
-        World world = getWorld();
-        if (world != null) {
+        World level = getLevel();
+        if (level != null) {
             return Attributes.ACTIVE.get(getBlockState());
         }
         return false;
@@ -76,9 +75,9 @@ public class ActiveStateTile extends TileEntity implements ITickableTileEntity {
 
     // directional state manage
     public void setDirection(Direction dir) {
-        if (directionCache != dir && world != null) {
+        if (directionCache != dir && level != null) {
             directionCache = dir;
-            world.setBlockState(getPos(), getBlockState().with(BlockStateProperties.FACING, dir));
+            level.setBlockAndUpdate(getBlockPos(), getBlockState().setValue(BlockStateProperties.FACING, dir));
         }
     }
 
@@ -86,8 +85,8 @@ public class ActiveStateTile extends TileEntity implements ITickableTileEntity {
         if (directionCache != null)
             return directionCache;
 
-        if (getWorld() != null) {
-            return getBlockState().get(BlockStateProperties.FACING);
+        if (getLevel() != null) {
+            return getBlockState().getValue(BlockStateProperties.FACING);
         }
         return null;
     }
@@ -101,10 +100,10 @@ public class ActiveStateTile extends TileEntity implements ITickableTileEntity {
     }
 
     private void updatePower() {
-        if (world == null)
+        if (level == null)
             return;
 
-        boolean power = world.isBlockPowered(getPos());
+        boolean power = level.hasNeighborSignal(getBlockPos());
         if (redstone != power) {
             redstone = power;
             onPowerChange();

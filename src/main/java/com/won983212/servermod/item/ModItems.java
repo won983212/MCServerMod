@@ -14,8 +14,8 @@ import net.minecraftforge.fml.common.Mod;
 public class ModItems {
     public static final BlockItem itemIndustrialAlarm = (BlockItem) new BlockItem(ModBlocks.blockIndustrialAlarm, new Item.Properties()
             .setISTER(() -> RenderIndustrialAlarmItem::new)
-            .maxStackSize(64)
-            .group(ItemGroup.DECORATIONS))
+            .stacksTo(64)
+            .tab(ItemGroup.TAB_DECORATIONS))
             .setRegistryName("block_industrial_alarm");
 
     @SubscribeEvent

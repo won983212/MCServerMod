@@ -14,12 +14,12 @@ public class AttributeActiveState implements IBlockAttribute<Boolean> {
 
     @Override
     public Boolean get(BlockState state) {
-        return state.get(ACTIVE_STATE);
+        return state.getValue(ACTIVE_STATE);
     }
 
     @Override
     public BlockState set(BlockState state, Boolean value) {
-        return state.with(ACTIVE_STATE, value);
+        return state.setValue(ACTIVE_STATE, value);
     }
 
     @Override
@@ -29,6 +29,6 @@ public class AttributeActiveState implements IBlockAttribute<Boolean> {
 
     @Override
     public BlockState getDefaultState(BlockState state) {
-        return state.with(ACTIVE_STATE, false);
+        return state.setValue(ACTIVE_STATE, false);
     }
 }

@@ -27,8 +27,8 @@ public class TileEntityIndustrialAlarm extends ActiveStateTile {
     }
 
     @Override
-    public void remove() {
-        super.remove();
+    public void setRemoved() {
+        super.setRemoved();
         if (isClient()) {
             updateSound();
         }
@@ -39,8 +39,8 @@ public class TileEntityIndustrialAlarm extends ActiveStateTile {
             if (--playSoundCooldown > 0) {
                 return;
             }
-            if (!Minecraft.getInstance().getSoundHandler().isPlaying(activeSound)) {
-                activeSound = SoundHandlerHelper.playRepeat(ModSounds.INDUSTRIAL_ALARM, SoundCategory.RECORDS, getPos(), 6);
+            if (!Minecraft.getInstance().getSoundManager().isActive(activeSound)) {
+                activeSound = SoundHandlerHelper.playRepeat(ModSounds.INDUSTRIAL_ALARM, SoundCategory.RECORDS, getBlockPos(), 6);
             }
             playSoundCooldown = 20;
         } else if (activeSound != null) {

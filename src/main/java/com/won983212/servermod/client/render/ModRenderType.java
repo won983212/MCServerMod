@@ -15,12 +15,12 @@ public class ModRenderType extends RenderType {
     }
 
     public static RenderType standard(ResourceLocation resourceLocation) {
-        RenderType.State state = RenderType.State.getBuilder()
-                .texture(new RenderState.TextureState(resourceLocation, false, false))//Texture state
-                .shadeModel(SHADE_ENABLED)//shadeModel(GL11.GL_SMOOTH)
-                .alpha(ZERO_ALPHA)//disableAlphaTest
-                .transparency(TRANSLUCENT_TRANSPARENCY)//enableBlend/blendFunc(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA)
-                .build(true);
-        return makeType("standard", DefaultVertexFormats.ENTITY, GL11.GL_QUADS, 256, true, false, state);
+        RenderType.State state = RenderType.State.builder()
+                .setTextureState(new RenderState.TextureState(resourceLocation, false, false))//Texture state
+                .setShadeModelState(SMOOTH_SHADE)//shadeModel(GL11.GL_SMOOTH)
+                .setAlphaState(NO_ALPHA)//disableAlphaTest
+                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)//enableBlend/blendFunc(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA)
+                .createCompositeState(true);
+        return create("standard", DefaultVertexFormats.NEW_ENTITY, GL11.GL_QUADS, 256, true, false, state);
     }
 }

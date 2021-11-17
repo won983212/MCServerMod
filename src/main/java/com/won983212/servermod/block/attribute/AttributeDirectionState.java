@@ -13,12 +13,12 @@ public class AttributeDirectionState implements IBlockAttribute<Direction> {
 
     @Override
     public Direction get(BlockState state) {
-        return state.get(BlockStateProperties.FACING);
+        return state.getValue(BlockStateProperties.FACING);
     }
 
     @Override
     public BlockState set(BlockState state, Direction value) {
-        return state.with(BlockStateProperties.FACING, value);
+        return state.setValue(BlockStateProperties.FACING, value);
     }
 
     @Override
@@ -28,6 +28,6 @@ public class AttributeDirectionState implements IBlockAttribute<Direction> {
 
     @Override
     public BlockState getDefaultState(BlockState state) {
-        return state.with(BlockStateProperties.FACING, Direction.NORTH);
+        return state.setValue(BlockStateProperties.FACING, Direction.NORTH);
     }
 }

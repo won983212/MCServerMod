@@ -18,7 +18,7 @@ public class Commands {
         CommandDispatcher<CommandSource> dispater = e.getDispatcher();
         LiteralArgumentBuilder<CommandSource> skinCommand
                 = net.minecraft.command.Commands.literal("skin")
-                .requires((source) -> source.hasPermissionLevel(2))
+                .requires((source) -> source.hasPermission(2))
                 .then(net.minecraft.command.Commands.literal("reload")
                         .executes(ctx -> reloadSkin(ctx.getSource())));
         dispater.register(skinCommand);
@@ -26,7 +26,7 @@ public class Commands {
 
     private static int reloadSkin(CommandSource source) {
         NetworkDispatcher.sendToAll(new ReloadSkinClientMessage());
-        source.sendFeedback(new TranslationTextComponent("servermod.command.reloaded"), true);
+        source.sendSuccess(new TranslationTextComponent("servermod.command.reloaded"), true);
         return 1;
     }
 }
