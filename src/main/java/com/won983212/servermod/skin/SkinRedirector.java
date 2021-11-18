@@ -1,4 +1,4 @@
-package com.won983212.servermod;
+package com.won983212.servermod.skin;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -9,6 +9,8 @@ import com.google.gson.Gson;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.minecraft.MinecraftProfileTexture;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.won983212.servermod.Logger;
+import com.won983212.servermod.ServerMod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.SkinManager;
 import net.minecraft.util.Util;

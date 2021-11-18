@@ -2,7 +2,7 @@ package com.won983212.servermod.mixin;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.minecraft.MinecraftProfileTexture;
-import com.won983212.servermod.SkinRedirector;
+import com.won983212.servermod.skin.SkinRedirector;
 import net.minecraft.client.resources.SkinManager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

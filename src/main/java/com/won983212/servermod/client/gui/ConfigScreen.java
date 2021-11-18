@@ -1,7 +1,7 @@
 package com.won983212.servermod.client.gui;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import com.won983212.servermod.ForgeEventHandler;
+import com.won983212.servermod.skin.SkinCacheCleaner;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -37,7 +37,7 @@ public class ConfigScreen extends Screen {
                 TITLE_HEIGHT + font.lineHeight + 30,
                 BUTTON_WIDTH, BUTTON_HEIGHT,
                 new TranslationTextComponent("servermod.settings.clearcache"),
-                button -> ForgeEventHandler.clearSkinCache()
+                button -> SkinCacheCleaner.clearSkinCache()
         ));
         this.addButton(new Button(
                 (this.width - BUTTON_WIDTH) / 2,

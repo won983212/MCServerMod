@@ -1,26 +1,27 @@
 package com.won983212.servermod.network;
 
-import com.won983212.servermod.ForgeEventHandler;
 import com.won983212.servermod.Logger;
+import com.won983212.servermod.skin.SkinCacheCleaner;
 import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public class ReloadSkinClientMessage {
+public class ReloadSkinClientMessage implements IMessage {
 
     public ReloadSkinClientMessage() {
     }
 
-    public static ReloadSkinClientMessage decode(PacketBuffer buf) {
-        return new ReloadSkinClientMessage();
+    public ReloadSkinClientMessage(PacketBuffer buf) {
     }
 
-    public void encode(PacketBuffer buf) {
+    @Override
+    public void write(PacketBuffer buf) {
     }
 
-    public static void onMessageReceived(final ReloadSkinClientMessage message, Supplier<NetworkEvent.Context> ctxSupplier) {
+    @Override
+    public void handle(Supplier<NetworkEvent.Context> ctxSupplier) {
         NetworkEvent.Context ctx = ctxSupplier.get();
         LogicalSide side = ctx.getDirection().getReceptionSide();
 
@@ -30,6 +31,6 @@ public class ReloadSkinClientMessage {
             return;
         }
 
-        ctx.enqueueWork(ForgeEventHandler::clearSkinCache);
+        ctx.enqueueWork(SkinCacheCleaner::clearSkinCache);
     }
 }

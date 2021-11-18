@@ -18,8 +18,13 @@ public class ModItems {
             .tab(ItemGroup.TAB_DECORATIONS))
             .setRegistryName("block_industrial_alarm");
 
+    public static final SchematicItem itemSchematic = (SchematicItem) new SchematicItem(new Item.Properties()
+            .stacksTo(1)
+            .tab(ItemGroup.TAB_TOOLS))
+            .setRegistryName("schematic");
+
     @SubscribeEvent
     public static void onItemsRegistration(final RegistryEvent.Register<Item> itemRegisterEvent) {
-        itemRegisterEvent.getRegistry().register(itemIndustrialAlarm);
+        itemRegisterEvent.getRegistry().registerAll(itemIndustrialAlarm, itemSchematic);
     }
 }

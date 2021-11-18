@@ -1,4 +1,4 @@
-package com.won983212.servermod;
+package com.won983212.servermod.skin;
 
 /** Gson Object **/
 public class SkinTextureInfo {
