@@ -1,5 +1,6 @@
-package com.won983212.servermod.schematic;
+package com.won983212.servermod.schematic.world.chunk;
 
+import com.won983212.servermod.schematic.world.PlacementSimulationWorld;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.shorts.ShortList;
 import net.minecraft.block.Block;

@@ -3,13 +3,13 @@ package com.won983212.servermod.schematic.client.tools;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.won983212.servermod.ModTextures;
 import com.won983212.servermod.client.ClientDist;
-import com.won983212.servermod.client.render.outliner.AABBOutline;
 import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
+import com.won983212.servermod.client.render.outliner.AABBOutline;
 import com.won983212.servermod.schematic.client.SchematicHandler;
 import com.won983212.servermod.schematic.client.SchematicTransformation;
-import com.won983212.servermod.utility.AnimationTickHolder;
 import com.won983212.servermod.utility.RaycastHelper;
 import com.won983212.servermod.utility.VecHelper;
+import com.won983212.servermod.utility.animate.AnimationTickHolder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.gui.screen.Screen;
@@ -20,9 +20,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.RayTraceResult.Type;
 import net.minecraft.util.math.vector.Vector3d;
-
-import java.util.Arrays;
-import java.util.List;
 
 public abstract class SchematicToolBase implements ISchematicTool {
 

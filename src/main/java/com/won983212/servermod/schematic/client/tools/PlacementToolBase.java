@@ -1,7 +1,6 @@
 package com.won983212.servermod.schematic.client.tools;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-
 import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 

@@ -34,7 +34,7 @@ public class SchematicProcessor extends StructureProcessor {
         if (info.nbt != null) {
             TileEntity te = info.state.createTileEntity(world);
             if (te != null) {
-                CompoundNBT nbt = NBTProcessors.process(te, info.nbt, false);
+                CompoundNBT nbt = NBTProcessors.process(te, info.nbt);
                 if (nbt != info.nbt)
                     return new Template.BlockInfo(info.pos, info.state, nbt);
             }

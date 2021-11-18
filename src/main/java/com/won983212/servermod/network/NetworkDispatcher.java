@@ -1,18 +1,10 @@
 package com.won983212.servermod.network;
 
 import com.won983212.servermod.ServerMod;
-import com.won983212.servermod.schematic.packet.SchematicUploadPacket;
-import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.network.NetworkDirection;
-import net.minecraftforge.fml.network.NetworkEvent;
 import net.minecraftforge.fml.network.NetworkRegistry;
 import net.minecraftforge.fml.network.PacketDistributor;
 import net.minecraftforge.fml.network.simple.SimpleChannel;
-
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 public class NetworkDispatcher {
     private static final String MESSAGE_PROTOCOL_VERSION = "1.0";

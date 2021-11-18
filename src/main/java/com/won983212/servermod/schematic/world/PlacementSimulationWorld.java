@@ -1,5 +1,6 @@
-package com.won983212.servermod.schematic;
+package com.won983212.servermod.schematic.world;
 
+import com.won983212.servermod.schematic.world.chunk.WrappedChunkProvider;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.tileentity.TileEntity;
@@ -20,10 +21,6 @@ public class PlacementSimulationWorld extends WrappedWorld {
     public WrappedChunkProvider chunkProvider;
     private final BlockPos.Mutable scratch = new BlockPos.Mutable();
 
-    public PlacementSimulationWorld(World wrapped) {
-        this(wrapped, new WrappedChunkProvider());
-    }
-
     public PlacementSimulationWorld(World wrapped, WrappedChunkProvider chunkProvider) {
         super(wrapped, chunkProvider);
         this.chunkProvider = chunkProvider.setWorld(this);
@@ -36,26 +33,6 @@ public class PlacementSimulationWorld extends WrappedWorld {
     @Override
     public WorldLightManager getLightEngine() {
         return lighter;
-    }
-
-    public void updateLightSources() {
-        for (Map.Entry<BlockPos, BlockState> entry : blocksAdded.entrySet()) {
-            BlockPos pos = entry.getKey();
-            BlockState state = entry.getValue();
-            int light = state.getLightValue(this, pos);
-            if (light > 0) {
-                lighter.onBlockEmissionIncrease(pos, light);
-            }
-        }
-    }
-
-    public void setTileEntities(Collection<TileEntity> tileEntities) {
-        tesAdded.clear();
-        tileEntities.forEach(te -> tesAdded.put(te.getBlockPos(), te));
-    }
-
-    public void clear() {
-        blocksAdded.clear();
     }
 
     @Override

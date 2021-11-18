@@ -6,18 +6,18 @@ import net.minecraft.client.renderer.IRenderTypeBuffer;
 
 public interface ISchematicTool {
 
-    public void init();
+    void init();
 
-    public void updateSelection();
+    void updateSelection();
 
-    public boolean handleRightClick();
+    boolean handleRightClick();
 
-    public boolean handleMouseWheel(double delta);
+    boolean handleMouseWheel(double delta);
 
-    public void renderTool(MatrixStack ms, SuperRenderTypeBuffer buffer);
+    void renderTool(MatrixStack ms, SuperRenderTypeBuffer buffer);
 
-    public void renderOverlay(MatrixStack ms, IRenderTypeBuffer buffer);
+    void renderOverlay(MatrixStack ms, IRenderTypeBuffer buffer);
 
-    public void renderOnSchematic(MatrixStack ms, SuperRenderTypeBuffer buffer);
+    void renderOnSchematic(MatrixStack ms, SuperRenderTypeBuffer buffer);
 
 }

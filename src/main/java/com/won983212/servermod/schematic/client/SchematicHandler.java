@@ -10,11 +10,11 @@ import com.won983212.servermod.item.ModItems;
 import com.won983212.servermod.item.SchematicItem;
 import com.won983212.servermod.network.NetworkDispatcher;
 import com.won983212.servermod.schematic.SchematicInstances;
-import com.won983212.servermod.schematic.SchematicWorld;
+import com.won983212.servermod.schematic.world.SchematicWorld;
 import com.won983212.servermod.schematic.client.tools.Tools;
 import com.won983212.servermod.schematic.packet.SchematicPlacePacket;
 import com.won983212.servermod.schematic.packet.SchematicSyncPacket;
-import com.won983212.servermod.utility.AnimationTickHolder;
+import com.won983212.servermod.utility.animate.AnimationTickHolder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.gui.screen.Screen;
@@ -80,9 +80,7 @@ public class SchematicHandler {
             return;
         }
 
-        if (!active || !stack.getTag()
-                .getString("File")
-                .equals(displayedSchematic))
+        if (!active || !stack.getTag().getString("File").equals(displayedSchematic))
             init(player, stack);
         if (!active)
             return;
@@ -94,14 +92,12 @@ public class SchematicHandler {
             sync();
 
         selectionScreen.update();
-        currentTool.getTool()
-                .updateSelection();
+        currentTool.getTool().updateSelection();
     }
 
     private void init(ClientPlayerEntity player, ItemStack stack) {
         loadSettings(stack);
-        displayedSchematic = stack.getTag()
-                .getString("File");
+        displayedSchematic = stack.getTag().getString("File");
         active = true;
         if (deployed) {
             setupRenderer();
@@ -133,12 +129,9 @@ public class SchematicHandler {
         placementSettings.setMirror(Mirror.LEFT_RIGHT);
         schematic.placeInWorldChunk(wMirroredLR, BlockPos.ZERO.south(size.getZ() - 1), placementSettings, wMirroredFB.getRandom());
 
-        renderers.get(0)
-                .display(w);
-        renderers.get(1)
-                .display(wMirroredFB);
-        renderers.get(2)
-                .display(wMirroredLR);
+        renderers.get(0).display(w);
+        renderers.get(1).display(wMirroredFB);
+        renderers.get(2).display(wMirroredLR);
     }
 
     public void render(MatrixStack ms, SuperRenderTypeBuffer buffer) {
@@ -157,33 +150,25 @@ public class SchematicHandler {
 
         if (!renderers.isEmpty()) {
             float pt = AnimationTickHolder.getPartialTicks();
-            boolean lr = transformation.getScaleLR()
-                    .get(pt) < 0;
-            boolean fb = transformation.getScaleFB()
-                    .get(pt) < 0;
+            boolean lr = transformation.getScaleLR().get(pt) < 0;
+            boolean fb = transformation.getScaleFB().get(pt) < 0;
             if (lr && !fb)
-                renderers.get(2)
-                        .render(ms, buffer);
+                renderers.get(2).render(ms, buffer);
             else if (fb && !lr)
-                renderers.get(1)
-                        .render(ms, buffer);
+                renderers.get(1).render(ms, buffer);
             else
-                renderers.get(0)
-                        .render(ms, buffer);
+                renderers.get(0).render(ms, buffer);
         }
 
         if (active)
             currentTool.getTool().renderOnSchematic(ms, buffer);
-
         ms.popPose();
-
     }
 
     public void renderOverlay(MatrixStack ms, IRenderTypeBuffer buffer, float partialTicks) {
         if (!active)
             return;
-        currentTool.getTool()
-                .renderOverlay(ms, buffer);
+        currentTool.getTool().renderOverlay(ms, buffer);
         selectionScreen.renderPassive(ms, partialTicks);
     }
 
@@ -192,8 +177,7 @@ public class SchematicHandler {
             return;
         if (!pressed || button != 1)
             return;
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player.isShiftKeyDown())
+        if (Minecraft.getInstance().player.isShiftKeyDown())
             return;
         currentTool.getTool().handleRightClick();
     }
@@ -231,7 +215,6 @@ public class SchematicHandler {
             return null;
         if (!stack.hasTag())
             return null;
-
         activeSchematicItem = stack;
         activeHotbarSlot = player.inventory.selected;
         return stack;
@@ -239,8 +222,7 @@ public class SchematicHandler {
 
     private boolean itemLost(PlayerEntity player) {
         for (int i = 0; i < PlayerInventory.getSelectionSize(); i++) {
-            if (!player.inventory.getItem(i)
-                    .sameItem(activeSchematicItem))
+            if (!player.inventory.getItem(i).sameItem(activeSchematicItem))
                 continue;
             if (!ItemStack.tagMatches(player.inventory.getItem(i), activeSchematicItem))
                 continue;
@@ -261,8 +243,7 @@ public class SchematicHandler {
 
     public void equip(Tools tool) {
         this.currentTool = tool;
-        currentTool.getTool()
-                .init();
+        currentTool.getTool().init();
     }
 
     public void loadSettings(ItemStack blueprint) {
@@ -291,10 +272,6 @@ public class SchematicHandler {
         }
         deployed = true;
         setupRenderer();
-    }
-
-    public String getCurrentSchematicName() {
-        return displayedSchematic != null ? displayedSchematic : "-";
     }
 
     public void printInstantly() {

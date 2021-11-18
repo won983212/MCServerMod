@@ -62,9 +62,8 @@ public class SchematicSyncPacket implements IMessage {
             } else {
                 stack = player.inventory.getItem(slot);
             }
-            if (ModItems.itemSchematic != stack.getItem()) {
+            if (ModItems.itemSchematic != stack.getItem())
                 return;
-            }
             CompoundNBT tag = stack.getOrCreateTag();
             tag.putBoolean("Deployed", deployed);
             tag.put("Anchor", NBTUtil.writeBlockPos(anchor));

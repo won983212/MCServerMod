@@ -1,9 +1,7 @@
 package com.won983212.servermod.client.render.outliner;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-
 import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Vector3d;
 
 public class LineOutline extends Outline {

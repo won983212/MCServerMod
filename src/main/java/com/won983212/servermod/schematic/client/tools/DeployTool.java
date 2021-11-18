@@ -1,13 +1,12 @@
 package com.won983212.servermod.schematic.client.tools;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-
 import com.won983212.servermod.ModKeys;
-import com.won983212.servermod.client.render.outliner.AABBOutline;
 import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
+import com.won983212.servermod.client.render.outliner.AABBOutline;
 import com.won983212.servermod.schematic.client.SchematicTransformation;
-import com.won983212.servermod.utility.AnimationTickHolder;
 import com.won983212.servermod.utility.MatrixTransformStack;
+import com.won983212.servermod.utility.animate.AnimationTickHolder;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTUtil;
 import net.minecraft.util.math.AxisAlignedBB;
@@ -26,9 +25,7 @@ public class DeployTool extends PlacementToolBase {
     @Override
     public void updateSelection() {
         if (schematicHandler.isActive() && selectionRange == -1) {
-            selectionRange = (int) (schematicHandler.getBounds()
-                    .getCenter()
-                    .length() / 2);
+            selectionRange = (int) (schematicHandler.getBounds().getCenter().length() / 2);
             selectionRange = MathHelper.clamp(selectionRange, 1, 100);
         }
         selectIgnoreBlocks = ModKeys.KEY_ACTIVATE_TOOL.isDown();
@@ -68,8 +65,7 @@ public class DeployTool extends PlacementToolBase {
 
         AABBOutline outline = schematicHandler.getOutline();
         outline.render(ms, buffer, pt);
-        outline.getParams()
-                .clearTextures();
+        outline.getParams().clearTextures();
         ms.popPose();
     }
 
@@ -86,20 +82,16 @@ public class DeployTool extends PlacementToolBase {
     public boolean handleRightClick() {
         if (selectedPos == null)
             return super.handleRightClick();
-        Vector3d center = schematicHandler.getBounds()
-                .getCenter();
+        Vector3d center = schematicHandler.getBounds().getCenter();
         BlockPos target = selectedPos.offset(-((int) center.x), 0, -((int) center.z));
 
         ItemStack item = schematicHandler.getActiveSchematicItem();
         if (item != null) {
-            item.getTag()
-                    .putBoolean("Deployed", true);
-            item.getTag()
-                    .put("Anchor", NBTUtil.writeBlockPos(target));
+            item.getTag().putBoolean("Deployed", true);
+            item.getTag().put("Anchor", NBTUtil.writeBlockPos(target));
         }
 
-        schematicHandler.getTransformation()
-                .moveTo(target);
+        schematicHandler.getTransformation().moveTo(target);
         schematicHandler.markDirty();
         schematicHandler.deploy();
         return true;

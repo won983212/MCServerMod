@@ -6,7 +6,6 @@ import com.won983212.servermod.utility.Lang;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUseContext;
 import net.minecraft.nbt.CompoundNBT;
@@ -158,9 +157,7 @@ public class SchematicItem extends Item {
 
         if (!player.isShiftKeyDown() || hand != Hand.MAIN_HAND)
             return false;
-        if (!player.getItemInHand(hand).hasTag())
-            return false;
-        return true;
+        return player.getItemInHand(hand).hasTag();
     }
 
 }

@@ -1,7 +1,6 @@
 package com.won983212.servermod.utility;
 
 import com.won983212.servermod.ServerMod;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 
@@ -16,10 +15,6 @@ public class Lang {
 
     public static TranslationTextComponent createTranslationTextComponent(String key, Object... args) {
         return new TranslationTextComponent(ServerMod.MODID + "." + key, args);
-    }
-
-    public static void sendStatus(PlayerEntity player, String key, Object... args) {
-        player.displayClientMessage(createTranslationTextComponent(key, args), true);
     }
 
     public static List<ITextComponent> translatedOptions(String prefix, String... keys) {

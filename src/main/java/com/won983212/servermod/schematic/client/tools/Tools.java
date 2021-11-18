@@ -18,10 +18,10 @@ public enum Tools {
     Print(new PlaceTool(), ModIcons.I_CONFIRM),
     Flip(new FlipTool(), ModIcons.I_TOOL_MIRROR);
 
-    private ISchematicTool tool;
-    private ModIcons icon;
+    private final ISchematicTool tool;
+    private final ModIcons icon;
 
-    private Tools(ISchematicTool tool, ModIcons icon) {
+    Tools(ISchematicTool tool, ModIcons icon) {
         this.tool = tool;
         this.icon = icon;
     }

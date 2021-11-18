@@ -22,13 +22,6 @@ public class RaycastHelper {
         return worldIn.clip(context);
     }
 
-    public static PredicateTraceResult rayTraceUntil(PlayerEntity playerIn, double range,
-                                                     Predicate<BlockPos> predicate) {
-        Vector3d origin = getTraceOrigin(playerIn);
-        Vector3d target = getTraceTarget(playerIn, range, origin);
-        return rayTraceUntil(origin, target, predicate);
-    }
-
     public static Vector3d getTraceTarget(PlayerEntity playerIn, double range, Vector3d origin) {
         float f = playerIn.xRot;
         float f1 = playerIn.yRot;

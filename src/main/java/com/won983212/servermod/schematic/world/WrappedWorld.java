@@ -1,4 +1,4 @@
-package com.won983212.servermod.schematic;
+package com.won983212.servermod.schematic.world;
 
 import mcp.MethodsReturnNonnullByDefault;
 import net.minecraft.block.Block;

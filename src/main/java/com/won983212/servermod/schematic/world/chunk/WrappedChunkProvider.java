@@ -1,5 +1,6 @@
-package com.won983212.servermod.schematic;
+package com.won983212.servermod.schematic.world.chunk;
 
+import com.won983212.servermod.schematic.world.PlacementSimulationWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.IBlockReader;

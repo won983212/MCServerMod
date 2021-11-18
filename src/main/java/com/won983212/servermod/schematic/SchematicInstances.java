@@ -3,6 +3,8 @@ package com.won983212.servermod.schematic;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.won983212.servermod.item.SchematicItem;
+import com.won983212.servermod.schematic.world.SchematicWorld;
+import com.won983212.servermod.schematic.world.WorldAttached;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.NBTUtil;
@@ -55,7 +57,6 @@ public class SchematicInstances {
         SchematicWorld world = new SchematicWorld(anchor, wrapped);
         PlacementSettings settings = SchematicItem.getSettings(schematic);
         activeTemplate.placeInWorldChunk(world, anchor, settings, wrapped.getRandom());
-
         return world;
     }
 

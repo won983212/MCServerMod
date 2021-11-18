@@ -4,9 +4,7 @@ import com.mojang.blaze3d.vertex.IVertexBuilder;
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.model.ModelBakery;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.Util;
-import org.lwjgl.opengl.GL11;
 
 import java.util.SortedMap;
 
@@ -47,12 +45,6 @@ public class SuperRenderTypeBuffer implements IRenderTypeBuffer {
         earlyBuffer.endBatch();
         defaultBuffer.endBatch();
         lateBuffer.endBatch();
-    }
-
-    public void draw(RenderType type) {
-        earlyBuffer.endBatch(type);
-        defaultBuffer.endBatch(type);
-        lateBuffer.endBatch(type);
     }
 
     private static class SuperRenderTypeBufferPhase extends Impl {

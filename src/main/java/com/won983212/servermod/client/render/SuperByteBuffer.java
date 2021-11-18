@@ -2,7 +2,6 @@ package com.won983212.servermod.client.render;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
-import com.won983212.servermod.utility.MatrixTransformStack;
 import it.unimi.dsi.fastutil.longs.Long2IntMap;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import net.minecraft.client.Minecraft;
@@ -10,8 +9,6 @@ import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.*;
@@ -23,7 +20,7 @@ public class SuperByteBuffer {
     private final BufferBuilderReader template;
 
     // Vertex Position
-    private MatrixStack transforms;
+    private final MatrixStack transforms;
 
     // Vertex Coloring
     private boolean shouldColor;
@@ -37,7 +34,6 @@ public class SuperByteBuffer {
     // Vertex Overlay Color
     private boolean hasOverlay;
     private int overlay = OverlayTexture.NO_OVERLAY;
-    ;
 
     // Vertex Lighting
     private boolean useWorldLight;
@@ -54,23 +50,11 @@ public class SuperByteBuffer {
     private final Vector4f pos = new Vector4f();
     private final Vector3f normal = new Vector3f();
     private final Vector4f lightPos = new Vector4f();
-    private final MatrixTransformStack stacker;
 
     public SuperByteBuffer(BufferBuilder buf) {
         template = new BufferBuilderReader(buf);
         transforms = new MatrixStack();
         transforms.pushPose();
-        stacker = MatrixTransformStack.of(transforms);
-    }
-
-    public static float getUnInterpolatedU(TextureAtlasSprite sprite, float u) {
-        float f = sprite.getU1() - sprite.getU0();
-        return (u - sprite.getU0()) / f * 16.0F;
-    }
-
-    public static float getUnInterpolatedV(TextureAtlasSprite sprite, float v) {
-        float f = sprite.getV1() - sprite.getV0();
-        return (v - sprite.getV0()) / f * 16.0F;
     }
 
     public void renderInto(MatrixStack input, IVertexBuilder builder) {
@@ -220,10 +204,6 @@ public class SuperByteBuffer {
         return this;
     }
 
-    public MatrixTransformStack matrixStacker() {
-        return stacker;
-    }
-
     public SuperByteBuffer translate(Vector3d vec) {
         return translate(vec.x, vec.y, vec.z);
     }
@@ -234,136 +214,6 @@ public class SuperByteBuffer {
 
     public SuperByteBuffer translate(float x, float y, float z) {
         transforms.translate(x, y, z);
-        return this;
-    }
-
-    public SuperByteBuffer transform(MatrixStack stack) {
-        transforms.last()
-                .pose()
-                .multiply(stack.last()
-                        .pose());
-        transforms.last()
-                .normal()
-                .mul(stack.last()
-                        .normal());
-        return this;
-    }
-
-    public SuperByteBuffer rotate(Direction axis, float radians) {
-        if (radians == 0)
-            return this;
-        transforms.mulPose(axis.step()
-                .rotation(radians));
-        return this;
-    }
-
-    public SuperByteBuffer rotate(Quaternion q) {
-        transforms.mulPose(q);
-        return this;
-    }
-
-    public SuperByteBuffer rotateCentered(Direction axis, float radians) {
-        return translate(.5f, .5f, .5f).rotate(axis, radians)
-                .translate(-.5f, -.5f, -.5f);
-    }
-
-    public SuperByteBuffer rotateCentered(Quaternion q) {
-        return translate(.5f, .5f, .5f).rotate(q)
-                .translate(-.5f, -.5f, -.5f);
-    }
-
-    public SuperByteBuffer color(int r, int g, int b, int a) {
-        shouldColor = true;
-        this.r = r;
-        this.g = g;
-        this.b = b;
-        this.a = a;
-        return this;
-    }
-
-    public SuperByteBuffer color(int color) {
-        shouldColor = true;
-        r = ((color >> 16) & 0xFF);
-        g = ((color >> 8) & 0xFF);
-        b = (color & 0xFF);
-        a = 255;
-        return this;
-    }
-
-    /**
-     * Prevents vertex colors from being divided by the diffuse value calculated from the raw untransformed normal vector.
-     * Useful when passed vertex colors do not have diffuse baked in.
-     * Disabled when custom color is used.
-     */
-    public SuperByteBuffer disableDiffuseDiv() {
-        disableDiffuseDiv = true;
-        return this;
-    }
-
-    /**
-     * Prevents vertex colors from being multiplied by the diffuse value calculated from the final transformed normal vector.
-     * Useful for entity rendering, when diffuse is applied automatically later.
-     */
-    public SuperByteBuffer disableDiffuseMult() {
-        disableDiffuseMult = true;
-        return this;
-    }
-
-    public SuperByteBuffer overlay() {
-        hasOverlay = true;
-        return this;
-    }
-
-    public SuperByteBuffer overlay(int overlay) {
-        hasOverlay = true;
-        this.overlay = overlay;
-        return this;
-    }
-
-    public SuperByteBuffer light() {
-        useWorldLight = true;
-        return this;
-    }
-
-    public SuperByteBuffer light(Matrix4f lightTransform) {
-        useWorldLight = true;
-        this.lightTransform = lightTransform;
-        return this;
-    }
-
-    public SuperByteBuffer light(int packedLightCoords) {
-        hasCustomLight = true;
-        this.packedLightCoords = packedLightCoords;
-        return this;
-    }
-
-    public SuperByteBuffer light(Matrix4f lightTransform, int packedLightCoords) {
-        light(lightTransform);
-        light(packedLightCoords);
-        return this;
-    }
-
-    /**
-     * Uses max light from calculated light (world light or custom light) and vertex light for the final light value.
-     * Ineffective if any other light method was not called.
-     */
-    public SuperByteBuffer hybridLight() {
-        hybridLight = true;
-        return this;
-    }
-
-    /**
-     * Transforms normals not only by the local matrix stack, but also by the passed matrix stack.
-     */
-    public SuperByteBuffer fullNormalTransform() {
-        fullNormalTransform = true;
-        return this;
-    }
-
-    public SuperByteBuffer forEntityRender() {
-        disableDiffuseMult();
-        overlay();
-        fullNormalTransform();
         return this;
     }
 
@@ -395,11 +245,6 @@ public class SuperByteBuffer {
     @FunctionalInterface
     public interface SpriteShiftFunc {
         void shift(IVertexBuilder builder, float u, float v);
-    }
-
-    @FunctionalInterface
-    public interface IVertexLighter {
-        public int getPackedLight(float x, float y, float z);
     }
 
 }

@@ -1,10 +1,10 @@
-package com.won983212.servermod.utility;
+package com.won983212.servermod.utility.animate;
 
 public class InterpolatedChasingValue extends InterpolatedValue {
 
-    float speed = 0.5f;
-    float target = 0;
-    float eps = 1 / 4096f;
+    private float speed = 0.5f;
+    private float target = 0;
+    private final float eps = 1 / 4096f;
 
     public void tick() {
         float diff = getCurrentDiff();

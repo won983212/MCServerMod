@@ -13,9 +13,9 @@ public class SchematicUploadPacket implements IMessage {
     public static final int WRITE = 1;
     public static final int FINISH = 2;
 
-    private int code;
+    private final int code;
     private long size;
-    private String schematic;
+    private final String schematic;
     private byte[] data;
 
     public SchematicUploadPacket(int code, String schematic) {
@@ -60,13 +60,11 @@ public class SchematicUploadPacket implements IMessage {
     }
 
     public void handle(Supplier<Context> context) {
-        context.get()
-                .enqueueWork(() -> {
-                    ServerPlayerEntity player = context.get()
-                            .getSender();
-                    if (player == null)
-                        return;
-                    // TODO Handle upload packet
+        context.get().enqueueWork(() -> {
+            ServerPlayerEntity player = context.get().getSender();
+            if (player == null)
+                return;
+            // TODO Handle upload packet
 				/*if (code == BEGIN) {
 					BlockPos pos = ((SchematicTableContainer) player.containerMenu).getTileEntity()
 							.getBlockPos();
@@ -76,9 +74,8 @@ public class SchematicUploadPacket implements IMessage {
 					Create.SCHEMATIC_RECEIVER.handleWriteRequest(player, schematic, data);
 				if (code == FINISH)
 					Create.SCHEMATIC_RECEIVER.handleFinishedUpload(player, schematic);*/
-                });
-        context.get()
-                .setPacketHandled(true);
+        });
+        context.get().setPacketHandled(true);
     }
 
 }

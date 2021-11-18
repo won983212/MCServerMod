@@ -1,7 +1,11 @@
 package com.won983212.servermod.schematic.client;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import com.won983212.servermod.utility.*;
+import com.won983212.servermod.utility.MatrixTransformStack;
+import com.won983212.servermod.utility.VecHelper;
+import com.won983212.servermod.utility.animate.AnimationTickHolder;
+import com.won983212.servermod.utility.animate.InterpolatedChasingAngle;
+import com.won983212.servermod.utility.animate.InterpolatedChasingValue;
 import net.minecraft.util.Direction.Axis;
 import net.minecraft.util.Mirror;
 import net.minecraft.util.Rotation;
@@ -14,8 +18,8 @@ import static java.lang.Math.abs;
 
 public class SchematicTransformation {
 
-    private InterpolatedChasingValue x, y, z, scaleFrontBack, scaleLeftRight;
-    private InterpolatedChasingAngle rotation;
+    private final InterpolatedChasingValue x, y, z, scaleFrontBack, scaleLeftRight;
+    private final InterpolatedChasingAngle rotation;
     private double xOrigin;
     private double zOrigin;
 
@@ -36,8 +40,7 @@ public class SchematicTransformation {
         xOrigin = bounds.getXsize() / 2f;
         zOrigin = bounds.getZsize() / 2f;
 
-        int r = -(settings.getRotation()
-                .ordinal() * 90);
+        int r = -(settings.getRotation().ordinal() * 90);
         rotation.start(r);
 
         Vector3d vec = fromAnchor(anchor);
@@ -65,10 +68,6 @@ public class SchematicTransformation {
         ms.scale(abs(fb), 1, abs(lr));
         ms.translate(-xOrigin, 0, -zOrigin);
 
-    }
-
-    public boolean isFlipped() {
-        return getMirrorModifier(Axis.X) < 0 != getMirrorModifier(Axis.Z) < 0;
     }
 
     public Vector3d getRotationOffset(boolean ignoreMirrors) {
@@ -102,7 +101,6 @@ public class SchematicTransformation {
 
     public PlacementSettings toSettings() {
         PlacementSettings settings = new PlacementSettings();
-
         int i = (int) rotation.getTarget();
 
         boolean mirrorlr = getScaleLR().getTarget() < 0;
@@ -174,8 +172,7 @@ public class SchematicTransformation {
     }
 
     public float getCurrentRotation() {
-        float pt = AnimationTickHolder.getPartialTicks();
-        return rotation.get(pt);
+        return rotation.get(AnimationTickHolder.getPartialTicks());
     }
 
     public void tick() {
@@ -200,13 +197,6 @@ public class SchematicTransformation {
 
     public void move(float xIn, float yIn, float zIn) {
         moveTo(x.getTarget() + xIn, y.getTarget() + yIn, z.getTarget() + zIn);
-    }
-
-    public void startAt(BlockPos pos) {
-        x.start(pos.getX());
-        y.start(0);
-        z.start(pos.getZ());
-        moveTo(pos);
     }
 
     public void moveTo(BlockPos pos) {

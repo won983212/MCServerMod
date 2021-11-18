@@ -13,7 +13,6 @@ import net.minecraftforge.fml.network.NetworkEvent.Context;
 import java.util.function.Supplier;
 
 public class SchematicPlacePacket implements IMessage {
-
     public ItemStack stack;
 
     public SchematicPlacePacket(ItemStack stack) {
@@ -60,5 +59,4 @@ public class SchematicPlacePacket implements IMessage {
         });
         context.get().setPacketHandled(true);
     }
-
 }

@@ -17,14 +17,9 @@ import java.util.function.UnaryOperator;
 public final class NBTProcessors {
 
     private static final Map<TileEntityType<?>, UnaryOperator<CompoundNBT>> processors = new HashMap<>();
-    private static final Map<TileEntityType<?>, UnaryOperator<CompoundNBT>> survivalProcessors = new HashMap<>();
 
     public static synchronized void addProcessor(TileEntityType<?> type, UnaryOperator<CompoundNBT> processor) {
         processors.put(type, processor);
-    }
-
-    public static synchronized void addSurvivalProcessor(TileEntityType<?> type, UnaryOperator<CompoundNBT> processor) {
-        survivalProcessors.put(type, processor);
     }
 
     static {
@@ -65,16 +60,12 @@ public final class NBTProcessors {
     }
 
     @Nullable
-    public static CompoundNBT process(TileEntity tileEntity, CompoundNBT compound, boolean survival) {
+    public static CompoundNBT process(TileEntity tileEntity, CompoundNBT compound) {
         if (compound == null)
             return null;
         TileEntityType<?> type = tileEntity.getType();
-        if (survival && survivalProcessors.containsKey(type))
-            compound = survivalProcessors.get(type)
-                    .apply(compound);
         if (compound != null && processors.containsKey(type))
-            return processors.get(type)
-                    .apply(compound);
+            return processors.get(type).apply(compound);
         if (tileEntity instanceof MobSpawnerTileEntity)
             return compound;
         if (tileEntity.onlyOpCanSetNbt())

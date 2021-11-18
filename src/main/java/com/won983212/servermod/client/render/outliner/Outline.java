@@ -6,7 +6,6 @@ import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.won983212.servermod.ModTextures;
 import com.won983212.servermod.client.render.RenderTypes;
 import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
-import com.won983212.servermod.utility.AngleHelper;
 import com.won983212.servermod.utility.Color;
 import com.won983212.servermod.utility.MatrixTransformStack;
 import com.won983212.servermod.utility.VecHelper;
@@ -33,10 +32,10 @@ public abstract class Outline {
 
     public void renderCuboidLine(MatrixStack ms, SuperRenderTypeBuffer buffer, Vector3d start, Vector3d end) {
         Vector3d diff = end.subtract(start);
-        float hAngle = AngleHelper.deg(MathHelper.atan2(diff.x, diff.z));
+        float hAngle = deg(MathHelper.atan2(diff.x, diff.z));
         float hDistance = (float) diff.multiply(1, 0, 1)
                 .length();
-        float vAngle = AngleHelper.deg(MathHelper.atan2(hDistance, diff.y)) - 90;
+        float vAngle = deg(MathHelper.atan2(hDistance, diff.y)) - 90;
         ms.pushPose();
         MatrixTransformStack.of(ms)
                 .translate(start)
@@ -62,7 +61,7 @@ public abstract class Outline {
 
         Vector3d extension = diff.normalize()
                 .scale(lineWidth / 2);
-        Vector3d plane = VecHelper.axisAlingedPlaneOf(diff);
+        Vector3d plane = axisAlingedPlaneOf(diff);
         Direction face = Direction.getNearest(diff.x, diff.y, diff.z);
         Axis axis = face.getAxis();
 
@@ -152,11 +151,19 @@ public abstract class Outline {
         transformNormals = null;
     }
 
-    public void tick() {
-    }
-
     public OutlineParams getParams() {
         return params;
+    }
+
+    private static float deg(double rad) {
+        if (rad == 0)
+            return 0;
+        return (float) (rad * 180 / Math.PI);
+    }
+
+    private static Vector3d axisAlingedPlaneOf(Vector3d vec) {
+        vec = vec.normalize();
+        return new Vector3d(1, 1, 1).subtract(Math.abs(vec.x), Math.abs(vec.y), Math.abs(vec.z));
     }
 
     public static class OutlineParams {
@@ -187,11 +194,6 @@ public abstract class Outline {
 
         public OutlineParams colored(int color) {
             rgb = new Color(color, false);
-            return this;
-        }
-
-        public OutlineParams colored(Color c) {
-            rgb = c.copy();
             return this;
         }
 

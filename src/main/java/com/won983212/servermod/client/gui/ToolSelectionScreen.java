@@ -2,16 +2,15 @@ package com.won983212.servermod.client.gui;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.won983212.servermod.ModIcons;
 import com.won983212.servermod.ModKeys;
 import com.won983212.servermod.ModTextures;
 import com.won983212.servermod.schematic.client.tools.Tools;
+import com.won983212.servermod.utility.Lang;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
-import com.won983212.servermod.utility.Lang;
 
 import java.util.List;
 import java.util.function.Consumer;

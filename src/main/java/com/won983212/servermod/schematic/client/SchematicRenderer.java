@@ -1,17 +1,18 @@
 package com.won983212.servermod.schematic.client;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
+import com.won983212.servermod.Logger;
 import com.won983212.servermod.client.render.SuperByteBuffer;
 import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
-import com.won983212.servermod.client.render.TileEntityRenderHelper;
-import com.won983212.servermod.schematic.SchematicWorld;
+import com.won983212.servermod.schematic.world.SchematicWorld;
 import com.won983212.servermod.utility.MatrixTransformStack;
+import com.won983212.servermod.utility.animate.AnimationTickHolder;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BlockRendererDispatcher;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.RenderTypeLookup;
+import net.minecraft.client.renderer.*;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
+import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
@@ -22,7 +23,6 @@ import org.lwjgl.opengl.GL11;
 import java.util.*;
 
 public class SchematicRenderer {
-
     private final Map<RenderType, SuperByteBuffer> bufferCache = new HashMap<>(getLayerCount());
     private final Set<RenderType> usedBlockRenderLayers = new HashSet<>(getLayerCount());
     private final Set<RenderType> startedBufferBuilders = new HashSet<>(getLayerCount());
@@ -71,7 +71,7 @@ public class SchematicRenderer {
             SuperByteBuffer superByteBuffer = bufferCache.get(layer);
             superByteBuffer.renderInto(ms, buffer.getBuffer(layer));
         }
-        TileEntityRenderHelper.renderTileEntities(schematic, schematic.getRenderedTileEntities(), ms, buffer);
+        renderTileEntities(ms, buffer);
     }
 
     protected void redraw(Minecraft minecraft) {
@@ -131,4 +131,32 @@ public class SchematicRenderer {
         return RenderType.chunkBufferLayers().size();
     }
 
+    private void renderTileEntities(MatrixStack ms, IRenderTypeBuffer buffer) {
+        Iterator<TileEntity> iterator = schematic.getRenderedTileEntities().iterator();
+        while (iterator.hasNext()) {
+            TileEntity tileEntity = iterator.next();
+            TileEntityRenderer<TileEntity> renderer = TileEntityRendererDispatcher.instance.getRenderer(tileEntity);
+            if (renderer == null) {
+                iterator.remove();
+                continue;
+            }
+
+            BlockPos pos = tileEntity.getBlockPos();
+            ms.pushPose();
+            MatrixTransformStack.of(ms).translate(pos);
+
+            try {
+                int worldLight = WorldRenderer.getLightColor(schematic, pos);
+                float pt = AnimationTickHolder.getPartialTicks();
+                renderer.render(tileEntity, pt, ms, buffer, worldLight, OverlayTexture.NO_OVERLAY);
+            } catch (Exception e) {
+                iterator.remove();
+                String message = "TileEntity " + tileEntity.getType().getRegistryName().toString()
+                        + " didn't want to render while moved.\n";
+                Logger.error(message + e.toString());
+            }
+
+            ms.popPose();
+        }
+    }
 }

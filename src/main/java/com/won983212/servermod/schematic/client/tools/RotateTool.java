@@ -3,13 +3,13 @@ package com.won983212.servermod.schematic.client.tools;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
 import com.won983212.servermod.client.render.outliner.LineOutline;
-import com.won983212.servermod.utility.AnimationTickHolder;
+import com.won983212.servermod.utility.animate.AnimationTickHolder;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.vector.Vector3d;
 
 public class RotateTool extends PlacementToolBase {
 
-    private LineOutline line = new LineOutline();
+    private final LineOutline line = new LineOutline();
 
     @Override
     public boolean handleMouseWheel(double delta) {
@@ -31,8 +31,7 @@ public class RotateTool extends PlacementToolBase {
                 .disableNormals()
                 .colored(0xdddddd)
                 .lineWidth(1 / 16f);
-        line.set(start, end)
-                .render(ms, buffer, AnimationTickHolder.getPartialTicks());
+        line.set(start, end).render(ms, buffer, AnimationTickHolder.getPartialTicks());
 
         super.renderOnSchematic(ms, buffer);
     }

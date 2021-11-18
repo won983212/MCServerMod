@@ -63,8 +63,8 @@ public class AABBOutline extends Outline {
 
         renderFace(ms, buffer, Direction.NORTH, xYz, XYz, Xyz, xyz, noCull);
         renderFace(ms, buffer, Direction.SOUTH, XYZ, xYZ, xyZ, XyZ, noCull);
-        renderFace(ms, buffer, Direction.EAST, XYz, XYZ, XyZ, Xyz, noCull);
-        renderFace(ms, buffer, Direction.WEST, xYZ, xYz, xyz, xyZ, noCull);
+        renderFace(ms, buffer, Direction.EAST, xYZ, xYz, xyz, xyZ, noCull);
+        renderFace(ms, buffer, Direction.WEST, XYz, XYZ, XyZ, Xyz, noCull);
         renderFace(ms, buffer, Direction.UP, xYZ, XYZ, XYz, xYz, noCull);
         renderFace(ms, buffer, Direction.DOWN, xyz, Xyz, XyZ, xyZ, noCull);
 
@@ -75,11 +75,9 @@ public class AABBOutline extends Outline {
         if (!params.faceTexture.isPresent())
             return;
 
-        ResourceLocation faceTexture = params.faceTexture.get()
-                .getLocation();
+        ResourceLocation faceTexture = params.faceTexture.get().getLocation();
         float alphaBefore = params.alpha;
-        params.alpha =
-                (direction == params.getHighlightedFace() && params.hightlightedFaceTexture.isPresent()) ? 1 : 0.5f;
+        params.alpha = (direction == params.getHighlightedFace() && params.hightlightedFaceTexture.isPresent()) ? 1 : 0.5f;
 
         RenderType translucentType = RenderTypes.getOutlineTranslucent(faceTexture, !noCull);
         IVertexBuilder builder = buffer.getLateBuffer(translucentType);

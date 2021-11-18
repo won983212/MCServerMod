@@ -1,14 +1,13 @@
-package com.won983212.servermod.schematic;
+package com.won983212.servermod.schematic.world;
 
+import net.minecraft.world.IWorld;
+import net.minecraftforge.common.util.NonNullFunction;
+
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.annotation.Nonnull;
-
-import net.minecraft.world.IWorld;
-import net.minecraftforge.common.util.NonNullFunction;
 
 public class WorldAttached<T> {
 
@@ -20,10 +19,6 @@ public class WorldAttached<T> {
         this.factory = factory;
         attached = new HashMap<>();
         allMaps.add(attached);
-    }
-
-    public static void invalidateWorld(IWorld world) {
-        allMaps.forEach(m -> m.remove(world));
     }
 
     @Nonnull

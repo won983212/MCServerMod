@@ -1,10 +1,10 @@
 package com.won983212.servermod.client;
 
-import com.won983212.servermod.ModKeys;
 import com.won983212.servermod.LegacyIDs;
 import com.won983212.servermod.ModDist;
+import com.won983212.servermod.ModKeys;
 import com.won983212.servermod.client.gui.ConfigScreen;
-import com.won983212.servermod.client.render.RenderIndustrialAlarm;
+import com.won983212.servermod.client.render.tile.RenderIndustrialAlarm;
 import com.won983212.servermod.schematic.client.SchematicHandler;
 import com.won983212.servermod.tile.ModTiles;
 import net.minecraftforge.fml.ExtensionPoint;

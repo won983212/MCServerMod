@@ -7,7 +7,7 @@ import com.won983212.servermod.ModKeys;
 import com.won983212.servermod.ServerMod;
 import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
 import com.won983212.servermod.skin.SkinCacheCleaner;
-import com.won983212.servermod.utility.AnimationTickHolder;
+import com.won983212.servermod.utility.animate.AnimationTickHolder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.world.ClientWorld;

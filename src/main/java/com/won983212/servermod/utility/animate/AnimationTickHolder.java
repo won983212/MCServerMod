@@ -1,10 +1,8 @@
-package com.won983212.servermod.utility;
+package com.won983212.servermod.utility.animate;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.world.IWorld;
 
 public class AnimationTickHolder {
-
     private static int ticks;
     private static int paused_ticks;
 
@@ -14,24 +12,11 @@ public class AnimationTickHolder {
     }
 
     public static void tick() {
-        if (!Minecraft.getInstance()
-                .isPaused()) {
+        if (!Minecraft.getInstance().isPaused()) {
             ticks = (ticks + 1) % 1_728_000; // wrap around every 24 hours so we maintain enough floating point precision
         } else {
             paused_ticks = (paused_ticks + 1) % 1_728_000;
         }
-    }
-
-    public static int getTicks() {
-        return getTicks(false);
-    }
-
-    public static int getTicks(boolean includePaused) {
-        return includePaused ? ticks + paused_ticks : ticks;
-    }
-
-    public static float getRenderTime() {
-        return getTicks() + getPartialTicks();
     }
 
     public static float getPartialTicks() {

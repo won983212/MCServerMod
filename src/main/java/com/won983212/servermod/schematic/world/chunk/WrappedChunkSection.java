@@ -1,4 +1,4 @@
-package com.won983212.servermod.schematic;
+package com.won983212.servermod.schematic.world.chunk;
 
 import net.minecraft.block.BlockState;
 import net.minecraft.world.chunk.ChunkSection;

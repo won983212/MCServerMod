@@ -1,11 +1,10 @@
 package com.won983212.servermod.client.render;
 
-import java.nio.ByteBuffer;
-
 import com.mojang.datafixers.util.Pair;
-
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.vertex.VertexFormat;
+
+import java.nio.ByteBuffer;
 
 public class BufferBuilderReader {
 

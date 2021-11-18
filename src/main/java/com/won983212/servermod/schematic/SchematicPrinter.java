@@ -1,12 +1,11 @@
 package com.won983212.servermod.schematic;
 
 import com.won983212.servermod.item.SchematicItem;
+import com.won983212.servermod.schematic.world.SchematicWorld;
 import com.won983212.servermod.utility.BlockHelper;
-import net.minecraft.block.*;
+import net.minecraft.block.BlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.ListNBT;
 import net.minecraft.nbt.NBTUtil;
 import net.minecraft.state.properties.BedPart;
 import net.minecraft.state.properties.BlockStateProperties;
@@ -36,44 +35,12 @@ public class SchematicPrinter {
     private BlockPos currentPos;
     private int printingEntityIndex;
     private PrintStage printStage;
-    private List<BlockPos> deferredBlocks;
+    private final List<BlockPos> deferredBlocks;
 
     public SchematicPrinter() {
         printingEntityIndex = -1;
         printStage = PrintStage.BLOCKS;
         deferredBlocks = new LinkedList<>();
-    }
-
-    public void fromTag(CompoundNBT compound, boolean clientPacket) {
-        if (compound.contains("CurrentPos"))
-            currentPos = NBTUtil.readBlockPos(compound.getCompound("CurrentPos"));
-        if (clientPacket) {
-            schematicLoaded = false;
-            if (compound.contains("Anchor")) {
-                schematicAnchor = NBTUtil.readBlockPos(compound.getCompound("Anchor"));
-                schematicLoaded = true;
-            }
-        }
-
-        printingEntityIndex = compound.getInt("EntityProgress");
-        printStage = PrintStage.valueOf(compound.getString("PrintStage"));
-        compound.getList("DeferredBlocks", 10).stream()
-                .map(p -> NBTUtil.readBlockPos((CompoundNBT) p))
-                .collect(Collectors.toCollection(() -> deferredBlocks));
-    }
-
-    public void write(CompoundNBT compound) {
-        if (currentPos != null)
-            compound.put("CurrentPos", NBTUtil.writeBlockPos(currentPos));
-        if (schematicAnchor != null)
-            compound.put("Anchor", NBTUtil.writeBlockPos(schematicAnchor));
-
-        compound.putInt("EntityProgress", printingEntityIndex);
-        compound.putString("PrintStage", printStage.name());
-        ListNBT tagDeferredBlocks = new ListNBT();
-        for (BlockPos p : deferredBlocks)
-            tagDeferredBlocks.add(NBTUtil.writeBlockPos(p));
-        compound.put("DeferredBlocks", tagDeferredBlocks);
     }
 
     public void loadSchematic(ItemStack blueprint, World originalWorld, boolean processNBT) {
@@ -90,7 +57,7 @@ public class SchematicPrinter {
 
         BlockPos extraBounds = Template.calculateRelativePosition(settings, activeTemplate.getSize()
                 .offset(-1, -1, -1));
-        blockReader.bounds.expand(new MutableBoundingBox(extraBounds, extraBounds));
+        blockReader.getBounds().expand(new MutableBoundingBox(extraBounds, extraBounds));
 
         printingEntityIndex = -1;
         printStage = PrintStage.BLOCKS;
@@ -98,16 +65,6 @@ public class SchematicPrinter {
         MutableBoundingBox bounds = blockReader.getBounds();
         currentPos = new BlockPos(bounds.x0 - 1, bounds.y0, bounds.z0);
         schematicLoaded = true;
-    }
-
-    public void resetSchematic() {
-        schematicLoaded = false;
-        schematicAnchor = null;
-        currentPos = null;
-        blockReader = null;
-        printingEntityIndex = -1;
-        printStage = PrintStage.BLOCKS;
-        deferredBlocks.clear();
     }
 
     public boolean isLoaded() {
@@ -118,19 +75,6 @@ public class SchematicPrinter {
         if (!isLoaded())
             return null;
         return schematicAnchor.offset(currentPos);
-    }
-
-    public PrintStage getPrintStage() {
-        return printStage;
-    }
-
-    public BlockPos getAnchor() {
-        return schematicAnchor;
-    }
-
-    public boolean isWorldEmpty() {
-        return blockReader.getAllPositions().isEmpty();
-        //return blockReader.getBounds().getLength().equals(new Vector3i(0,0,0));
     }
 
     @FunctionalInterface
@@ -254,32 +198,6 @@ public class SchematicPrinter {
             return false;
         }
 
-        return shouldDeferBlock(blockReader.getBlockState(getCurrentTarget()));
-    }
-
-    public static boolean shouldDeferBlock(BlockState state) {
-        Block block = state.getBlock();
-        if (state.hasProperty(BlockStateProperties.HANGING))
-            return true;
-
-        if (block instanceof LadderBlock)
-            return true;
-        if (block instanceof TorchBlock)
-            return true;
-        if (block instanceof AbstractSignBlock)
-            return true;
-        if (block instanceof AbstractPressurePlateBlock)
-            return true;
-        if (block instanceof HorizontalFaceBlock && !(block instanceof GrindstoneBlock))
-            return true;
-        if (block instanceof AbstractRailBlock)
-            return true;
-        if (block instanceof RedstoneDiodeBlock)
-            return true;
-        if (block instanceof RedstoneWireBlock)
-            return true;
-        if (block instanceof CarpetBlock)
-            return true;
-        return false;
+        return BlockHelper.shouldDeferBlock(blockReader.getBlockState(getCurrentTarget()));
     }
 }
