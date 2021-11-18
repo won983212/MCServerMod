@@ -209,49 +209,49 @@ public class WrappedChunk implements IChunk {
         return world.getBlockState(pos);
     }
 
-	@Override
-	public FluidState getFluidState(BlockPos p_204610_1_) {
-		return null;
-	}
+    @Override
+    public FluidState getFluidState(BlockPos p_204610_1_) {
+        return null;
+    }
 
-	@Override
-	public void addReferenceForFeature(Structure<?> arg0, long arg1) {
+    @Override
+    public void addReferenceForFeature(Structure<?> arg0, long arg1) {
 
-	}
+    }
 
-	@Override
-	public Map<Structure<?>, LongSet> getAllReferences() {
-		return null;
-	}
+    @Override
+    public Map<Structure<?>, LongSet> getAllReferences() {
+        return null;
+    }
 
-	@Override
-	public LongSet getReferencesForFeature(Structure<?> arg0) {
-		return null;
-	}
+    @Override
+    public LongSet getReferencesForFeature(Structure<?> arg0) {
+        return null;
+    }
 
-	@Override
-	public StructureStart<?> getStartForFeature(Structure<?> arg0) {
-		return null;
-	}
+    @Override
+    public StructureStart<?> getStartForFeature(Structure<?> arg0) {
+        return null;
+    }
 
-	@Override
-	public void setAllReferences(Map<Structure<?>, LongSet> arg0) {
+    @Override
+    public void setAllReferences(Map<Structure<?>, LongSet> arg0) {
 
-	}
+    }
 
-	@Override
-	public void setStartForFeature(Structure<?> arg0, StructureStart<?> arg1) {
+    @Override
+    public void setStartForFeature(Structure<?> arg0, StructureStart<?> arg1) {
 
-	}
+    }
 
-	@Override
-	public void setAllStarts(Map<Structure<?>, StructureStart<?>> p_201612_1_) {
+    @Override
+    public void setAllStarts(Map<Structure<?>, StructureStart<?>> p_201612_1_) {
 
-	}
+    }
 
-	@Override
-	public Map<Structure<?>, StructureStart<?>> getAllStarts() {
-		return null;
-	}
+    @Override
+    public Map<Structure<?>, StructureStart<?>> getAllStarts() {
+        return null;
+    }
 
 }

@@ -17,49 +17,49 @@ import javax.annotation.Nullable;
 import java.util.Optional;
 
 public class SchematicProcessor extends StructureProcessor {
-	
-	public static final SchematicProcessor INSTANCE = new SchematicProcessor();
-	public static final Codec<SchematicProcessor> CODEC = Codec.unit(() -> INSTANCE);
-	
-	public static IStructureProcessorType<SchematicProcessor> TYPE;
-	
-	public static void register() {
-		TYPE = IStructureProcessorType.register("schematic", CODEC);
-	}
-	
-	@Nullable
-	@Override
-	public Template.BlockInfo process(IWorldReader world, BlockPos pos, BlockPos anotherPos, Template.BlockInfo rawInfo,
-			Template.BlockInfo info, PlacementSettings settings, @Nullable Template template) {
-		if (info.nbt != null) {
-			TileEntity te = info.state.createTileEntity(world);
-			if (te != null) {
-				CompoundNBT nbt = NBTProcessors.process(te, info.nbt, false);
-				if (nbt != info.nbt)
-					return new Template.BlockInfo(info.pos, info.state, nbt);
-			}
-		}
-		return info;
-	}
 
-	@Nullable
-	@Override
-	public Template.EntityInfo processEntity(IWorldReader world, BlockPos pos, Template.EntityInfo rawInfo,
-			Template.EntityInfo info, PlacementSettings settings, Template template) {
-		return EntityType.by(info.nbt).flatMap(type -> {
-			if (world instanceof World) {
-				Entity e = type.create((World) world);
-				if (e != null && !e.onlyOpCanSetNbt()) {
-					return Optional.of(info);
-				}
-			}
-			return Optional.empty();
-		}).orElse(null);
-	}
+    public static final SchematicProcessor INSTANCE = new SchematicProcessor();
+    public static final Codec<SchematicProcessor> CODEC = Codec.unit(() -> INSTANCE);
 
-	@Override
-	protected IStructureProcessorType<?> getType() {
-		return TYPE;
-	}
+    public static IStructureProcessorType<SchematicProcessor> TYPE;
+
+    public static void register() {
+        TYPE = IStructureProcessorType.register("schematic", CODEC);
+    }
+
+    @Nullable
+    @Override
+    public Template.BlockInfo process(IWorldReader world, BlockPos pos, BlockPos anotherPos, Template.BlockInfo rawInfo,
+                                      Template.BlockInfo info, PlacementSettings settings, @Nullable Template template) {
+        if (info.nbt != null) {
+            TileEntity te = info.state.createTileEntity(world);
+            if (te != null) {
+                CompoundNBT nbt = NBTProcessors.process(te, info.nbt, false);
+                if (nbt != info.nbt)
+                    return new Template.BlockInfo(info.pos, info.state, nbt);
+            }
+        }
+        return info;
+    }
+
+    @Nullable
+    @Override
+    public Template.EntityInfo processEntity(IWorldReader world, BlockPos pos, Template.EntityInfo rawInfo,
+                                             Template.EntityInfo info, PlacementSettings settings, Template template) {
+        return EntityType.by(info.nbt).flatMap(type -> {
+            if (world instanceof World) {
+                Entity e = type.create((World) world);
+                if (e != null && !e.onlyOpCanSetNbt()) {
+                    return Optional.of(info);
+                }
+            }
+            return Optional.empty();
+        }).orElse(null);
+    }
+
+    @Override
+    protected IStructureProcessorType<?> getType() {
+        return TYPE;
+    }
 
 }

@@ -70,7 +70,7 @@ public class ModelIndustrialAlarm extends Model {
 
     @Override
     public void renderToBuffer(@Nonnull MatrixStack matrix, @Nonnull IVertexBuilder vertexBuilder, int light, int overlayLight, float red, float green, float blue,
-                       float alpha) {
+                               float alpha) {
         render(matrix, vertexBuilder, light, overlayLight, red, green, blue, alpha, false, 0, false);
     }
 

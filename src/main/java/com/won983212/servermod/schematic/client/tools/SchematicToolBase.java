@@ -26,121 +26,123 @@ import java.util.List;
 
 public abstract class SchematicToolBase implements ISchematicTool {
 
-	protected SchematicHandler schematicHandler;
+    protected SchematicHandler schematicHandler;
 
-	protected BlockPos selectedPos;
-	protected Vector3d chasingSelectedPos;
-	protected Vector3d lastChasingSelectedPos;
+    protected BlockPos selectedPos;
+    protected Vector3d chasingSelectedPos;
+    protected Vector3d lastChasingSelectedPos;
 
-	protected boolean selectIgnoreBlocks;
-	protected int selectionRange;
-	protected boolean schematicSelected;
-	protected boolean renderSelectedFace;
-	protected Direction selectedFace;
+    protected boolean selectIgnoreBlocks;
+    protected int selectionRange;
+    protected boolean schematicSelected;
+    protected boolean renderSelectedFace;
+    protected Direction selectedFace;
 
-	@Override
-	public void init() {
-		schematicHandler = ClientDist.SCHEMATIC_HANDLER;
-		selectedPos = null;
-		selectedFace = null;
-		schematicSelected = false;
-		chasingSelectedPos = Vector3d.ZERO;
-		lastChasingSelectedPos = Vector3d.ZERO;
-	}
+    @Override
+    public void init() {
+        schematicHandler = ClientDist.SCHEMATIC_HANDLER;
+        selectedPos = null;
+        selectedFace = null;
+        schematicSelected = false;
+        chasingSelectedPos = Vector3d.ZERO;
+        lastChasingSelectedPos = Vector3d.ZERO;
+    }
 
-	@Override
-	public void updateSelection() {
-		updateTargetPos();
+    @Override
+    public void updateSelection() {
+        updateTargetPos();
 
-		if (selectedPos == null)
-			return;
-		lastChasingSelectedPos = chasingSelectedPos;
-		Vector3d target = Vector3d.atLowerCornerOf(selectedPos);
-		if (target.distanceTo(chasingSelectedPos) < 1 / 512f) {
-			chasingSelectedPos = target;
-			return;
-		}
+        if (selectedPos == null)
+            return;
+        lastChasingSelectedPos = chasingSelectedPos;
+        Vector3d target = Vector3d.atLowerCornerOf(selectedPos);
+        if (target.distanceTo(chasingSelectedPos) < 1 / 512f) {
+            chasingSelectedPos = target;
+            return;
+        }
 
-		chasingSelectedPos = chasingSelectedPos.add(target.subtract(chasingSelectedPos)
-			.scale(1 / 2f));
-	}
+        chasingSelectedPos = chasingSelectedPos.add(target.subtract(chasingSelectedPos)
+                .scale(1 / 2f));
+    }
 
-	public void updateTargetPos() {
-		ClientPlayerEntity player = Minecraft.getInstance().player;
+    public void updateTargetPos() {
+        ClientPlayerEntity player = Minecraft.getInstance().player;
 
-		// Select Blueprint
-		if (schematicHandler.isDeployed()) {
-			SchematicTransformation transformation = schematicHandler.getTransformation();
-			AxisAlignedBB localBounds = schematicHandler.getBounds();
+        // Select Blueprint
+        if (schematicHandler.isDeployed()) {
+            SchematicTransformation transformation = schematicHandler.getTransformation();
+            AxisAlignedBB localBounds = schematicHandler.getBounds();
 
-			Vector3d traceOrigin = RaycastHelper.getTraceOrigin(player);
-			Vector3d start = transformation.toLocalSpace(traceOrigin);
-			Vector3d end = transformation.toLocalSpace(RaycastHelper.getTraceTarget(player, 70, traceOrigin));
-			RaycastHelper.PredicateTraceResult result =
-				RaycastHelper.rayTraceUntil(start, end, pos -> localBounds.contains(VecHelper.getCenterOf(pos)));
+            Vector3d traceOrigin = RaycastHelper.getTraceOrigin(player);
+            Vector3d start = transformation.toLocalSpace(traceOrigin);
+            Vector3d end = transformation.toLocalSpace(RaycastHelper.getTraceTarget(player, 70, traceOrigin));
+            RaycastHelper.PredicateTraceResult result =
+                    RaycastHelper.rayTraceUntil(start, end, pos -> localBounds.contains(VecHelper.getCenterOf(pos)));
 
-			schematicSelected = !result.missed();
-			selectedFace = schematicSelected ? result.getFacing() : null;
-		}
+            schematicSelected = !result.missed();
+            selectedFace = schematicSelected ? result.getFacing() : null;
+        }
 
-		boolean snap = this.selectedPos == null;
+        boolean snap = this.selectedPos == null;
 
-		// Select location at distance
-		if (selectIgnoreBlocks) {
-			float pt = AnimationTickHolder.getPartialTicks();
-			selectedPos = new BlockPos(player.getEyePosition(pt)
-				.add(player.getLookAngle()
-					.scale(selectionRange)));
-			if (snap)
-				lastChasingSelectedPos = chasingSelectedPos = Vector3d.atLowerCornerOf(selectedPos);
-			return;
-		}
+        // Select location at distance
+        if (selectIgnoreBlocks) {
+            float pt = AnimationTickHolder.getPartialTicks();
+            selectedPos = new BlockPos(player.getEyePosition(pt)
+                    .add(player.getLookAngle()
+                            .scale(selectionRange)));
+            if (snap)
+                lastChasingSelectedPos = chasingSelectedPos = Vector3d.atLowerCornerOf(selectedPos);
+            return;
+        }
 
-		// Select targeted Block
-		selectedPos = null;
-		BlockRayTraceResult trace = RaycastHelper.rayTraceRange(player.level, player, 75);
-		if (trace == null || trace.getType() != Type.BLOCK)
-			return;
+        // Select targeted Block
+        selectedPos = null;
+        BlockRayTraceResult trace = RaycastHelper.rayTraceRange(player.level, player, 75);
+        if (trace == null || trace.getType() != Type.BLOCK)
+            return;
 
-		BlockPos hit = new BlockPos(trace.getLocation());
-		boolean replaceable = player.level.getBlockState(hit)
-			.getMaterial()
-			.isReplaceable();
-		if (trace.getDirection()
-			.getAxis()
-			.isVertical() && !replaceable)
-			hit = hit.relative(trace.getDirection());
-		selectedPos = hit;
-		if (snap)
-			lastChasingSelectedPos = chasingSelectedPos = Vector3d.atLowerCornerOf(selectedPos);
-	}
+        BlockPos hit = new BlockPos(trace.getLocation());
+        boolean replaceable = player.level.getBlockState(hit)
+                .getMaterial()
+                .isReplaceable();
+        if (trace.getDirection()
+                .getAxis()
+                .isVertical() && !replaceable)
+            hit = hit.relative(trace.getDirection());
+        selectedPos = hit;
+        if (snap)
+            lastChasingSelectedPos = chasingSelectedPos = Vector3d.atLowerCornerOf(selectedPos);
+    }
 
-	@Override
-	public void renderTool(MatrixStack ms, SuperRenderTypeBuffer buffer) {}
+    @Override
+    public void renderTool(MatrixStack ms, SuperRenderTypeBuffer buffer) {
+    }
 
-	@Override
-	public void renderOverlay(MatrixStack ms, IRenderTypeBuffer buffer) {}
+    @Override
+    public void renderOverlay(MatrixStack ms, IRenderTypeBuffer buffer) {
+    }
 
-	@Override
-	public void renderOnSchematic(MatrixStack ms, SuperRenderTypeBuffer buffer) {
-		if (!schematicHandler.isDeployed())
-			return;
+    @Override
+    public void renderOnSchematic(MatrixStack ms, SuperRenderTypeBuffer buffer) {
+        if (!schematicHandler.isDeployed())
+            return;
 
-		ms.pushPose();
-		AABBOutline outline = schematicHandler.getOutline();
-		if (renderSelectedFace) {
-			outline.getParams()
-				.highlightFace(selectedFace)
-				.withFaceTextures(ModTextures.CHECKERED,
-						Screen.hasControlDown() ? ModTextures.HIGHLIGHT_CHECKERED : ModTextures.CHECKERED);
-		}
-		outline.getParams()
-			.colored(0x6886c5)
-			.withFaceTexture(ModTextures.CHECKERED)
-			.lineWidth(1 / 16f);
-		outline.render(ms, buffer, AnimationTickHolder.getPartialTicks());
-		outline.getParams().clearTextures();
-		ms.popPose();
-	}
+        ms.pushPose();
+        AABBOutline outline = schematicHandler.getOutline();
+        if (renderSelectedFace) {
+            outline.getParams()
+                    .highlightFace(selectedFace)
+                    .withFaceTextures(ModTextures.CHECKERED,
+                            Screen.hasControlDown() ? ModTextures.HIGHLIGHT_CHECKERED : ModTextures.CHECKERED);
+        }
+        outline.getParams()
+                .colored(0x6886c5)
+                .withFaceTexture(ModTextures.CHECKERED)
+                .lineWidth(1 / 16f);
+        outline.render(ms, buffer, AnimationTickHolder.getPartialTicks());
+        outline.getParams().clearTextures();
+        ms.popPose();
+    }
 
 }

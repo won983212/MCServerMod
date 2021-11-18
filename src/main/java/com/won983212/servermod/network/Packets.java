@@ -24,7 +24,7 @@ public enum Packets {
         this.loader = new PacketLoader<>(type, factory, direction);
     }
 
-    public static void registerAllPackets(SimpleChannel channel){
+    public static void registerAllPackets(SimpleChannel channel) {
         for (Packets packet : values()) {
             packet.loader.reigster(channel);
         }
@@ -46,7 +46,7 @@ public enum Packets {
             this.direction = direction;
         }
 
-        public void reigster(SimpleChannel channel){
+        public void reigster(SimpleChannel channel) {
             channel.messageBuilder(type, id++, direction)
                     .encoder(encoder)
                     .decoder(decoder)

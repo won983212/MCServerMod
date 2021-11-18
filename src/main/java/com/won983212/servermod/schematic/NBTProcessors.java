@@ -16,70 +16,70 @@ import java.util.function.UnaryOperator;
 
 public final class NBTProcessors {
 
-	private static final Map<TileEntityType<?>, UnaryOperator<CompoundNBT>> processors = new HashMap<>();
-	private static final Map<TileEntityType<?>, UnaryOperator<CompoundNBT>> survivalProcessors = new HashMap<>();
+    private static final Map<TileEntityType<?>, UnaryOperator<CompoundNBT>> processors = new HashMap<>();
+    private static final Map<TileEntityType<?>, UnaryOperator<CompoundNBT>> survivalProcessors = new HashMap<>();
 
-	public static synchronized void addProcessor(TileEntityType<?> type, UnaryOperator<CompoundNBT> processor) {
-		processors.put(type, processor);
-	}
+    public static synchronized void addProcessor(TileEntityType<?> type, UnaryOperator<CompoundNBT> processor) {
+        processors.put(type, processor);
+    }
 
-	public static synchronized void addSurvivalProcessor(TileEntityType<?> type, UnaryOperator<CompoundNBT> processor) {
-		survivalProcessors.put(type, processor);
-	}
+    public static synchronized void addSurvivalProcessor(TileEntityType<?> type, UnaryOperator<CompoundNBT> processor) {
+        survivalProcessors.put(type, processor);
+    }
 
-	static {
-		addProcessor(TileEntityType.SIGN, data -> {
-			for (int i = 0; i < 4; ++i) {
-				if (textComponentHasClickEvent(data.getString("Text" + (i + 1))))
-					return null;
-			}
-			return data;
-		});
-		addProcessor(TileEntityType.LECTERN, data -> {
-			if (!data.contains("Book", Constants.NBT.TAG_COMPOUND))
-				return data;
-			CompoundNBT book = data.getCompound("Book");
+    static {
+        addProcessor(TileEntityType.SIGN, data -> {
+            for (int i = 0; i < 4; ++i) {
+                if (textComponentHasClickEvent(data.getString("Text" + (i + 1))))
+                    return null;
+            }
+            return data;
+        });
+        addProcessor(TileEntityType.LECTERN, data -> {
+            if (!data.contains("Book", Constants.NBT.TAG_COMPOUND))
+                return data;
+            CompoundNBT book = data.getCompound("Book");
 
-			if (!book.contains("tag", Constants.NBT.TAG_COMPOUND))
-				return data;
-			CompoundNBT tag = book.getCompound("tag");
+            if (!book.contains("tag", Constants.NBT.TAG_COMPOUND))
+                return data;
+            CompoundNBT tag = book.getCompound("tag");
 
-			if (!tag.contains("pages", Constants.NBT.TAG_LIST))
-				return data;
-			ListNBT pages = tag.getList("pages", Constants.NBT.TAG_STRING);
+            if (!tag.contains("pages", Constants.NBT.TAG_LIST))
+                return data;
+            ListNBT pages = tag.getList("pages", Constants.NBT.TAG_STRING);
 
-			for (INBT inbt : pages) {
-				if (textComponentHasClickEvent(inbt.getAsString()))
-					return null;
-			}
-			return data;
-		});
-	}
+            for (INBT inbt : pages) {
+                if (textComponentHasClickEvent(inbt.getAsString()))
+                    return null;
+            }
+            return data;
+        });
+    }
 
-	public static boolean textComponentHasClickEvent(String json) {
-		ITextComponent component = ITextComponent.Serializer.fromJson(json.isEmpty() ? "\"\"" : json);
-		return component != null && component.getStyle() != null && component.getStyle().getClickEvent() != null;
-	}
+    public static boolean textComponentHasClickEvent(String json) {
+        ITextComponent component = ITextComponent.Serializer.fromJson(json.isEmpty() ? "\"\"" : json);
+        return component != null && component.getStyle() != null && component.getStyle().getClickEvent() != null;
+    }
 
-	private NBTProcessors() {
-	}
+    private NBTProcessors() {
+    }
 
-	@Nullable
-	public static CompoundNBT process(TileEntity tileEntity, CompoundNBT compound, boolean survival) {
-		if (compound == null)
-			return null;
-		TileEntityType<?> type = tileEntity.getType();
-		if (survival && survivalProcessors.containsKey(type))
-			compound = survivalProcessors.get(type)
-				.apply(compound);
-		if (compound != null && processors.containsKey(type))
-			return processors.get(type)
-				.apply(compound);
-		if (tileEntity instanceof MobSpawnerTileEntity)
-			return compound;
-		if (tileEntity.onlyOpCanSetNbt())
-			return null;
-		return compound;
-	}
+    @Nullable
+    public static CompoundNBT process(TileEntity tileEntity, CompoundNBT compound, boolean survival) {
+        if (compound == null)
+            return null;
+        TileEntityType<?> type = tileEntity.getType();
+        if (survival && survivalProcessors.containsKey(type))
+            compound = survivalProcessors.get(type)
+                    .apply(compound);
+        if (compound != null && processors.containsKey(type))
+            return processors.get(type)
+                    .apply(compound);
+        if (tileEntity instanceof MobSpawnerTileEntity)
+            return compound;
+        if (tileEntity.onlyOpCanSetNbt())
+            return null;
+        return compound;
+    }
 
 }

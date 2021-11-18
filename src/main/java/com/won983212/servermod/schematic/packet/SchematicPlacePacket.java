@@ -14,51 +14,51 @@ import java.util.function.Supplier;
 
 public class SchematicPlacePacket implements IMessage {
 
-	public ItemStack stack;
+    public ItemStack stack;
 
-	public SchematicPlacePacket(ItemStack stack) {
-		this.stack = stack;
-	}
+    public SchematicPlacePacket(ItemStack stack) {
+        this.stack = stack;
+    }
 
-	public SchematicPlacePacket(PacketBuffer buffer) {
-		stack = buffer.readItem();
-	}
+    public SchematicPlacePacket(PacketBuffer buffer) {
+        stack = buffer.readItem();
+    }
 
-	public void write(PacketBuffer buffer) {
-		buffer.writeItem(stack);
-	}
+    public void write(PacketBuffer buffer) {
+        buffer.writeItem(stack);
+    }
 
-	public void handle(Supplier<Context> context) {
-		context.get().enqueueWork(() -> {
-			ServerPlayerEntity player = context.get().getSender();
-			if (player == null)
-				return;
+    public void handle(Supplier<Context> context) {
+        context.get().enqueueWork(() -> {
+            ServerPlayerEntity player = context.get().getSender();
+            if (player == null)
+                return;
 
-			World world = player.getLevel();
-			SchematicPrinter printer = new SchematicPrinter();
-			printer.loadSchematic(stack, world, !player.canUseGameMasterBlocks());
-			if (!printer.isLoaded())
-				return;
-			
-			boolean includeAir = false; // TODO Selectable include air
+            World world = player.getLevel();
+            SchematicPrinter printer = new SchematicPrinter();
+            printer.loadSchematic(stack, world, !player.canUseGameMasterBlocks());
+            if (!printer.isLoaded())
+                return;
 
-			while (printer.advanceCurrentPos()) {
-				if (!printer.shouldPlaceCurrent(world))
-					continue;
+            boolean includeAir = false; // TODO Selectable include air
 
-				printer.handleCurrentTarget((pos, state, tile) -> {
-					boolean placingAir = state.getBlock().isAir(state, world, pos);
-					if (placingAir && !includeAir)
-						return;
-					
-					CompoundNBT tileData = tile != null ? tile.save(new CompoundNBT()) : null;
-					BlockHelper.placeSchematicBlock(world, state, pos, null, tileData);
-				}, (pos, entity) -> {
-					world.addFreshEntity(entity);
-				});
-			}
-		});
-		context.get().setPacketHandled(true);
-	}
+            while (printer.advanceCurrentPos()) {
+                if (!printer.shouldPlaceCurrent(world))
+                    continue;
+
+                printer.handleCurrentTarget((pos, state, tile) -> {
+                    boolean placingAir = state.getBlock().isAir(state, world, pos);
+                    if (placingAir && !includeAir)
+                        return;
+
+                    CompoundNBT tileData = tile != null ? tile.save(new CompoundNBT()) : null;
+                    BlockHelper.placeSchematicBlock(world, state, pos, null, tileData);
+                }, (pos, entity) -> {
+                    world.addFreshEntity(entity);
+                });
+            }
+        });
+        context.get().setPacketHandled(true);
+    }
 
 }

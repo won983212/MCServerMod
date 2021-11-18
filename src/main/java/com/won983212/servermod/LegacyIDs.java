@@ -26,7 +26,8 @@ public class LegacyIDs {
         try {
             InputStream is = Minecraft.getInstance().getResourceManager().getResource(LEGACY_MAP_FILE).getInputStream();
             String json = IOUtils.toString(is, StandardCharsets.UTF_8);
-            Type idMapType = new TypeToken<Map<String, String>>() { }.getType();
+            Type idMapType = new TypeToken<Map<String, String>>() {
+            }.getType();
             setLegacyMap(new Gson().fromJson(json, idMapType));
             is.close();
             Logger.info("Legacy ID Map loaded.");
@@ -35,12 +36,12 @@ public class LegacyIDs {
         }
     }
 
-    private static void setLegacyMap(Map<String, String> map){
+    private static void setLegacyMap(Map<String, String> map) {
         LEGACY_ID_MAP.clear();
         LEGACY_ID_MAP.putAll(map);
     }
 
-    public static String getLegacyId(Item item){
+    public static String getLegacyId(Item item) {
         if (!LEGACY_ID_MAP.isEmpty()) {
             String key = Registry.ITEM.getKey(item).toString();
             return LEGACY_ID_MAP.get(key);

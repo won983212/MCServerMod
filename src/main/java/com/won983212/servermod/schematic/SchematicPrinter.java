@@ -25,258 +25,261 @@ import java.util.stream.Collectors;
 
 public class SchematicPrinter {
 
-	public enum PrintStage {
-		BLOCKS, DEFERRED_BLOCKS, ENTITIES
-	}
+    public enum PrintStage {
+        BLOCKS, DEFERRED_BLOCKS, ENTITIES
+    }
 
-	private boolean schematicLoaded;
-	private SchematicWorld blockReader;
-	private BlockPos schematicAnchor;
+    private boolean schematicLoaded;
+    private SchematicWorld blockReader;
+    private BlockPos schematicAnchor;
 
-	private BlockPos currentPos;
-	private int printingEntityIndex;
-	private PrintStage printStage;
-	private List<BlockPos> deferredBlocks;
+    private BlockPos currentPos;
+    private int printingEntityIndex;
+    private PrintStage printStage;
+    private List<BlockPos> deferredBlocks;
 
-	public SchematicPrinter() {
-		printingEntityIndex = -1;
-		printStage = PrintStage.BLOCKS;
-		deferredBlocks = new LinkedList<>();
-	}
+    public SchematicPrinter() {
+        printingEntityIndex = -1;
+        printStage = PrintStage.BLOCKS;
+        deferredBlocks = new LinkedList<>();
+    }
 
-	public void fromTag(CompoundNBT compound, boolean clientPacket) {
-		if (compound.contains("CurrentPos"))
-			currentPos = NBTUtil.readBlockPos(compound.getCompound("CurrentPos"));
-		if (clientPacket) {
-			schematicLoaded = false;
-			if (compound.contains("Anchor")) {
-				schematicAnchor = NBTUtil.readBlockPos(compound.getCompound("Anchor"));
-				schematicLoaded = true;
-			}
-		}
-		
-		printingEntityIndex = compound.getInt("EntityProgress");
-		printStage = PrintStage.valueOf(compound.getString("PrintStage"));
-		compound.getList("DeferredBlocks", 10).stream()
-			.map(p -> NBTUtil.readBlockPos((CompoundNBT) p))
-			.collect(Collectors.toCollection(() -> deferredBlocks));
-	}
+    public void fromTag(CompoundNBT compound, boolean clientPacket) {
+        if (compound.contains("CurrentPos"))
+            currentPos = NBTUtil.readBlockPos(compound.getCompound("CurrentPos"));
+        if (clientPacket) {
+            schematicLoaded = false;
+            if (compound.contains("Anchor")) {
+                schematicAnchor = NBTUtil.readBlockPos(compound.getCompound("Anchor"));
+                schematicLoaded = true;
+            }
+        }
 
-	public void write(CompoundNBT compound) {
-		if (currentPos != null)
-			compound.put("CurrentPos", NBTUtil.writeBlockPos(currentPos));
-		if (schematicAnchor != null)
-			compound.put("Anchor", NBTUtil.writeBlockPos(schematicAnchor));
-		
-		compound.putInt("EntityProgress", printingEntityIndex);
-		compound.putString("PrintStage", printStage.name());
-		ListNBT tagDeferredBlocks = new ListNBT();
-		for (BlockPos p : deferredBlocks)
-			tagDeferredBlocks.add(NBTUtil.writeBlockPos(p));
-		compound.put("DeferredBlocks", tagDeferredBlocks);
-	}
+        printingEntityIndex = compound.getInt("EntityProgress");
+        printStage = PrintStage.valueOf(compound.getString("PrintStage"));
+        compound.getList("DeferredBlocks", 10).stream()
+                .map(p -> NBTUtil.readBlockPos((CompoundNBT) p))
+                .collect(Collectors.toCollection(() -> deferredBlocks));
+    }
 
-	public void loadSchematic(ItemStack blueprint, World originalWorld, boolean processNBT) {
-		if (!blueprint.hasTag() || !blueprint.getTag().getBoolean("Deployed"))
-			return;
+    public void write(CompoundNBT compound) {
+        if (currentPos != null)
+            compound.put("CurrentPos", NBTUtil.writeBlockPos(currentPos));
+        if (schematicAnchor != null)
+            compound.put("Anchor", NBTUtil.writeBlockPos(schematicAnchor));
 
-		Template activeTemplate = SchematicItem.loadSchematic(blueprint);
-		PlacementSettings settings = SchematicItem.getSettings(blueprint, processNBT);
+        compound.putInt("EntityProgress", printingEntityIndex);
+        compound.putString("PrintStage", printStage.name());
+        ListNBT tagDeferredBlocks = new ListNBT();
+        for (BlockPos p : deferredBlocks)
+            tagDeferredBlocks.add(NBTUtil.writeBlockPos(p));
+        compound.put("DeferredBlocks", tagDeferredBlocks);
+    }
 
-		schematicAnchor = NBTUtil.readBlockPos(blueprint.getTag()
-			.getCompound("Anchor"));
-		blockReader = new SchematicWorld(schematicAnchor, originalWorld);
-		activeTemplate.placeInWorldChunk(blockReader, schematicAnchor, settings, blockReader.getRandom());
+    public void loadSchematic(ItemStack blueprint, World originalWorld, boolean processNBT) {
+        if (!blueprint.hasTag() || !blueprint.getTag().getBoolean("Deployed"))
+            return;
 
-		BlockPos extraBounds = Template.calculateRelativePosition(settings, activeTemplate.getSize()
-			.offset(-1, -1, -1));
-		blockReader.bounds.expand(new MutableBoundingBox(extraBounds, extraBounds));
+        Template activeTemplate = SchematicItem.loadSchematic(blueprint);
+        PlacementSettings settings = SchematicItem.getSettings(blueprint, processNBT);
 
-		printingEntityIndex = -1;
-		printStage = PrintStage.BLOCKS;
-		deferredBlocks.clear();
-		MutableBoundingBox bounds = blockReader.getBounds();
-		currentPos = new BlockPos(bounds.x0 - 1, bounds.y0, bounds.z0);
-		schematicLoaded = true;
-	}
+        schematicAnchor = NBTUtil.readBlockPos(blueprint.getTag()
+                .getCompound("Anchor"));
+        blockReader = new SchematicWorld(schematicAnchor, originalWorld);
+        activeTemplate.placeInWorldChunk(blockReader, schematicAnchor, settings, blockReader.getRandom());
 
-	public void resetSchematic() {
-		schematicLoaded = false;
-		schematicAnchor = null;
-		currentPos = null;
-		blockReader = null;
-		printingEntityIndex = -1;
-		printStage = PrintStage.BLOCKS;
-		deferredBlocks.clear();
-	}
+        BlockPos extraBounds = Template.calculateRelativePosition(settings, activeTemplate.getSize()
+                .offset(-1, -1, -1));
+        blockReader.bounds.expand(new MutableBoundingBox(extraBounds, extraBounds));
 
-	public boolean isLoaded() {
-		return schematicLoaded;
-	}
+        printingEntityIndex = -1;
+        printStage = PrintStage.BLOCKS;
+        deferredBlocks.clear();
+        MutableBoundingBox bounds = blockReader.getBounds();
+        currentPos = new BlockPos(bounds.x0 - 1, bounds.y0, bounds.z0);
+        schematicLoaded = true;
+    }
 
-	public BlockPos getCurrentTarget() {
-		if (!isLoaded())
-			return null;
-		return schematicAnchor.offset(currentPos);
-	}
+    public void resetSchematic() {
+        schematicLoaded = false;
+        schematicAnchor = null;
+        currentPos = null;
+        blockReader = null;
+        printingEntityIndex = -1;
+        printStage = PrintStage.BLOCKS;
+        deferredBlocks.clear();
+    }
 
-	public PrintStage getPrintStage() {
-		return printStage;
-	}
+    public boolean isLoaded() {
+        return schematicLoaded;
+    }
 
-	public BlockPos getAnchor() {
-		return schematicAnchor;
-	}
+    public BlockPos getCurrentTarget() {
+        if (!isLoaded())
+            return null;
+        return schematicAnchor.offset(currentPos);
+    }
 
-	public boolean isWorldEmpty() {
-		return blockReader.getAllPositions().isEmpty();
-		//return blockReader.getBounds().getLength().equals(new Vector3i(0,0,0));
-	}
+    public PrintStage getPrintStage() {
+        return printStage;
+    }
 
-	@FunctionalInterface
-	public interface BlockTargetHandler {
-		void handle(BlockPos target, BlockState blockState, TileEntity tileEntity);
-	}
-	@FunctionalInterface
-	public interface EntityTargetHandler {
-		void handle(BlockPos target, Entity entity);
-	}
+    public BlockPos getAnchor() {
+        return schematicAnchor;
+    }
 
-	public void handleCurrentTarget(BlockTargetHandler blockHandler, EntityTargetHandler entityHandler) {
-		BlockPos target = getCurrentTarget();
+    public boolean isWorldEmpty() {
+        return blockReader.getAllPositions().isEmpty();
+        //return blockReader.getBounds().getLength().equals(new Vector3i(0,0,0));
+    }
 
-		if (printStage == PrintStage.ENTITIES) {
-			Entity entity = blockReader.getEntities()
-				.collect(Collectors.toList())
-				.get(printingEntityIndex);
-			entityHandler.handle(target, entity);
-		} else {
-			BlockState blockState = BlockHelper.setZeroAge(blockReader.getBlockState(target));
-			TileEntity tileEntity = blockReader.getBlockEntity(target);
-			blockHandler.handle(target, blockState, tileEntity);
-		}
-	}
+    @FunctionalInterface
+    public interface BlockTargetHandler {
+        void handle(BlockPos target, BlockState blockState, TileEntity tileEntity);
+    }
 
-	@FunctionalInterface
-	public interface PlacementPredicate {
-		boolean shouldPlace(BlockPos target, BlockState blockState, TileEntity tileEntity,
-							BlockState toReplace, BlockState toReplaceOther, boolean isNormalCube);
-	}
+    @FunctionalInterface
+    public interface EntityTargetHandler {
+        void handle(BlockPos target, Entity entity);
+    }
 
-	public boolean shouldPlaceCurrent(World world) { return shouldPlaceCurrent(world, (a,b,c,d,e,f) -> true); }
+    public void handleCurrentTarget(BlockTargetHandler blockHandler, EntityTargetHandler entityHandler) {
+        BlockPos target = getCurrentTarget();
 
-	public boolean shouldPlaceCurrent(World world, PlacementPredicate predicate) {
-		if (world == null)
-			return false;
+        if (printStage == PrintStage.ENTITIES) {
+            Entity entity = blockReader.getEntities()
+                    .collect(Collectors.toList())
+                    .get(printingEntityIndex);
+            entityHandler.handle(target, entity);
+        } else {
+            BlockState blockState = BlockHelper.setZeroAge(blockReader.getBlockState(target));
+            TileEntity tileEntity = blockReader.getBlockEntity(target);
+            blockHandler.handle(target, blockState, tileEntity);
+        }
+    }
 
-		if (printStage == PrintStage.ENTITIES)
-			return true;
+    @FunctionalInterface
+    public interface PlacementPredicate {
+        boolean shouldPlace(BlockPos target, BlockState blockState, TileEntity tileEntity,
+                            BlockState toReplace, BlockState toReplaceOther, boolean isNormalCube);
+    }
 
-		return shouldPlaceBlock(world, predicate, getCurrentTarget());
-	}
+    public boolean shouldPlaceCurrent(World world) {
+        return shouldPlaceCurrent(world, (a, b, c, d, e, f) -> true);
+    }
 
-	public boolean shouldPlaceBlock(World world, PlacementPredicate predicate, BlockPos pos) {
-		BlockState state = BlockHelper.setZeroAge(blockReader.getBlockState(pos));
-		TileEntity tileEntity = blockReader.getBlockEntity(pos);
+    public boolean shouldPlaceCurrent(World world, PlacementPredicate predicate) {
+        if (world == null)
+            return false;
 
-		BlockState toReplace = world.getBlockState(pos);
-		BlockState toReplaceOther = null;
-		if (state.hasProperty(BlockStateProperties.BED_PART) && state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)
-				&& state.getValue(BlockStateProperties.BED_PART) == BedPart.FOOT)
-			toReplaceOther = world.getBlockState(pos.relative(state.getValue(BlockStateProperties.HORIZONTAL_FACING)));
-		if (state.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)
-				&& state.getValue(BlockStateProperties.DOUBLE_BLOCK_HALF) == DoubleBlockHalf.LOWER)
-			toReplaceOther = world.getBlockState(pos.above());
+        if (printStage == PrintStage.ENTITIES)
+            return true;
 
-		if (!world.isLoaded(pos))
-			return false;
-		if (!world.getWorldBorder().isWithinBounds(pos))
-			return false;
-		if (toReplace == state)
-			return false;
-		if (toReplace.getDestroySpeed(world, pos) == -1
-				|| (toReplaceOther != null && toReplaceOther.getDestroySpeed(world, pos) == -1))
-			return false;
+        return shouldPlaceBlock(world, predicate, getCurrentTarget());
+    }
 
-		boolean isNormalCube = state.isRedstoneConductor(blockReader, currentPos);
-		return predicate.shouldPlace(pos, state, tileEntity, toReplace, toReplaceOther, isNormalCube);
-	}
+    public boolean shouldPlaceBlock(World world, PlacementPredicate predicate, BlockPos pos) {
+        BlockState state = BlockHelper.setZeroAge(blockReader.getBlockState(pos));
+        TileEntity tileEntity = blockReader.getBlockEntity(pos);
 
-	public boolean advanceCurrentPos() {
-		List<Entity> entities = blockReader.getEntities().collect(Collectors.toList());
+        BlockState toReplace = world.getBlockState(pos);
+        BlockState toReplaceOther = null;
+        if (state.hasProperty(BlockStateProperties.BED_PART) && state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)
+                && state.getValue(BlockStateProperties.BED_PART) == BedPart.FOOT)
+            toReplaceOther = world.getBlockState(pos.relative(state.getValue(BlockStateProperties.HORIZONTAL_FACING)));
+        if (state.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)
+                && state.getValue(BlockStateProperties.DOUBLE_BLOCK_HALF) == DoubleBlockHalf.LOWER)
+            toReplaceOther = world.getBlockState(pos.above());
 
-		do {
-			if (printStage == PrintStage.BLOCKS) {
-				while (tryAdvanceCurrentPos()) {
-					deferredBlocks.add(currentPos);
-				}
-			}
+        if (!world.isLoaded(pos))
+            return false;
+        if (!world.getWorldBorder().isWithinBounds(pos))
+            return false;
+        if (toReplace == state)
+            return false;
+        if (toReplace.getDestroySpeed(world, pos) == -1
+                || (toReplaceOther != null && toReplaceOther.getDestroySpeed(world, pos) == -1))
+            return false;
 
-			if (printStage == PrintStage.DEFERRED_BLOCKS) {
-				if (deferredBlocks.isEmpty()) {
-					printStage = PrintStage.ENTITIES;
-				} else {
-					currentPos = deferredBlocks.remove(0);
-				}
-			}
+        boolean isNormalCube = state.isRedstoneConductor(blockReader, currentPos);
+        return predicate.shouldPlace(pos, state, tileEntity, toReplace, toReplaceOther, isNormalCube);
+    }
 
-			if (printStage == PrintStage.ENTITIES) {
-				if (printingEntityIndex + 1 < entities.size()) {
-					printingEntityIndex++;
-					currentPos = entities.get(printingEntityIndex).blockPosition().subtract(schematicAnchor);
-				} else {
-					// Reached end of printing
-					return false;
-				}
-			}
-		} while (!blockReader.getBounds().isInside(currentPos));
+    public boolean advanceCurrentPos() {
+        List<Entity> entities = blockReader.getEntities().collect(Collectors.toList());
 
-		// More things available to print
-		return true;
-	}
+        do {
+            if (printStage == PrintStage.BLOCKS) {
+                while (tryAdvanceCurrentPos()) {
+                    deferredBlocks.add(currentPos);
+                }
+            }
 
-	public boolean tryAdvanceCurrentPos() {
-		currentPos = currentPos.relative(Direction.EAST);
-		MutableBoundingBox bounds = blockReader.getBounds();
-		BlockPos posInBounds = currentPos.offset(-bounds.x0, -bounds.y0, -bounds.z0);
+            if (printStage == PrintStage.DEFERRED_BLOCKS) {
+                if (deferredBlocks.isEmpty()) {
+                    printStage = PrintStage.ENTITIES;
+                } else {
+                    currentPos = deferredBlocks.remove(0);
+                }
+            }
 
-		if (posInBounds.getX() > bounds.getXSpan())
-			currentPos = new BlockPos(bounds.x0, currentPos.getY(), currentPos.getZ() + 1).west();
-		if (posInBounds.getZ() > bounds.getZSpan())
-			currentPos = new BlockPos(currentPos.getX(), currentPos.getY() + 1, bounds.z0).west();
+            if (printStage == PrintStage.ENTITIES) {
+                if (printingEntityIndex + 1 < entities.size()) {
+                    printingEntityIndex++;
+                    currentPos = entities.get(printingEntityIndex).blockPosition().subtract(schematicAnchor);
+                } else {
+                    // Reached end of printing
+                    return false;
+                }
+            }
+        } while (!blockReader.getBounds().isInside(currentPos));
 
-		// End of blocks reached
-		if (currentPos.getY() > bounds.getYSpan()) {
-			printStage = PrintStage.DEFERRED_BLOCKS;
-			return false;
-		}
+        // More things available to print
+        return true;
+    }
 
-		return shouldDeferBlock(blockReader.getBlockState(getCurrentTarget()));
-	}
+    public boolean tryAdvanceCurrentPos() {
+        currentPos = currentPos.relative(Direction.EAST);
+        MutableBoundingBox bounds = blockReader.getBounds();
+        BlockPos posInBounds = currentPos.offset(-bounds.x0, -bounds.y0, -bounds.z0);
 
-	public static boolean shouldDeferBlock(BlockState state) {
-		Block block = state.getBlock();
-		if (state.hasProperty(BlockStateProperties.HANGING))
-			return true;
+        if (posInBounds.getX() > bounds.getXSpan())
+            currentPos = new BlockPos(bounds.x0, currentPos.getY(), currentPos.getZ() + 1).west();
+        if (posInBounds.getZ() > bounds.getZSpan())
+            currentPos = new BlockPos(currentPos.getX(), currentPos.getY() + 1, bounds.z0).west();
 
-		if (block instanceof LadderBlock)
-			return true;
-		if (block instanceof TorchBlock)
-			return true;
-		if (block instanceof AbstractSignBlock)
-			return true;
-		if (block instanceof AbstractPressurePlateBlock)
-			return true;
-		if (block instanceof HorizontalFaceBlock && !(block instanceof GrindstoneBlock))
-			return true;
-		if (block instanceof AbstractRailBlock)
-			return true;
-		if (block instanceof RedstoneDiodeBlock)
-			return true;
-		if (block instanceof RedstoneWireBlock)
-			return true;
-		if (block instanceof CarpetBlock)
-			return true;
-		return false;
-	}
+        // End of blocks reached
+        if (currentPos.getY() > bounds.getYSpan()) {
+            printStage = PrintStage.DEFERRED_BLOCKS;
+            return false;
+        }
+
+        return shouldDeferBlock(blockReader.getBlockState(getCurrentTarget()));
+    }
+
+    public static boolean shouldDeferBlock(BlockState state) {
+        Block block = state.getBlock();
+        if (state.hasProperty(BlockStateProperties.HANGING))
+            return true;
+
+        if (block instanceof LadderBlock)
+            return true;
+        if (block instanceof TorchBlock)
+            return true;
+        if (block instanceof AbstractSignBlock)
+            return true;
+        if (block instanceof AbstractPressurePlateBlock)
+            return true;
+        if (block instanceof HorizontalFaceBlock && !(block instanceof GrindstoneBlock))
+            return true;
+        if (block instanceof AbstractRailBlock)
+            return true;
+        if (block instanceof RedstoneDiodeBlock)
+            return true;
+        if (block instanceof RedstoneWireBlock)
+            return true;
+        if (block instanceof CarpetBlock)
+            return true;
+        return false;
+    }
 }

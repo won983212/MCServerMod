@@ -26,7 +26,7 @@ public class SkinCacheCleaner {
         MC_INST.gui.getChat().addMessage(new TranslationTextComponent("servermod.message.cachecleared"));
     }
 
-    private static void removeCacheFolder(){
+    private static void removeCacheFolder() {
         File cacheFolder = MC_INST.getSkinManager().skinsDirectory;
         if (cacheFolder.isDirectory()) {
             try {
@@ -37,7 +37,7 @@ public class SkinCacheCleaner {
         }
     }
 
-    private static void clearPlayerSkin(NetworkPlayerInfo info){
+    private static void clearPlayerSkin(NetworkPlayerInfo info) {
         ResourceLocation location = info.getSkinLocation();
         MC_INST.textureManager.release(location);
 
