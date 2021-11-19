@@ -10,27 +10,27 @@ import net.minecraft.util.registry.Registry;
 import javax.annotation.Nonnull;
 
 public class RegistryHelper {
-    public static Block getBlockFromId(String id, Block defaultValue){
-        if(id.equals("minecraft:air"))
+    public static Block getBlockFromId(String id, Block defaultValue) {
+        if (id.equals("minecraft:air"))
             return Blocks.AIR;
         Block block = Registry.BLOCK.get(new ResourceLocation(id));
         return block == Blocks.AIR ? defaultValue : block;
     }
 
     @Nonnull
-    public static Block getBlockFromId(String id){
+    public static Block getBlockFromId(String id) {
         return getBlockFromId(id, Blocks.AIR);
     }
 
-    public static Item getItemFromId(String id, Item defaultValue){
-        if(id.equals("minecraft:air"))
+    public static Item getItemFromId(String id, Item defaultValue) {
+        if (id.equals("minecraft:air"))
             return Items.AIR;
         Item item = Registry.ITEM.get(new ResourceLocation(id));
         return item == Items.AIR ? defaultValue : item;
     }
 
     @Nonnull
-    public static Item getItemFromId(String id){
+    public static Item getItemFromId(String id) {
         return getItemFromId(id, Items.AIR);
     }
 }

@@ -9,7 +9,10 @@ import net.minecraft.util.math.SectionPos;
 import net.minecraft.world.World;
 import net.minecraft.world.lighting.WorldLightManager;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 
 public class PlacementSimulationWorld extends WrappedWorld {

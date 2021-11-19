@@ -19,7 +19,7 @@
 
 package com.won983212.servermod.schematic.parser.legacycompat;
 
-import com.won983212.servermod.legacy.LegacyMapper;
+import com.won983212.servermod.LegacyMapper;
 import com.won983212.servermod.utility.RegistryHelper;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;

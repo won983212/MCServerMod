@@ -2,10 +2,10 @@ package com.won983212.servermod.client;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.won983212.servermod.LegacyMapper;
 import com.won983212.servermod.ModKeys;
 import com.won983212.servermod.ServerMod;
 import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
-import com.won983212.servermod.legacy.LegacyMapper;
 import com.won983212.servermod.skin.SkinCacheCleaner;
 import com.won983212.servermod.utility.animate.AnimationTickHolder;
 import net.minecraft.client.Minecraft;

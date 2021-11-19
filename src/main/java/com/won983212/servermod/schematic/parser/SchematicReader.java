@@ -19,7 +19,7 @@
 
 package com.won983212.servermod.schematic.parser;
 
-import com.won983212.servermod.legacy.LegacyMapper;
+import com.won983212.servermod.LegacyMapper;
 import net.minecraft.block.BlockState;
 import net.minecraft.nbt.*;
 import net.minecraftforge.common.util.Constants;

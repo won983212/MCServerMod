@@ -17,7 +17,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.won983212.servermod.legacy;
+package com.won983212.servermod;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -25,10 +25,8 @@ import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.won983212.servermod.Logger;
 import com.won983212.servermod.client.ResourceUtil;
 import com.won983212.servermod.utility.RegistryHelper;
-import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.command.arguments.BlockStateArgument;
@@ -84,12 +82,10 @@ public final class LegacyMapper {
         for (Map.Entry<String, String> blockEntry : dataFile.blocks.entrySet()) {
             String id = blockEntry.getKey();
             String value = blockEntry.getValue();
-
             BlockState state = null;
 
             // if it's still null, the fixer was unavailable or failed
             try {
-                //state = blockFactory.parseFromInput(value);
                 state = BlockStateArgument.block().parse(new StringReader(value)).getState();
             } catch (CommandSyntaxException ignored) {
             }
@@ -108,7 +104,7 @@ public final class LegacyMapper {
             String id = itemEntry.getKey();
             String value = itemEntry.getValue();
             Item type = RegistryHelper.getItemFromId(value, null);
-            if(type != null) {
+            if (type != null) {
                 itemToStringMap.put(type, id);
                 stringToItemMap.put(id, type);
             } else {
