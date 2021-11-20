@@ -228,8 +228,4 @@ public abstract class SchematicReader {
                 return id;
         }
     }
-
-    protected BlockState getBlockState(int id, int data) {
-        return LegacyMapper.getInstance().getBlockFromLegacy(id, data);
-    }
 }

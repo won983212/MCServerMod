@@ -29,6 +29,8 @@ import net.minecraft.nbt.INBT;
 import net.minecraft.nbt.IntNBT;
 import net.minecraft.nbt.StringNBT;
 
+import java.util.HashSet;
+
 public class FlowerPotCompatibilityHandler implements NBTCompatibilityHandler {
     @Override
     public boolean isAffectedBlock(BlockState block) {
@@ -50,7 +52,7 @@ public class FlowerPotCompatibilityHandler implements NBTCompatibilityHandler {
             }
             BlockState newState = convertLegacyBlockType(id, data);
             if (newState != null) {
-                for (String key : values.getAllKeys()) {
+                for (String key : new HashSet<>(values.getAllKeys())) {
                     values.remove(key);
                 }
                 return newState;

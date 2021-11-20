@@ -1,5 +1,6 @@
 package com.won983212.servermod.item;
 
+import com.won983212.servermod.client.ClientDist;
 import com.won983212.servermod.schematic.SchematicInstances;
 import com.won983212.servermod.schematic.SchematicProcessor;
 import com.won983212.servermod.utility.Lang;
@@ -99,7 +100,8 @@ public class SchematicItem extends Item {
     }
 
     public static Template loadSchematic(ItemStack blueprint) {
-        Template t = new Template();
+        // TODO Test for new schematic loader
+        /*Template t = new Template();
         String owner = blueprint.getTag().getString("Owner");
         String schematic = blueprint.getTag().getString("File");
 
@@ -127,9 +129,9 @@ public class SchematicItem extends Item {
             t.load(nbt);
         } catch (IOException e) {
             LOGGER.warn("Failed to read schematic", e);
-        }
+        }*/
 
-        return t;
+        return ClientDist.t;
     }
 
     @Nonnull

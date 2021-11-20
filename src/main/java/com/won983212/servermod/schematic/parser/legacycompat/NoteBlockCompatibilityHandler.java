@@ -27,6 +27,8 @@ import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.INBT;
 import net.minecraft.state.IntegerProperty;
 
+import java.util.HashSet;
+
 public class NoteBlockCompatibilityHandler implements NBTCompatibilityHandler {
     private static final IntegerProperty NoteProperty;
 
@@ -52,7 +54,7 @@ public class NoteBlockCompatibilityHandler implements NBTCompatibilityHandler {
         INBT noteTag = values.get("note");
         if (noteTag instanceof ByteNBT) {
             byte note = ((ByteNBT) noteTag).getAsByte();
-            for (String key : values.getAllKeys()) {
+            for (String key : new HashSet<>(values.getAllKeys())) {
                 values.remove(key);
             }
             return block.setValue(NoteProperty, (int) note);
