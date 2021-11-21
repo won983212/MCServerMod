@@ -6,6 +6,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.registry.Registry;
+import net.minecraft.world.biome.Biome;
 
 import javax.annotation.Nonnull;
 
@@ -32,5 +33,10 @@ public class RegistryHelper {
     @Nonnull
     public static Item getItemFromId(String id) {
         return getItemFromId(id, Items.AIR);
+    }
+
+    public static Biome getBiomeById(String key) {
+        // TODO implement
+        return null;
     }
 }

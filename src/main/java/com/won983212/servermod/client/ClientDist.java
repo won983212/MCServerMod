@@ -35,7 +35,7 @@ public class ClientDist extends ModDist {
         String[] schems = new String[]{"270"};
         for(String schem : schems) {
             try {
-                t = new MCEditSchematicReader().parseSchematic(new File("C:\\Users\\psvm\\IdeaProjects\\ServerMod\\run\\schematics\\" + schem + ".schematic"));
+                t = new MCEditSchematicReader().parseSchematic(new File("C:\\Users\\psvm\\IdeaProjects\\MCServerMod\\run\\schematics\\" + schem + ".schematic"));
             } catch (IOException e) {
                 e.printStackTrace();
             }

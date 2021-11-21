@@ -59,33 +59,16 @@ public class MCEditSchematicReader extends SchematicReader {
             new Pre13HangingCompatibilityHandler()
     );
 
-    private Template template;
-    private CompoundNBT nbt;
+    protected Template parseSchematic(CompoundNBT schematic) throws IOException {
+        Template template = new Template();
 
-    public Template parseSchematic(File file) throws IOException {
-        template = new Template();
-        read(file);
-        parseSchematicToTemplate();
-        return template;
-    }
-
-    private void read(File file) throws IOException {
-        try (DataInputStream stream = new DataInputStream(new BufferedInputStream(
-                new GZIPInputStream(new FileInputStream(file))))) {
-            nbt = CompressedStreamTools.read(stream, new NBTSizeTracker(0x20000000L));
-        } catch (IOException e) {
-            throw new IOException("Failed to read schematic", e);
-        }
-    }
-
-    private void parseSchematicToTemplate() throws IOException {
         // Check
-        if (!nbt.contains("Blocks")) {
+        if (!schematic.contains("Blocks")) {
             throw new IOException("Schematic file is missing a 'Blocks' tag");
         }
 
         // Check type of Schematic
-        String materials = nbt.getString("Materials");
+        String materials = schematic.getString("Materials");
         if (!materials.equals("Alpha")) {
             throw new IOException("Schematic file is not an Alpha schematic");
         }
@@ -95,9 +78,9 @@ public class MCEditSchematicReader extends SchematicReader {
         // ====================================================================
 
         // Get information
-        short width = checkTag(nbt, "Width", ShortNBT.class).getAsShort();
-        short height = checkTag(nbt, "Height", ShortNBT.class).getAsShort();
-        short length = checkTag(nbt, "Length", ShortNBT.class).getAsShort();
+        short width = checkTag(schematic, "Width", ShortNBT.class).getAsShort();
+        short height = checkTag(schematic, "Height", ShortNBT.class).getAsShort();
+        short length = checkTag(schematic, "Length", ShortNBT.class).getAsShort();
         template.size = new BlockPos(width, height, length);
 
         // ====================================================================
@@ -105,15 +88,15 @@ public class MCEditSchematicReader extends SchematicReader {
         // ====================================================================
 
         // Get blocks
-        byte[] blockId = checkTag(nbt, "Blocks", ByteArrayNBT.class).getAsByteArray();
-        byte[] blockData = checkTag(nbt, "Data", ByteArrayNBT.class).getAsByteArray();
+        byte[] blockId = checkTag(schematic, "Blocks", ByteArrayNBT.class).getAsByteArray();
+        byte[] blockData = checkTag(schematic, "Data", ByteArrayNBT.class).getAsByteArray();
         byte[] addId = new byte[0];
         short[] blocks = new short[blockId.length]; // Have to later combine IDs
 
         // We support 4096 block IDs using the same method as vanilla Minecraft, where
         // the highest 4 bits are stored in a separate byte array.
-        if (nbt.contains("AddBlocks")) {
-            addId = checkTag(nbt, "AddBlocks", ByteArrayNBT.class).getAsByteArray();
+        if (schematic.contains("AddBlocks")) {
+            addId = checkTag(schematic, "AddBlocks", ByteArrayNBT.class).getAsByteArray();
         }
 
         // Combine the AddBlocks data with the first 8-bit block ID
@@ -130,7 +113,7 @@ public class MCEditSchematicReader extends SchematicReader {
         }
 
         // Need to pull out tile entities
-        final ListNBT tileEntityTag = getTag(nbt, "TileEntities", ListNBT.class);
+        final ListNBT tileEntityTag = getTag(schematic, "TileEntities", ListNBT.class);
         List<INBT> tileEntities = tileEntityTag == null ? new ArrayList<>() : tileEntityTag;
         Map<BlockPos, CompoundNBT> tileEntitiesMap = new HashMap<>();
         Map<BlockPos, BlockState> blockStates = new HashMap<>();
@@ -171,9 +154,7 @@ public class MCEditSchematicReader extends SchematicReader {
             blockStates.put(vec, newBlock);
         }
 
-        List<Template.BlockInfo> plainBlocks = Lists.newArrayList();
-        List<Template.BlockInfo> tileBlocks = Lists.newArrayList();
-        List<Template.BlockInfo> specialBlocks = Lists.newArrayList();
+        PriorityBlockList blockList = new PriorityBlockList();
         Set<Integer> unknownBlocks = new HashSet<>();
 
         template.palettes.clear();
@@ -206,15 +187,7 @@ public class MCEditSchematicReader extends SchematicReader {
                     if (tileEntitiesMap.containsKey(pt)) {
                         blockNBT = tileEntitiesMap.get(pt).copy();
                     }
-
-                    Template.BlockInfo tempBlock = new Template.BlockInfo(pt, state, blockNBT);
-                    if (tempBlock.nbt != null) {
-                        tileBlocks.add(tempBlock);
-                    } else if (!tempBlock.state.getBlock().hasDynamicShape() && tempBlock.state.isCollisionShapeFullBlock(EmptyBlockReader.INSTANCE, BlockPos.ZERO)) {
-                        plainBlocks.add(tempBlock);
-                    } else {
-                        specialBlocks.add(tempBlock);
-                    }
+                    blockList.addBlock(pt, state, blockNBT);
 
                     // TODO Progress System
                     if (current++ % (total / 20) == 0){
@@ -223,28 +196,14 @@ public class MCEditSchematicReader extends SchematicReader {
                 }
             }
         }
-
-        List<Template.BlockInfo> list = Lists.newArrayList();
-        list.addAll(plainBlocks);
-        list.addAll(specialBlocks);
-        list.addAll(tileBlocks);
-
-        Template.Palette palette;
-        try {
-            Constructor<Template.Palette> con = Template.Palette.class.getDeclaredConstructor(List.class);
-            con.setAccessible(true);
-            palette = con.newInstance(list);
-        } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
-            throw new IOException("Can't create palette", e);
-        }
-        template.palettes.add(palette);
+        blockList.addNewPaletteTo(template);
 
         // ====================================================================
         // Entities
         // ====================================================================
 
         template.entityInfoList.clear();
-        ListNBT entityList = getTag(nbt, "Entities", ListNBT.class);
+        ListNBT entityList = getTag(schematic, "Entities", ListNBT.class);
         if (entityList != null) {
             for (INBT tag : entityList) {
                 if (tag instanceof CompoundNBT) {
@@ -265,6 +224,160 @@ public class MCEditSchematicReader extends SchematicReader {
                     }
                 }
             }
+        }
+
+        return template;
+    }
+
+    protected String convertEntityId(String id) {
+        switch (id) {
+            case "AreaEffectCloud":
+                return "area_effect_cloud";
+            case "ArmorStand":
+                return "armor_stand";
+            case "CaveSpider":
+                return "cave_spider";
+            case "MinecartChest":
+                return "chest_minecart";
+            case "DragonFireball":
+                return "dragon_fireball";
+            case "ThrownEgg":
+                return "egg";
+            case "EnderDragon":
+                return "ender_dragon";
+            case "ThrownEnderpearl":
+                return "ender_pearl";
+            case "FallingSand":
+                return "falling_block";
+            case "FireworksRocketEntity":
+                return "fireworks_rocket";
+            case "MinecartFurnace":
+                return "furnace_minecart";
+            case "MinecartHopper":
+                return "hopper_minecart";
+            case "EntityHorse":
+                return "horse";
+            case "ItemFrame":
+                return "item_frame";
+            case "LeashKnot":
+                return "leash_knot";
+            case "LightningBolt":
+                return "lightning_bolt";
+            case "LavaSlime":
+                return "magma_cube";
+            case "MinecartRideable":
+                return "minecart";
+            case "MushroomCow":
+                return "mooshroom";
+            case "Ozelot":
+                return "ocelot";
+            case "PolarBear":
+                return "polar_bear";
+            case "ThrownPotion":
+                return "potion";
+            case "ShulkerBullet":
+                return "shulker_bullet";
+            case "SmallFireball":
+                return "small_fireball";
+            case "MinecartSpawner":
+                return "spawner_minecart";
+            case "SpectralArrow":
+                return "spectral_arrow";
+            case "PrimedTnt":
+                return "tnt";
+            case "MinecartTNT":
+                return "tnt_minecart";
+            case "VillagerGolem":
+                return "villager_golem";
+            case "WitherBoss":
+                return "wither";
+            case "WitherSkull":
+                return "wither_skull";
+            case "PigZombie":
+                return "zombie_pigman";
+            case "XPOrb":
+            case "xp_orb":
+                return "experience_orb";
+            case "ThrownExpBottle":
+            case "xp_bottle":
+                return "experience_bottle";
+            case "EyeOfEnderSignal":
+            case "eye_of_ender_signal":
+                return "eye_of_ender";
+            case "EnderCrystal":
+            case "ender_crystal":
+                return "end_crystal";
+            case "fireworks_rocket":
+                return "firework_rocket";
+            case "MinecartCommandBlock":
+            case "commandblock_minecart":
+                return "command_block_minecart";
+            case "snowman":
+                return "snow_golem";
+            case "villager_golem":
+                return "iron_golem";
+            case "evocation_fangs":
+                return "evoker_fangs";
+            case "evocation_illager":
+                return "evoker";
+            case "vindication_illager":
+                return "vindicator";
+            case "illusion_illager":
+                return "illusioner";
+            default:
+                return id;
+        }
+    }
+
+    protected String convertBlockEntityId(String id) {
+        switch (id) {
+            case "Cauldron":
+                return "brewing_stand";
+            case "Control":
+                return "command_block";
+            case "DLDetector":
+                return "daylight_detector";
+            case "Trap":
+                return "dispenser";
+            case "EnchantTable":
+                return "enchanting_table";
+            case "EndGateway":
+                return "end_gateway";
+            case "AirPortal":
+                return "end_portal";
+            case "EnderChest":
+                return "ender_chest";
+            case "FlowerPot":
+                return "flower_pot";
+            case "RecordPlayer":
+                return "jukebox";
+            case "MobSpawner":
+                return "mob_spawner";
+            case "Music":
+            case "noteblock":
+                return "note_block";
+            case "Structure":
+                return "structure_block";
+            case "Chest":
+                return "chest";
+            case "Sign":
+                return "sign";
+            case "Banner":
+                return "banner";
+            case "Beacon":
+                return "beacon";
+            case "Comparator":
+                return "comparator";
+            case "Dropper":
+                return "dropper";
+            case "Furnace":
+                return "furnace";
+            case "Hopper":
+                return "hopper";
+            case "Skull":
+                return "skull";
+            default:
+                return id;
         }
     }
 }

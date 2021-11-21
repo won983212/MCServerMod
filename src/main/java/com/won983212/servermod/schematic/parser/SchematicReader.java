@@ -19,17 +19,42 @@
 
 package com.won983212.servermod.schematic.parser;
 
+import com.google.common.collect.Lists;
 import com.won983212.servermod.LegacyMapper;
 import net.minecraft.block.BlockState;
 import net.minecraft.nbt.*;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.EmptyBlockReader;
+import net.minecraft.world.gen.feature.template.Template;
 import net.minecraftforge.common.util.Constants;
 
-import java.io.IOException;
+import javax.annotation.Nullable;
+import java.io.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.List;
+import java.util.zip.GZIPInputStream;
 
 /**
  * Base class for NBT schematic readers.
  */
 public abstract class SchematicReader {
+
+    protected abstract Template parseSchematic(CompoundNBT schematic) throws IOException;
+
+    public Template parseSchematic(File file) throws IOException {
+        CompoundNBT schematicNBT = readNBT(file);
+        return parseSchematic(schematicNBT);
+    }
+
+    private static CompoundNBT readNBT(File file) throws IOException {
+        try (DataInputStream stream = new DataInputStream(new BufferedInputStream(
+                new GZIPInputStream(new FileInputStream(file))))) {
+            return CompressedStreamTools.read(stream, new NBTSizeTracker(0x20000000L));
+        } catch (IOException e) {
+            throw new IOException("Failed to read schematic", e);
+        }
+    }
 
     protected static <T extends INBT> T checkTag(CompoundNBT nbt, String key, Class<T> expected) throws IOException {
         byte typeId = getNBTTypeFromClass(expected);
@@ -77,155 +102,37 @@ public abstract class SchematicReader {
         throw new IOException("Invaild type: " + cls);
     }
 
-    protected String convertEntityId(String id) {
-        switch (id) {
-            case "AreaEffectCloud":
-                return "area_effect_cloud";
-            case "ArmorStand":
-                return "armor_stand";
-            case "CaveSpider":
-                return "cave_spider";
-            case "MinecartChest":
-                return "chest_minecart";
-            case "DragonFireball":
-                return "dragon_fireball";
-            case "ThrownEgg":
-                return "egg";
-            case "EnderDragon":
-                return "ender_dragon";
-            case "ThrownEnderpearl":
-                return "ender_pearl";
-            case "FallingSand":
-                return "falling_block";
-            case "FireworksRocketEntity":
-                return "fireworks_rocket";
-            case "MinecartFurnace":
-                return "furnace_minecart";
-            case "MinecartHopper":
-                return "hopper_minecart";
-            case "EntityHorse":
-                return "horse";
-            case "ItemFrame":
-                return "item_frame";
-            case "LeashKnot":
-                return "leash_knot";
-            case "LightningBolt":
-                return "lightning_bolt";
-            case "LavaSlime":
-                return "magma_cube";
-            case "MinecartRideable":
-                return "minecart";
-            case "MushroomCow":
-                return "mooshroom";
-            case "Ozelot":
-                return "ocelot";
-            case "PolarBear":
-                return "polar_bear";
-            case "ThrownPotion":
-                return "potion";
-            case "ShulkerBullet":
-                return "shulker_bullet";
-            case "SmallFireball":
-                return "small_fireball";
-            case "MinecartSpawner":
-                return "spawner_minecart";
-            case "SpectralArrow":
-                return "spectral_arrow";
-            case "PrimedTnt":
-                return "tnt";
-            case "MinecartTNT":
-                return "tnt_minecart";
-            case "VillagerGolem":
-                return "villager_golem";
-            case "WitherBoss":
-                return "wither";
-            case "WitherSkull":
-                return "wither_skull";
-            case "PigZombie":
-                return "zombie_pigman";
-            case "XPOrb":
-            case "xp_orb":
-                return "experience_orb";
-            case "ThrownExpBottle":
-            case "xp_bottle":
-                return "experience_bottle";
-            case "EyeOfEnderSignal":
-            case "eye_of_ender_signal":
-                return "eye_of_ender";
-            case "EnderCrystal":
-            case "ender_crystal":
-                return "end_crystal";
-            case "fireworks_rocket":
-                return "firework_rocket";
-            case "MinecartCommandBlock":
-            case "commandblock_minecart":
-                return "command_block_minecart";
-            case "snowman":
-                return "snow_golem";
-            case "villager_golem":
-                return "iron_golem";
-            case "evocation_fangs":
-                return "evoker_fangs";
-            case "evocation_illager":
-                return "evoker";
-            case "vindication_illager":
-                return "vindicator";
-            case "illusion_illager":
-                return "illusioner";
-            default:
-                return id;
-        }
-    }
+    static class PriorityBlockList {
+        private final List<Template.BlockInfo> plainBlocks = Lists.newArrayList();
+        private final List<Template.BlockInfo> tileBlocks = Lists.newArrayList();
+        private final List<Template.BlockInfo> specialBlocks = Lists.newArrayList();
 
-    protected String convertBlockEntityId(String id) {
-        switch (id) {
-            case "Cauldron":
-                return "brewing_stand";
-            case "Control":
-                return "command_block";
-            case "DLDetector":
-                return "daylight_detector";
-            case "Trap":
-                return "dispenser";
-            case "EnchantTable":
-                return "enchanting_table";
-            case "EndGateway":
-                return "end_gateway";
-            case "AirPortal":
-                return "end_portal";
-            case "EnderChest":
-                return "ender_chest";
-            case "FlowerPot":
-                return "flower_pot";
-            case "RecordPlayer":
-                return "jukebox";
-            case "MobSpawner":
-                return "mob_spawner";
-            case "Music":
-            case "noteblock":
-                return "note_block";
-            case "Structure":
-                return "structure_block";
-            case "Chest":
-                return "chest";
-            case "Sign":
-                return "sign";
-            case "Banner":
-                return "banner";
-            case "Beacon":
-                return "beacon";
-            case "Comparator":
-                return "comparator";
-            case "Dropper":
-                return "dropper";
-            case "Furnace":
-                return "furnace";
-            case "Hopper":
-                return "hopper";
-            case "Skull":
-                return "skull";
-            default:
-                return id;
+        public void addBlock(BlockPos pt, BlockState state, @Nullable CompoundNBT blockNBT){
+            Template.BlockInfo tempBlock = new Template.BlockInfo(pt, state, blockNBT);
+            if (tempBlock.nbt != null) {
+                tileBlocks.add(tempBlock);
+            } else if (!tempBlock.state.getBlock().hasDynamicShape() && tempBlock.state.isCollisionShapeFullBlock(EmptyBlockReader.INSTANCE, BlockPos.ZERO)) {
+                plainBlocks.add(tempBlock);
+            } else {
+                specialBlocks.add(tempBlock);
+            }
+        }
+
+        public void addNewPaletteTo(Template template) throws IOException {
+            List<Template.BlockInfo> list = Lists.newArrayList();
+            list.addAll(plainBlocks);
+            list.addAll(specialBlocks);
+            list.addAll(tileBlocks);
+
+            Template.Palette palette;
+            try {
+                Constructor<Template.Palette> con = Template.Palette.class.getDeclaredConstructor(List.class);
+                con.setAccessible(true);
+                palette = con.newInstance(list);
+            } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
+                throw new IOException("Can't create palette", e);
+            }
+            template.palettes.add(palette);
         }
     }
 }
