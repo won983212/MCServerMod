@@ -20,29 +20,23 @@
 package com.won983212.servermod.schematic.parser;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.won983212.servermod.LegacyMapper;
 import com.won983212.servermod.Logger;
 import com.won983212.servermod.schematic.parser.legacycompat.*;
 import net.minecraft.block.BlockState;
 import net.minecraft.nbt.*;
-import net.minecraft.util.SharedConstants;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.world.EmptyBlockReader;
 import net.minecraft.world.gen.feature.template.Template;
 import net.minecraftforge.common.util.Constants;
 
 import java.io.*;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
-import java.util.zip.GZIPInputStream;
 
 /**
  * Reads schematic files that are compatible with MCEdit and other editors.
  */
-public class MCEditSchematicReader extends SchematicReader {
+class MCEditSchematicReader extends AbstractSchematicReader {
 
     private static final ImmutableList<NBTCompatibilityHandler> COMPATIBILITY_HANDLERS
             = ImmutableList.of(
@@ -59,7 +53,7 @@ public class MCEditSchematicReader extends SchematicReader {
             new Pre13HangingCompatibilityHandler()
     );
 
-    protected Template parseSchematic(CompoundNBT schematic) throws IOException {
+    protected Template parse(CompoundNBT schematic) throws IOException {
         Template template = new Template();
 
         // Check

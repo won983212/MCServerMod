@@ -34,9 +34,4 @@ public class RegistryHelper {
     public static Item getItemFromId(String id) {
         return getItemFromId(id, Items.AIR);
     }
-
-    public static Biome getBiomeById(String key) {
-        // TODO implement
-        return null;
-    }
 }

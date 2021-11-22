@@ -1,8 +1,8 @@
 package com.won983212.servermod.item;
 
-import com.won983212.servermod.client.ClientDist;
 import com.won983212.servermod.schematic.SchematicInstances;
 import com.won983212.servermod.schematic.SchematicProcessor;
+import com.won983212.servermod.schematic.parser.SchematicFileParser;
 import com.won983212.servermod.utility.Lang;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.player.PlayerEntity;
@@ -10,8 +10,6 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUseContext;
 import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.CompressedStreamTools;
-import net.minecraft.nbt.NBTSizeTracker;
 import net.minecraft.nbt.NBTUtil;
 import net.minecraft.util.*;
 import net.minecraft.util.math.BlockPos;
@@ -28,15 +26,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.List;
-import java.util.zip.GZIPInputStream;
 
 public class SchematicItem extends Item {
 
@@ -100,12 +93,12 @@ public class SchematicItem extends Item {
     }
 
     public static Template loadSchematic(ItemStack blueprint) {
-        // TODO Test for new schematic loader
-        /*Template t = new Template();
+        Template t = new Template();
         String owner = blueprint.getTag().getString("Owner");
         String schematic = blueprint.getTag().getString("File");
+        String schematicExt = schematic.substring(schematic.lastIndexOf('.') + 1);
 
-        if (!schematic.endsWith(".nbt"))
+        if (!SchematicFileParser.isSupportedExtension(schematicExt))
             return t;
 
         Path dir;
@@ -123,15 +116,12 @@ public class SchematicItem extends Item {
         if (!path.startsWith(dir))
             return t;
 
-        try (DataInputStream stream = new DataInputStream(new BufferedInputStream(
-                new GZIPInputStream(Files.newInputStream(path, StandardOpenOption.READ))))) {
-            CompoundNBT nbt = CompressedStreamTools.read(stream, new NBTSizeTracker(0x20000000L));
-            t.load(nbt);
+        try {
+            return SchematicFileParser.parseSchematicFile(path.toFile());
         } catch (IOException e) {
-            LOGGER.warn("Failed to read schematic", e);
-        }*/
-
-        return ClientDist.t;
+            e.printStackTrace();
+        }
+        return t;
     }
 
     @Nonnull
@@ -153,7 +143,7 @@ public class SchematicItem extends Item {
         // TODO Test Code
         if (player.isShiftKeyDown()) {
             ItemStack stack = player.getItemInHand(hand);
-            writeTo(stack, "test.nbt", player.getName().getString());
+            writeTo(stack, "ModernHouse137.schem", player.getName().getString());
             return true;
         }
 

@@ -3,8 +3,6 @@ package com.won983212.servermod.schematic.parser;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.won983212.servermod.Logger;
-import com.won983212.servermod.schematic.parser.legacycompat.EntityNBTCompatibilityHandler;
-import com.won983212.servermod.utility.RegistryHelper;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.command.arguments.BlockStateArgument;
@@ -12,27 +10,22 @@ import net.minecraft.nbt.*;
 import net.minecraft.util.SharedConstants;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.world.biome.Biome;
-import net.minecraft.world.biome.Biomes;
 import net.minecraft.world.gen.feature.template.Template;
-import net.minecraftforge.common.BiomeManager;
 import net.minecraftforge.common.util.Constants;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SpongeSchematicReader extends SchematicReader {
+class SpongeSchematicReader extends AbstractSchematicReader {
 
     private ForgeDataFixer fixer = null;
-    private int schematicVersion = -1;
     private int dataVersion = -1;
 
     @Override
-    protected Template parseSchematic(CompoundNBT schematic) throws IOException {
+    protected Template parse(CompoundNBT schematic) throws IOException {
         int liveDataVersion = SharedConstants.getCurrentVersion().getWorldVersion();
-        schematicVersion = checkTag(schematic, "Version", IntNBT.class).getAsInt();
+        int schematicVersion = checkTag(schematic, "Version", IntNBT.class).getAsInt();
         if (schematicVersion == 1) {
             dataVersion = 1631; // data version of 1.13.2. this is a relatively safe assumption unless someone imports a schematic from 1.12, e.g. sponge 7.1-
             fixer = new ForgeDataFixer(dataVersion);
@@ -71,8 +64,6 @@ public class SpongeSchematicReader extends SchematicReader {
             if (offsetParts.length != 3) {
                 throw new IOException("Invalid offset specified in schematic.");
             }
-        } else {
-            offsetParts = new int[]{0, 0, 0};
         }
 
         IntNBT paletteMaxTag = getTag(schematicTag, "PaletteMax", IntNBT.class);
@@ -85,7 +76,7 @@ public class SpongeSchematicReader extends SchematicReader {
         for (String palettePart : paletteObject.getAllKeys()) {
             int id = checkTag(paletteObject, palettePart, IntNBT.class).getAsInt();
             if (fixer != null) {
-                palettePart = fixer.fixUp(DataFixer.FixTypes.BLOCK_STATE, palettePart, dataVersion);
+                palettePart = fixer.fixUp(ForgeDataFixer.FixTypes.BLOCK_STATE, palettePart, dataVersion);
             }
             BlockState state;
             try {
@@ -116,15 +107,15 @@ public class SpongeSchematicReader extends SchematicReader {
                 tag.remove("Id");
                 tag.remove("Pos");
                 if (fixer != null) {
-                    // TODO fixit
-                    fixer.fixUp(DataFixer.FixTypes.BLOCK_ENTITY, tag.copy(), dataVersion));
-                    tag = ((CompoundNBT) AdventureNBTConverter.fromAdventure().getValue();
+                    tag = fixer.fixUp(ForgeDataFixer.FixTypes.BLOCK_ENTITY, tag.copy(), dataVersion);
                 }
                 tileEntitiesMap.put(pt, tag);
             }
         }
 
         Template template = new Template();
+        template.size = new BlockPos(width, height, length);
+
         PriorityBlockList blockList = new PriorityBlockList();
         int index = 0;
         int i = 0;
@@ -187,9 +178,7 @@ public class SpongeSchematicReader extends SchematicReader {
             entityTag.remove("Id");
 
             if (fixer != null) {
-                // TODO fixit
-                fixer.fixUp(DataFixer.FixTypes.ENTITY, entityTag, dataVersion);
-                entityTag = (CompoundNBT) AdventureNBTConverter.fromAdventure();
+                entityTag = fixer.fixUp(ForgeDataFixer.FixTypes.ENTITY, entityTag, dataVersion);
             }
 
             ListNBT pos = entityTag.getList("Pos", Constants.NBT.TAG_DOUBLE);

@@ -20,7 +20,6 @@
 package com.won983212.servermod.schematic.parser;
 
 import com.google.common.collect.Lists;
-import com.won983212.servermod.LegacyMapper;
 import net.minecraft.block.BlockState;
 import net.minecraft.nbt.*;
 import net.minecraft.util.math.BlockPos;
@@ -32,19 +31,20 @@ import javax.annotation.Nullable;
 import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
 /**
  * Base class for NBT schematic readers.
  */
-public abstract class SchematicReader {
+public abstract class AbstractSchematicReader {
 
-    protected abstract Template parseSchematic(CompoundNBT schematic) throws IOException;
+    protected abstract Template parse(CompoundNBT schematic) throws IOException;
 
-    public Template parseSchematic(File file) throws IOException {
+    public Template parse(File file) throws IOException {
         CompoundNBT schematicNBT = readNBT(file);
-        return parseSchematic(schematicNBT);
+        return parse(schematicNBT);
     }
 
     private static CompoundNBT readNBT(File file) throws IOException {
