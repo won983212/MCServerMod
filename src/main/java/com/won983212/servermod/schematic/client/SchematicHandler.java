@@ -2,6 +2,7 @@ package com.won983212.servermod.schematic.client;
 
 import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.matrix.MatrixStack;
+import com.won983212.servermod.Logger;
 import com.won983212.servermod.ModKeys;
 import com.won983212.servermod.client.gui.ToolSelectionScreen;
 import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
@@ -33,6 +34,7 @@ import net.minecraft.world.gen.feature.template.Template;
 
 import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.CompletableFuture;
 
 public class SchematicHandler {
 
@@ -51,6 +53,7 @@ public class SchematicHandler {
 
     private final Vector<SchematicRenderer> renderers;
     private ToolSelectionScreen selectionScreen;
+    private CompletableFuture<Void> placingTask = null;
 
     public SchematicHandler() {
         renderers = new Vector<>(3);
@@ -75,15 +78,16 @@ public class SchematicHandler {
             if (activeSchematicItem != null && itemLost(player)) {
                 activeHotbarSlot = 0;
                 activeSchematicItem = null;
-                renderers.forEach(r -> r.setActive(false));
             }
             return;
         }
 
-        if (!active || !stack.getTag().getString("File").equals(displayedSchematic))
-            init(player, stack);
-        if (!active)
-            return;
+        boolean needsUpdate = !stack.getTag().getString("File").equals(displayedSchematic);
+        if (!active) {
+            active = true;
+            if (needsUpdate)
+                init(player, stack);
+        }
 
         renderers.forEach(SchematicRenderer::tick);
         if (syncCooldown > 0)
@@ -98,7 +102,6 @@ public class SchematicHandler {
     private void init(ClientPlayerEntity player, ItemStack stack) {
         loadSettings(stack);
         displayedSchematic = stack.getTag().getString("File");
-        active = true;
         if (deployed) {
             setupRenderer();
             Tools toolBefore = currentTool;
@@ -107,15 +110,23 @@ public class SchematicHandler {
                 selectionScreen.setSelectedElement(toolBefore);
                 equip(toolBefore);
             }
-        } else
+        } else {
             selectionScreen = new ToolSelectionScreen(ImmutableList.of(Tools.Deploy), this::equip);
+        }
     }
 
     private void setupRenderer() {
+        if (placingTask != null) {
+            placingTask.cancel(true);
+            Logger.debug("Pre schematic placing task is cancelled");
+        }
+
         Template schematic = SchematicItem.loadSchematic(activeSchematicItem);
         BlockPos size = schematic.getSize();
         if (size.equals(BlockPos.ZERO))
             return;
+
+        renderers.forEach(SchematicRenderer::cancelRenderCachingTask);
 
         World clientWorld = Minecraft.getInstance().level;
         SchematicWorld w = new SchematicWorld(clientWorld);
@@ -123,27 +134,30 @@ public class SchematicHandler {
         SchematicWorld wMirroredLR = new SchematicWorld(clientWorld);
         PlacementSettings placementSettings = new PlacementSettings();
 
-        schematic.placeInWorldChunk(w, BlockPos.ZERO, placementSettings, w.getRandom());
-        placementSettings.setMirror(Mirror.FRONT_BACK);
-        schematic.placeInWorldChunk(wMirroredFB, BlockPos.ZERO.east(size.getX() - 1), placementSettings, wMirroredFB.getRandom());
-        placementSettings.setMirror(Mirror.LEFT_RIGHT);
-        schematic.placeInWorldChunk(wMirroredLR, BlockPos.ZERO.south(size.getZ() - 1), placementSettings, wMirroredFB.getRandom());
-
-        renderers.get(0).display(w);
-        renderers.get(1).display(wMirroredFB);
-        renderers.get(2).display(wMirroredLR);
+        // TODO 3개 world placing을 동시에 처리할 수는 없을까?
+        Logger.debug("Placing schematic...");
+        placingTask = CompletableFuture.runAsync(() -> {
+            schematic.placeInWorldChunk(w, BlockPos.ZERO, placementSettings, w.getRandom());
+            placementSettings.setMirror(Mirror.FRONT_BACK);
+            schematic.placeInWorldChunk(wMirroredFB, BlockPos.ZERO.east(size.getX() - 1), placementSettings, wMirroredFB.getRandom());
+            placementSettings.setMirror(Mirror.LEFT_RIGHT);
+            schematic.placeInWorldChunk(wMirroredLR, BlockPos.ZERO.south(size.getZ() - 1), placementSettings, wMirroredFB.getRandom());
+        }).whenComplete((t, u) -> {
+            renderers.get(0).display(w);
+            renderers.get(1).display(wMirroredFB);
+            renderers.get(2).display(wMirroredLR);
+            Logger.debug("Placing complete!");
+            placingTask = null;
+        });
     }
 
     public void render(MatrixStack ms, SuperRenderTypeBuffer buffer) {
-        boolean present = activeSchematicItem != null;
-        if (!active && !present)
+        if (!active)
             return;
 
-        if (active) {
-            ms.pushPose();
-            currentTool.getTool().renderTool(ms, buffer);
-            ms.popPose();
-        }
+        ms.pushPose();
+        currentTool.getTool().renderTool(ms, buffer);
+        ms.popPose();
 
         ms.pushPose();
         transformation.applyGLTransformations(ms);
@@ -160,8 +174,7 @@ public class SchematicHandler {
                 renderers.get(0).render(ms, buffer);
         }
 
-        if (active)
-            currentTool.getTool().renderOnSchematic(ms, buffer);
+        currentTool.getTool().renderOnSchematic(ms, buffer);
         ms.popPose();
     }
 
@@ -269,9 +282,9 @@ public class SchematicHandler {
         if (!deployed) {
             List<Tools> tools = Tools.getTools(Minecraft.getInstance().player.isCreative());
             selectionScreen = new ToolSelectionScreen(tools, this::equip);
+            setupRenderer();
         }
         deployed = true;
-        setupRenderer();
     }
 
     public void printInstantly() {
@@ -280,7 +293,6 @@ public class SchematicHandler {
         nbt.putBoolean("Deployed", false);
         activeSchematicItem.setTag(nbt);
         SchematicInstances.clearHash(activeSchematicItem);
-        renderers.forEach(r -> r.setActive(false));
         active = false;
         markDirty();
     }

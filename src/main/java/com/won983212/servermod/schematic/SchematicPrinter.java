@@ -1,5 +1,6 @@
 package com.won983212.servermod.schematic;
 
+import com.won983212.servermod.Logger;
 import com.won983212.servermod.item.SchematicItem;
 import com.won983212.servermod.schematic.world.SchematicWorld;
 import com.won983212.servermod.utility.BlockHelper;
@@ -96,7 +97,7 @@ public class SchematicPrinter {
                     .get(printingEntityIndex);
             entityHandler.handle(target, entity);
         } else {
-            BlockState blockState = BlockHelper.setZeroAge(blockReader.getBlockState(target));
+            BlockState blockState = blockReader.getBlockState(target);
             TileEntity tileEntity = blockReader.getBlockEntity(target);
             blockHandler.handle(target, blockState, tileEntity);
         }
@@ -123,7 +124,7 @@ public class SchematicPrinter {
     }
 
     public boolean shouldPlaceBlock(World world, PlacementPredicate predicate, BlockPos pos) {
-        BlockState state = BlockHelper.setZeroAge(blockReader.getBlockState(pos));
+        BlockState state = blockReader.getBlockState(pos);
         TileEntity tileEntity = blockReader.getBlockEntity(pos);
 
         BlockState toReplace = world.getBlockState(pos);
@@ -137,12 +138,7 @@ public class SchematicPrinter {
 
         if (!world.isLoaded(pos))
             return false;
-        if (!world.getWorldBorder().isWithinBounds(pos))
-            return false;
-        if (toReplace == state)
-            return false;
-        if (toReplace.getDestroySpeed(world, pos) == -1
-                || (toReplaceOther != null && toReplaceOther.getDestroySpeed(world, pos) == -1))
+        if (toReplace.getDestroySpeed(world, pos) == -1 || (toReplaceOther != null && toReplaceOther.getDestroySpeed(world, pos) == -1))
             return false;
 
         boolean isNormalCube = state.isRedstoneConductor(blockReader, currentPos);

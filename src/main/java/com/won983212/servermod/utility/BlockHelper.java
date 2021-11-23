@@ -4,6 +4,7 @@ import net.minecraft.block.*;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.particles.ParticleTypes;
+import net.minecraft.state.properties.BedPart;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tileentity.TileEntity;
@@ -13,7 +14,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkSection;
-import net.minecraftforge.common.IPlantable;
 
 import javax.annotation.Nullable;
 
@@ -41,19 +41,11 @@ public class BlockHelper {
         // Piston
         if (state.hasProperty(BlockStateProperties.EXTENDED))
             state = state.setValue(BlockStateProperties.EXTENDED, Boolean.FALSE);
-        if (state.hasProperty(BlockStateProperties.WATERLOGGED))
-            state = state.setValue(BlockStateProperties.WATERLOGGED, Boolean.FALSE);
 
-        if (state.getBlock() == Blocks.COMPOSTER)
-            state = Blocks.COMPOSTER.defaultBlockState();
-        else if (state.getBlock() != Blocks.SEA_PICKLE && state.getBlock() instanceof IPlantable)
-            state = ((IPlantable) state.getBlock()).getPlant(world, target);
+        if (state.hasProperty(BedBlock.PART) && state.getValue(BedBlock.PART) == BedPart.HEAD)
+            return;
 
-        if (world.dimensionType()
-                .ultraWarm()
-                && state.getFluidState()
-                .getType()
-                .is(FluidTags.WATER)) {
+        if (world.dimensionType().ultraWarm() && state.getFluidState().getType().is(FluidTags.WATER)) {
             int i = target.getX();
             int j = target.getY();
             int k = target.getZ();
@@ -85,8 +77,7 @@ public class BlockHelper {
         }
 
         try {
-            state.getBlock()
-                    .setPlacedBy(world, target, state, null, stack);
+            state.getBlock().setPlacedBy(world, target, state, null, stack);
         } catch (Exception ignored) {
         }
     }
@@ -113,35 +104,5 @@ public class BlockHelper {
         if (block instanceof RedstoneWireBlock)
             return true;
         return block instanceof CarpetBlock;
-    }
-
-    public static BlockState setZeroAge(BlockState blockState) {
-        if (blockState.hasProperty(BlockStateProperties.AGE_1))
-            return blockState.setValue(BlockStateProperties.AGE_1, 0);
-        if (blockState.hasProperty(BlockStateProperties.AGE_2))
-            return blockState.setValue(BlockStateProperties.AGE_2, 0);
-        if (blockState.hasProperty(BlockStateProperties.AGE_3))
-            return blockState.setValue(BlockStateProperties.AGE_3, 0);
-        if (blockState.hasProperty(BlockStateProperties.AGE_5))
-            return blockState.setValue(BlockStateProperties.AGE_5, 0);
-        if (blockState.hasProperty(BlockStateProperties.AGE_7))
-            return blockState.setValue(BlockStateProperties.AGE_7, 0);
-        if (blockState.hasProperty(BlockStateProperties.AGE_15))
-            return blockState.setValue(BlockStateProperties.AGE_15, 0);
-        if (blockState.hasProperty(BlockStateProperties.AGE_25))
-            return blockState.setValue(BlockStateProperties.AGE_25, 0);
-        if (blockState.hasProperty(BlockStateProperties.LEVEL_HONEY))
-            return blockState.setValue(BlockStateProperties.LEVEL_HONEY, 0);
-        if (blockState.hasProperty(BlockStateProperties.HATCH))
-            return blockState.setValue(BlockStateProperties.HATCH, 0);
-        if (blockState.hasProperty(BlockStateProperties.STAGE))
-            return blockState.setValue(BlockStateProperties.STAGE, 0);
-        if (blockState.hasProperty(BlockStateProperties.LEVEL_CAULDRON))
-            return blockState.setValue(BlockStateProperties.LEVEL_CAULDRON, 0);
-        if (blockState.hasProperty(BlockStateProperties.LEVEL_COMPOSTER))
-            return blockState.setValue(BlockStateProperties.LEVEL_COMPOSTER, 0);
-        if (blockState.hasProperty(BlockStateProperties.EXTENDED))
-            return blockState.setValue(BlockStateProperties.EXTENDED, false);
-        return blockState;
     }
 }

@@ -20,8 +20,10 @@
 package com.won983212.servermod.schematic.parser;
 
 import com.google.common.collect.Lists;
+import com.won983212.servermod.Logger;
 import net.minecraft.block.BlockState;
 import net.minecraft.nbt.*;
+import net.minecraft.util.SharedConstants;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.EmptyBlockReader;
 import net.minecraft.world.gen.feature.template.Template;

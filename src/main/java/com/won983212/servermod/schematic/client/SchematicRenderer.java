@@ -2,7 +2,7 @@ package com.won983212.servermod.schematic.client;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.won983212.servermod.Logger;
-import com.won983212.servermod.client.render.SuperByteBuffer;
+import com.won983212.servermod.client.render.SchematicVertexFactory;
 import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
 import com.won983212.servermod.schematic.world.SchematicWorld;
 import com.won983212.servermod.utility.MatrixTransformStack;
@@ -14,6 +14,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.client.renderer.vertex.VertexBuffer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.client.ForgeHooksClient;
@@ -21,15 +22,16 @@ import net.minecraftforge.client.model.data.EmptyModelData;
 import org.lwjgl.opengl.GL11;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 public class SchematicRenderer {
-    private final Map<RenderType, SuperByteBuffer> bufferCache = new HashMap<>(getLayerCount());
     private final Set<RenderType> usedBlockRenderLayers = new HashSet<>(getLayerCount());
-    private final Set<RenderType> startedBufferBuilders = new HashSet<>(getLayerCount());
-    private boolean active;
+    private final Map<RenderType, VertexBuffer> bufferCache = new HashMap<>(getLayerCount());
     private boolean changed;
     protected SchematicWorld schematic;
     private BlockPos anchor;
+    private BlockRendererDispatcher blockRendererDispatcher;
+    private CompletableFuture<Void> renderCachingTask;
 
     public SchematicRenderer() {
         changed = false;
@@ -38,59 +40,76 @@ public class SchematicRenderer {
     public void display(SchematicWorld world) {
         this.anchor = world.anchor;
         this.schematic = world;
-        this.active = true;
-        this.changed = true;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
+        update();
     }
 
     public void update() {
         changed = true;
     }
 
+    public void cancelRenderCachingTask(){
+        if (renderCachingTask != null){
+            renderCachingTask.cancel(true);
+            Logger.debug("Pre schematic loading task is cancelled");
+        }
+    }
+
     public void tick() {
-        if (!active)
-            return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null || !changed)
             return;
 
-        redraw(mc);
+        cancelRenderCachingTask();
+
+        Logger.debug("Schematic caching....");
+        renderCachingTask = CompletableFuture.runAsync(() -> {
+            redraw(mc);
+            renderCachingTask = null;
+            Logger.debug("Schematic renderer is ready!");
+        });
+
         changed = false;
     }
 
     public void render(MatrixStack ms, SuperRenderTypeBuffer buffer) {
-        if (!active)
+        if (renderCachingTask != null || schematic == null)
             return;
-        buffer.getBuffer(RenderType.solid());
+
         for (RenderType layer : RenderType.chunkBufferLayers()) {
             if (!usedBlockRenderLayers.contains(layer))
                 continue;
-            SuperByteBuffer superByteBuffer = bufferCache.get(layer);
-            superByteBuffer.renderInto(ms, buffer.getBuffer(layer));
+            VertexBuffer buf = bufferCache.get(layer);
+            if (buf != null){
+                buf.bind();
+                layer.setupRenderState();
+                layer.format().setupBufferState(0L);
+                buf.draw(ms.last().pose(), layer.mode());
+                VertexBuffer.unbind();
+                layer.format().clearBufferState();
+                layer.clearRenderState();
+            }
         }
+
+        buffer.getBuffer(RenderType.solid());
         renderTileEntities(ms, buffer);
     }
 
     protected void redraw(Minecraft minecraft) {
         usedBlockRenderLayers.clear();
-        startedBufferBuilders.clear();
+        bufferCache.clear();
+        blockRendererDispatcher = minecraft.getBlockRenderer();
 
-        final SchematicWorld blockAccess = schematic;
-        final BlockRendererDispatcher blockRendererDispatcher = minecraft.getBlockRenderer();
-
-        List<BlockState> blockstates = new LinkedList<>();
+        Set<RenderType> startedBufferBuilders = new HashSet<>(getLayerCount());
         Map<RenderType, BufferBuilder> buffers = new HashMap<>();
         MatrixStack ms = new MatrixStack();
 
-        BlockPos.betweenClosedStream(blockAccess.getBounds())
+        BlockModelRenderer.enableCaching();
+        BlockPos.betweenClosedStream(schematic.getBounds())
                 .forEach(localPos -> {
                     ms.pushPose();
                     MatrixTransformStack.of(ms).translate(localPos);
                     BlockPos pos = localPos.offset(anchor);
-                    BlockState state = blockAccess.getBlockState(pos);
+                    BlockState state = schematic.getBlockState(pos);
 
                     for (RenderType blockRenderLayer : RenderType.chunkBufferLayers()) {
                         if (!RenderTypeLookup.canRenderInLayer(state, blockRenderLayer))
@@ -103,14 +122,12 @@ public class SchematicRenderer {
                         if (startedBufferBuilders.add(blockRenderLayer))
                             bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
 
-                        TileEntity tileEntity = blockAccess.getBlockEntity(localPos);
+                        TileEntity tileEntity = schematic.getBlockEntity(localPos);
 
-                        if (blockRendererDispatcher.renderModel(state, pos, blockAccess, ms, bufferBuilder, true,
-                                minecraft.level.random,
+                        if (blockRendererDispatcher.renderModel(state, pos, schematic, ms, bufferBuilder, true, minecraft.level.random,
                                 tileEntity != null ? tileEntity.getModelData() : EmptyModelData.INSTANCE)) {
                             usedBlockRenderLayers.add(blockRenderLayer);
                         }
-                        blockstates.add(state);
                     }
 
                     ForgeHooksClient.setRenderLayer(null);
@@ -123,8 +140,13 @@ public class SchematicRenderer {
                 continue;
             BufferBuilder buf = buffers.get(layer);
             buf.end();
-            bufferCache.put(layer, new SuperByteBuffer(buf));
+
+            SchematicVertexFactory factory = new SchematicVertexFactory(buf);
+            VertexBuffer vBuf = new VertexBuffer(layer.format());
+            vBuf.upload(factory.makeBuffer(layer));
+            bufferCache.put(layer, vBuf);
         }
+        BlockModelRenderer.clearCache();
     }
 
     private static int getLayerCount() {

@@ -21,6 +21,7 @@ public class SchematicFileParser {
                 .build();
         extensionToReaderMap.put("schematic", new MCEditSchematicReader());
         extensionToReaderMap.put("schem", new SpongeSchematicReader());
+        extensionToReaderMap.put("nbt", new VanillaSchematicReader());
     }
 
     public static boolean isSupportedExtension(String ext){

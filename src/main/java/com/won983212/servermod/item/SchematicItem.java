@@ -143,7 +143,7 @@ public class SchematicItem extends Item {
         // TODO Test Code
         if (player.isShiftKeyDown()) {
             ItemStack stack = player.getItemInHand(hand);
-            writeTo(stack, "ModernHouse137.schem", player.getName().getString());
+            writeTo(stack, "270.schematic", player.getName().getString());
             return true;
         }
 

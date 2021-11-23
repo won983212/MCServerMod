@@ -39,7 +39,7 @@ public class SchematicPlacePacket implements IMessage {
             if (!printer.isLoaded())
                 return;
 
-            boolean includeAir = false; // TODO Selectable include air
+            boolean includeAir = true; // TODO Selectable include air
 
             while (printer.advanceCurrentPos()) {
                 if (!printer.shouldPlaceCurrent(world))

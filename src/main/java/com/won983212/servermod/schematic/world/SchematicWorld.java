@@ -54,12 +54,10 @@ public class SchematicWorld extends WrappedWorld implements IServerWorld {
     @Override
     public boolean addFreshEntity(Entity entityIn) {
         if (entityIn instanceof ItemFrameEntity)
-            ((ItemFrameEntity) entityIn).getItem()
-                    .setTag(null);
+            ((ItemFrameEntity) entityIn).getItem().setTag(null);
         if (entityIn instanceof ArmorStandEntity) {
             ArmorStandEntity armorStandEntity = (ArmorStandEntity) entityIn;
-            armorStandEntity.getAllSlots()
-                    .forEach(stack -> stack.setTag(null));
+            armorStandEntity.getAllSlots().forEach(stack -> stack.setTag(null));
         }
 
         return entities.add(entityIn);
@@ -131,8 +129,7 @@ public class SchematicWorld extends WrappedWorld implements IServerWorld {
     }
 
     @Override
-    public <T extends Entity> List<T> getEntitiesOfClass(Class<? extends T> arg0, AxisAlignedBB arg1,
-                                                         Predicate<? super T> arg2) {
+    public <T extends Entity> List<T> getEntitiesOfClass(Class<? extends T> arg0, AxisAlignedBB arg1, Predicate<? super T> arg2) {
         return Collections.emptyList();
     }
 
@@ -163,14 +160,12 @@ public class SchematicWorld extends WrappedWorld implements IServerWorld {
 
     @Override
     public boolean setBlock(BlockPos pos, BlockState arg1, int arg2) {
-        pos = pos.immutable()
-                .subtract(anchor);
+        pos = pos.immutable().subtract(anchor);
         bounds.expand(new MutableBoundingBox(pos, pos));
         blocks.put(pos, arg1);
         if (tileEntities.containsKey(pos)) {
             TileEntity tileEntity = tileEntities.get(pos);
-            if (!tileEntity.getType()
-                    .isValid(arg1.getBlock())) {
+            if (!tileEntity.getType().isValid(arg1.getBlock())) {
                 tileEntities.remove(pos);
                 renderedTileEntities.remove(tileEntity);
             }

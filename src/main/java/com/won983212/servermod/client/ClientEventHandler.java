@@ -8,6 +8,7 @@ import com.won983212.servermod.ServerMod;
 import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
 import com.won983212.servermod.skin.SkinCacheCleaner;
 import com.won983212.servermod.utility.animate.AnimationTickHolder;
+import com.won983212.servermod.schematic.client.SchematicRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.world.ClientWorld;
@@ -16,6 +17,7 @@ import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.IWorld;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.EntityViewRenderEvent;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
@@ -28,6 +30,7 @@ import org.apache.commons.lang3.StringUtils;
 
 @Mod.EventBusSubscriber(modid = ServerMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ClientEventHandler {
+
     @SubscribeEvent
     public static void onTooltipShow(ItemTooltipEvent e) {
         if (e.getFlags().isAdvanced()) {
