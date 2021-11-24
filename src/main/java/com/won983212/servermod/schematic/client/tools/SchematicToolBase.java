@@ -49,8 +49,9 @@ public abstract class SchematicToolBase implements ISchematicTool {
     public void updateSelection() {
         updateTargetPos();
 
-        if (selectedPos == null)
+        if (selectedPos == null) {
             return;
+        }
         lastChasingSelectedPos = chasingSelectedPos;
         Vector3d target = Vector3d.atLowerCornerOf(selectedPos);
         if (target.distanceTo(chasingSelectedPos) < 1 / 512f) {
@@ -88,16 +89,18 @@ public abstract class SchematicToolBase implements ISchematicTool {
             selectedPos = new BlockPos(player.getEyePosition(pt)
                     .add(player.getLookAngle()
                             .scale(selectionRange)));
-            if (snap)
+            if (snap) {
                 lastChasingSelectedPos = chasingSelectedPos = Vector3d.atLowerCornerOf(selectedPos);
+            }
             return;
         }
 
         // Select targeted Block
         selectedPos = null;
         BlockRayTraceResult trace = RaycastHelper.rayTraceRange(player.level, player, 75);
-        if (trace == null || trace.getType() != Type.BLOCK)
+        if (trace == null || trace.getType() != Type.BLOCK) {
             return;
+        }
 
         BlockPos hit = new BlockPos(trace.getLocation());
         boolean replaceable = player.level.getBlockState(hit)
@@ -105,11 +108,13 @@ public abstract class SchematicToolBase implements ISchematicTool {
                 .isReplaceable();
         if (trace.getDirection()
                 .getAxis()
-                .isVertical() && !replaceable)
+                .isVertical() && !replaceable) {
             hit = hit.relative(trace.getDirection());
+        }
         selectedPos = hit;
-        if (snap)
+        if (snap) {
             lastChasingSelectedPos = chasingSelectedPos = Vector3d.atLowerCornerOf(selectedPos);
+        }
     }
 
     @Override
@@ -122,8 +127,9 @@ public abstract class SchematicToolBase implements ISchematicTool {
 
     @Override
     public void renderOnSchematic(MatrixStack ms, SuperRenderTypeBuffer buffer) {
-        if (!schematicHandler.isDeployed())
+        if (!schematicHandler.isDeployed()) {
             return;
+        }
 
         ms.pushPose();
         AABBOutline outline = schematicHandler.getOutline();

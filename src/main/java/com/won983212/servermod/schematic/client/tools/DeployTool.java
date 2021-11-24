@@ -36,8 +36,9 @@ public class DeployTool extends PlacementToolBase {
     public void renderTool(MatrixStack ms, SuperRenderTypeBuffer buffer) {
         super.renderTool(ms, buffer);
 
-        if (selectedPos == null)
+        if (selectedPos == null) {
             return;
+        }
 
         ms.pushPose();
         float pt = AnimationTickHolder.getPartialTicks();
@@ -71,8 +72,9 @@ public class DeployTool extends PlacementToolBase {
 
     @Override
     public boolean handleMouseWheel(double delta) {
-        if (!selectIgnoreBlocks)
+        if (!selectIgnoreBlocks) {
             return super.handleMouseWheel(delta);
+        }
         selectionRange += delta;
         selectionRange = MathHelper.clamp(selectionRange, 1, 100);
         return true;
@@ -80,8 +82,9 @@ public class DeployTool extends PlacementToolBase {
 
     @Override
     public boolean handleRightClick() {
-        if (selectedPos == null)
+        if (selectedPos == null) {
             return super.handleRightClick();
+        }
         Vector3d center = schematicHandler.getBounds().getCenter();
         BlockPos target = selectedPos.offset(-((int) center.x), 0, -((int) center.z));
 

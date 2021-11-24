@@ -41,8 +41,9 @@ public enum Tools {
     public static List<Tools> getTools(boolean creative) {
         List<Tools> tools = new ArrayList<>();
         Collections.addAll(tools, Move, MoveY, Deploy, Rotate, Flip);
-        if (creative)
+        if (creative) {
             tools.add(Print);
+        }
         return tools;
     }
 

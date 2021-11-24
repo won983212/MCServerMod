@@ -53,8 +53,9 @@ public class SchematicWorld extends WrappedWorld implements IServerWorld {
 
     @Override
     public boolean addFreshEntity(Entity entityIn) {
-        if (entityIn instanceof ItemFrameEntity)
+        if (entityIn instanceof ItemFrameEntity) {
             ((ItemFrameEntity) entityIn).getItem().setTag(null);
+        }
         if (entityIn instanceof ArmorStandEntity) {
             ArmorStandEntity armorStandEntity = (ArmorStandEntity) entityIn;
             armorStandEntity.getAllSlots().forEach(stack -> stack.setTag(null));
@@ -69,12 +70,15 @@ public class SchematicWorld extends WrappedWorld implements IServerWorld {
 
     @Override
     public TileEntity getBlockEntity(BlockPos pos) {
-        if (isOutsideBuildHeight(pos))
+        if (isOutsideBuildHeight(pos)) {
             return null;
-        if (tileEntities.containsKey(pos))
+        }
+        if (tileEntities.containsKey(pos)) {
             return tileEntities.get(pos);
-        if (!blocks.containsKey(pos.subtract(anchor)))
+        }
+        if (!blocks.containsKey(pos.subtract(anchor))) {
             return null;
+        }
 
         BlockState blockState = getBlockState(pos);
         if (blockState.hasTileEntity()) {
@@ -101,10 +105,12 @@ public class SchematicWorld extends WrappedWorld implements IServerWorld {
     public BlockState getBlockState(BlockPos globalPos) {
         BlockPos pos = globalPos.subtract(anchor);
 
-        if (pos.getY() - bounds.y0 == -1 && !renderMode)
+        if (pos.getY() - bounds.y0 == -1 && !renderMode) {
             return Blocks.GRASS_BLOCK.defaultBlockState();
-        if (getBounds().isInside(pos) && blocks.containsKey(pos))
+        }
+        if (getBounds().isInside(pos) && blocks.containsKey(pos)) {
             return processBlockStateForPrinting(blocks.get(pos));
+        }
         return Blocks.AIR.defaultBlockState();
     }
 
@@ -172,8 +178,9 @@ public class SchematicWorld extends WrappedWorld implements IServerWorld {
         }
 
         TileEntity tileEntity = getBlockEntity(pos);
-        if (tileEntity != null)
+        if (tileEntity != null) {
             tileEntities.put(pos, tileEntity);
+        }
 
         return true;
     }
@@ -201,8 +208,9 @@ public class SchematicWorld extends WrappedWorld implements IServerWorld {
     }
 
     protected BlockState processBlockStateForPrinting(BlockState state) {
-        if (state.getBlock() instanceof AbstractFurnaceBlock && state.hasProperty(BlockStateProperties.LIT))
+        if (state.getBlock() instanceof AbstractFurnaceBlock && state.hasProperty(BlockStateProperties.LIT)) {
             state = state.setValue(BlockStateProperties.LIT, false);
+        }
         return state;
     }
 

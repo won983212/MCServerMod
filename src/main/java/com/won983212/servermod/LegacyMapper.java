@@ -77,7 +77,8 @@ public final class LegacyMapper {
 
         InputStream is = Minecraft.getInstance().getResourceManager().getResource(LEGACY_MAP_FILE).getInputStream();
         String data = IOUtils.toString(is, StandardCharsets.UTF_8);
-        LegacyDataFile dataFile = gson.fromJson(data, new TypeToken<LegacyDataFile>() {}.getType());
+        LegacyDataFile dataFile = gson.fromJson(data, new TypeToken<LegacyDataFile>() {
+        }.getType());
 
         for (Map.Entry<String, String> blockEntry : dataFile.blocks.entrySet()) {
             String id = blockEntry.getKey();

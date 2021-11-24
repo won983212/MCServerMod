@@ -42,12 +42,14 @@ public class SkinCacheCleaner {
         MC_INST.textureManager.release(location);
 
         location = info.getCapeLocation();
-        if (location != null)
+        if (location != null) {
             MC_INST.textureManager.release(location);
+        }
 
         location = info.getElytraLocation();
-        if (location != null)
+        if (location != null) {
             MC_INST.textureManager.release(location);
+        }
 
         info.pendingTextures = false;
         info.textureLocations.clear();

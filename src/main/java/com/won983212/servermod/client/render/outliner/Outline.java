@@ -46,8 +46,9 @@ public abstract class Outline {
 
     public void renderAACuboidLine(MatrixStack ms, SuperRenderTypeBuffer buffer, Vector3d start, Vector3d end) {
         float lineWidth = params.getLineWidth();
-        if (lineWidth == 0)
+        if (lineWidth == 0) {
             return;
+        }
 
         IVertexBuilder builder = buffer.getBuffer(RenderTypes.getOutlineSolid());
 
@@ -127,8 +128,9 @@ public abstract class Outline {
         int k = i & '\uffff';
         Entry peek = ms.last();
         Color rgb = params.rgb;
-        if (transformNormals == null)
+        if (transformNormals == null) {
             transformNormals = peek.normal();
+        }
 
         int xOffset = 0;
         int yOffset = 0;
@@ -156,8 +158,9 @@ public abstract class Outline {
     }
 
     private static float deg(double rad) {
-        if (rad == 0)
+        if (rad == 0) {
             return 0;
+        }
         return (float) (rad * 180 / Math.PI);
     }
 

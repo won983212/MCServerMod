@@ -30,11 +30,13 @@ public class RepeatPlaySound extends TickableSound {
     }
 
     public void tick() {
-        if (--tick > 0)
+        if (--tick > 0) {
             return;
+        }
 
-        if (!SoundHandlerHelper.isClientPlayerInRange(this))
+        if (!SoundHandlerHelper.isClientPlayerInRange(this)) {
             stop();
+        }
 
         tick = 15;
     }

@@ -21,8 +21,6 @@ import net.minecraft.world.gen.feature.template.Template;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.common.thread.SidedThreadGroups;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -83,8 +81,9 @@ public class SchematicItem extends Item {
         PlacementSettings settings = new PlacementSettings();
         settings.setRotation(Rotation.valueOf(tag.getString("Rotation")));
         settings.setMirror(Mirror.valueOf(tag.getString("Mirror")));
-        if (processNBT)
+        if (processNBT) {
             settings.addProcessor(SchematicProcessor.INSTANCE);
+        }
         return settings;
     }
 
@@ -94,8 +93,9 @@ public class SchematicItem extends Item {
         String schematic = blueprint.getTag().getString("File");
         String schematicExt = schematic.substring(schematic.lastIndexOf('.') + 1);
 
-        if (!SchematicFileParser.isSupportedExtension(schematicExt))
+        if (!SchematicFileParser.isSupportedExtension(schematicExt)) {
             return t;
+        }
 
         Path dir;
         Path file;
@@ -109,8 +109,9 @@ public class SchematicItem extends Item {
         }
 
         Path path = dir.resolve(file).normalize();
-        if (!path.startsWith(dir))
+        if (!path.startsWith(dir)) {
             return t;
+        }
 
         try {
             return SchematicFileParser.parseSchematicFile(path.toFile());
@@ -123,15 +124,17 @@ public class SchematicItem extends Item {
     @Nonnull
     @Override
     public ActionResultType useOn(ItemUseContext context) {
-        if (context.getPlayer() != null && !onItemUse(context.getPlayer(), context.getHand()))
+        if (context.getPlayer() != null && !onItemUse(context.getPlayer(), context.getHand())) {
             return super.useOn(context);
+        }
         return ActionResultType.SUCCESS;
     }
 
     @Override
     public ActionResult<ItemStack> use(World worldIn, PlayerEntity playerIn, Hand handIn) {
-        if (!onItemUse(playerIn, handIn))
+        if (!onItemUse(playerIn, handIn)) {
             return super.use(worldIn, playerIn, handIn);
+        }
         return new ActionResult<>(ActionResultType.SUCCESS, playerIn.getItemInHand(handIn));
     }
 
@@ -143,8 +146,9 @@ public class SchematicItem extends Item {
             return true;
         }
 
-        if (!player.isShiftKeyDown() || hand != Hand.MAIN_HAND)
+        if (!player.isShiftKeyDown() || hand != Hand.MAIN_HAND) {
             return false;
+        }
         return player.getItemInHand(hand).hasTag();
     }
 

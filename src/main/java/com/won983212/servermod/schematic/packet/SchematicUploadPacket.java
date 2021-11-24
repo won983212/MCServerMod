@@ -43,27 +43,32 @@ public class SchematicUploadPacket implements IMessage {
         code = buffer.readInt();
         schematic = buffer.readUtf(256);
 
-        if (code == BEGIN)
+        if (code == BEGIN) {
             size = buffer.readLong();
-        if (code == WRITE)
+        }
+        if (code == WRITE) {
             data = buffer.readByteArray();
+        }
     }
 
     public void write(PacketBuffer buffer) {
         buffer.writeInt(code);
         buffer.writeUtf(schematic);
 
-        if (code == BEGIN)
+        if (code == BEGIN) {
             buffer.writeLong(size);
-        if (code == WRITE)
+        }
+        if (code == WRITE) {
             buffer.writeByteArray(data);
+        }
     }
 
     public void handle(Supplier<Context> context) {
         context.get().enqueueWork(() -> {
             ServerPlayerEntity player = context.get().getSender();
-            if (player == null)
+            if (player == null) {
                 return;
+            }
             // TODO Handle upload packet
 				/*if (code == BEGIN) {
 					BlockPos pos = ((SchematicTableContainer) player.containerMenu).getTileEntity()

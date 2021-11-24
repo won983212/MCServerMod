@@ -45,10 +45,12 @@ public class RaycastHelper {
     }
 
     public static PredicateTraceResult rayTraceUntil(Vector3d start, Vector3d end, Predicate<BlockPos> predicate) {
-        if (Double.isNaN(start.x) || Double.isNaN(start.y) || Double.isNaN(start.z))
+        if (Double.isNaN(start.x) || Double.isNaN(start.y) || Double.isNaN(start.z)) {
             return null;
-        if (Double.isNaN(end.x) || Double.isNaN(end.y) || Double.isNaN(end.z))
+        }
+        if (Double.isNaN(end.x) || Double.isNaN(end.y) || Double.isNaN(end.z)) {
             return null;
+        }
 
         int dx = MathHelper.floor(end.x);
         int dy = MathHelper.floor(end.y);
@@ -59,8 +61,9 @@ public class RaycastHelper {
 
         BlockPos currentPos = new BlockPos(x, y, z);
 
-        if (predicate.test(currentPos))
+        if (predicate.test(currentPos)) {
             return new PredicateTraceResult(currentPos, Direction.getNearest(dx - x, dy - y, dz - z));
+        }
 
         int remainingDistance = 200;
 
@@ -153,8 +156,9 @@ public class RaycastHelper {
             z = MathHelper.floor(start.z) - (enumfacing == Direction.SOUTH ? 1 : 0);
             currentPos = new BlockPos(x, y, z);
 
-            if (predicate.test(currentPos))
+            if (predicate.test(currentPos)) {
                 return new PredicateTraceResult(currentPos, enumfacing);
+            }
         }
 
         return new PredicateTraceResult();

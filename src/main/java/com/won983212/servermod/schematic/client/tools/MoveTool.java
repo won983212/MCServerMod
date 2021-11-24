@@ -20,8 +20,9 @@ public class MoveTool extends PlacementToolBase {
 
     @Override
     public boolean handleMouseWheel(double delta) {
-        if (!schematicSelected || !selectedFace.getAxis().isHorizontal())
+        if (!schematicSelected || !selectedFace.getAxis().isHorizontal()) {
             return true;
+        }
 
         SchematicTransformation transformation = schematicHandler.getTransformation();
         Vector3d vec = Vector3d.atLowerCornerOf(selectedFace.getNormal()).scale(-Math.signum(delta));

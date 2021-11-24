@@ -20,10 +20,8 @@
 package com.won983212.servermod.schematic.parser;
 
 import com.google.common.collect.Lists;
-import com.won983212.servermod.Logger;
 import net.minecraft.block.BlockState;
 import net.minecraft.nbt.*;
-import net.minecraft.util.SharedConstants;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.EmptyBlockReader;
 import net.minecraft.world.gen.feature.template.Template;
@@ -33,7 +31,6 @@ import javax.annotation.Nullable;
 import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
@@ -75,32 +72,45 @@ public abstract class AbstractSchematicReader {
     }
 
     private static byte getNBTTypeFromClass(Class<?> cls) throws IOException {
-        if (cls == ByteNBT.class)
+        if (cls == ByteNBT.class) {
             return Constants.NBT.TAG_BYTE;
-        if (cls == ShortNBT.class)
+        }
+        if (cls == ShortNBT.class) {
             return Constants.NBT.TAG_SHORT;
-        if (cls == IntNBT.class)
+        }
+        if (cls == IntNBT.class) {
             return Constants.NBT.TAG_INT;
-        if (cls == LongNBT.class)
+        }
+        if (cls == LongNBT.class) {
             return Constants.NBT.TAG_LONG;
-        if (cls == FloatNBT.class)
+        }
+        if (cls == FloatNBT.class) {
             return Constants.NBT.TAG_FLOAT;
-        if (cls == DoubleNBT.class)
+        }
+        if (cls == DoubleNBT.class) {
             return Constants.NBT.TAG_DOUBLE;
-        if (cls == ByteArrayNBT.class)
+        }
+        if (cls == ByteArrayNBT.class) {
             return Constants.NBT.TAG_BYTE_ARRAY;
-        if (cls == StringNBT.class)
+        }
+        if (cls == StringNBT.class) {
             return Constants.NBT.TAG_STRING;
-        if (cls == ListNBT.class)
+        }
+        if (cls == ListNBT.class) {
             return Constants.NBT.TAG_LIST;
-        if (cls == CompoundNBT.class)
+        }
+        if (cls == CompoundNBT.class) {
             return Constants.NBT.TAG_COMPOUND;
-        if (cls == IntArrayNBT.class)
+        }
+        if (cls == IntArrayNBT.class) {
             return Constants.NBT.TAG_INT_ARRAY;
-        if (cls == LongArrayNBT.class)
+        }
+        if (cls == LongArrayNBT.class) {
             return Constants.NBT.TAG_LONG_ARRAY;
-        if (cls == NumberNBT.class)
+        }
+        if (cls == NumberNBT.class) {
             return Constants.NBT.TAG_ANY_NUMERIC;
+        }
         throw new IOException("Invaild type: " + cls);
     }
 
@@ -109,7 +119,7 @@ public abstract class AbstractSchematicReader {
         private final List<Template.BlockInfo> tileBlocks = Lists.newArrayList();
         private final List<Template.BlockInfo> specialBlocks = Lists.newArrayList();
 
-        public void addBlock(BlockPos pt, BlockState state, @Nullable CompoundNBT blockNBT){
+        public void addBlock(BlockPos pt, BlockState state, @Nullable CompoundNBT blockNBT) {
             Template.BlockInfo tempBlock = new Template.BlockInfo(pt, state, blockNBT);
             if (tempBlock.nbt != null) {
                 tileBlocks.add(tempBlock);

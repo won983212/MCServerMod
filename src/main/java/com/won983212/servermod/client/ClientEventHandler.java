@@ -6,9 +6,9 @@ import com.won983212.servermod.LegacyMapper;
 import com.won983212.servermod.ModKeys;
 import com.won983212.servermod.ServerMod;
 import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
+import com.won983212.servermod.schematic.client.SchematicRenderer;
 import com.won983212.servermod.skin.SkinCacheCleaner;
 import com.won983212.servermod.utility.animate.AnimationTickHolder;
-import com.won983212.servermod.schematic.client.SchematicRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.world.ClientWorld;
@@ -42,7 +42,7 @@ public class ClientEventHandler {
     }
 
     @SubscribeEvent
-    public static void onCameraSetup(EntityViewRenderEvent.CameraSetup e){
+    public static void onCameraSetup(EntityViewRenderEvent.CameraSetup e) {
         SchematicRenderer.setCameraPosition(e.getInfo().getPosition());
     }
 
@@ -63,10 +63,12 @@ public class ClientEventHandler {
 
     @SubscribeEvent
     public static void onTick(TickEvent.ClientTickEvent event) {
-        if (Minecraft.getInstance().level == null || Minecraft.getInstance().player == null)
+        if (Minecraft.getInstance().level == null || Minecraft.getInstance().player == null) {
             return;
-        if (event.phase == TickEvent.Phase.START)
+        }
+        if (event.phase == TickEvent.Phase.START) {
             return;
+        }
         AnimationTickHolder.tick();
         ClientDist.SCHEMATIC_HANDLER.tick();
     }
@@ -89,8 +91,9 @@ public class ClientEventHandler {
 
     @SubscribeEvent
     public static void onRenderOverlay(RenderGameOverlayEvent.Post event) {
-        if (event.getType() != RenderGameOverlayEvent.ElementType.HOTBAR)
+        if (event.getType() != RenderGameOverlayEvent.ElementType.HOTBAR) {
             return;
+        }
 
         MatrixStack ms = event.getMatrixStack();
         IRenderTypeBuffer.Impl buffers = Minecraft.getInstance().renderBuffers().bufferSource();
@@ -99,8 +102,9 @@ public class ClientEventHandler {
 
     @SubscribeEvent
     public static void onKeyInput(InputEvent.KeyInputEvent e) {
-        if (Minecraft.getInstance().screen != null)
+        if (Minecraft.getInstance().screen != null) {
             return;
+        }
 
         int key = e.getKey();
         boolean pressed = !(e.getAction() == 0);
@@ -113,8 +117,9 @@ public class ClientEventHandler {
 
     @SubscribeEvent
     public static void onMouseInput(InputEvent.MouseInputEvent event) {
-        if (Minecraft.getInstance().screen != null)
+        if (Minecraft.getInstance().screen != null) {
             return;
+        }
 
         int button = event.getButton();
         boolean pressed = !(event.getAction() == 0);
@@ -123,8 +128,9 @@ public class ClientEventHandler {
 
     @SubscribeEvent
     public static void onMouseScrolled(InputEvent.MouseScrollEvent event) {
-        if (Minecraft.getInstance().screen != null)
+        if (Minecraft.getInstance().screen != null) {
             return;
+        }
 
         double delta = event.getScrollDelta();
         event.setCanceled(ClientDist.SCHEMATIC_HANDLER.mouseScrolled(delta));

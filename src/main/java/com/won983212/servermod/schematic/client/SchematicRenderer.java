@@ -48,8 +48,9 @@ public class SchematicRenderer {
     }
 
     public void render(MatrixStack ms, SuperRenderTypeBuffer buffer) {
-        if (loading || schematic == null)
+        if (loading || schematic == null) {
             return;
+        }
 
         for (RenderType layer : RenderType.chunkBufferLayers()) {
             if (layer == RenderType.solid()) {
@@ -156,8 +157,9 @@ public class SchematicRenderer {
 
         // finishDrawing
         for (RenderType layer : RenderType.chunkBufferLayers()) {
-            if (!startedBufferBuilders.contains(layer))
+            if (!startedBufferBuilders.contains(layer)) {
                 continue;
+            }
             BufferBuilder buf = buffers.get(layer);
             buf.end();
 
@@ -218,8 +220,9 @@ public class SchematicRenderer {
         }
 
         public void render(MatrixStack ms, RenderType layer) {
-            if (!usedBlockRenderLayers.contains(layer))
+            if (!usedBlockRenderLayers.contains(layer)) {
                 return;
+            }
             VertexBuffer buf = blockBufferCache.get(layer);
             if (buf != null) {
                 buf.bind();

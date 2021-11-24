@@ -15,8 +15,9 @@ public class SoundHandlerHelper {
 
     public static ISound playRepeat(SoundEvent sound, SoundCategory category, int x, int y, int z, float volume) {
         RepeatPlaySound activeSound = new RepeatPlaySound(sound, category, x, y, z, volume);
-        if (!isClientPlayerInRange(activeSound))
+        if (!isClientPlayerInRange(activeSound)) {
             return null;
+        }
         Minecraft.getInstance().getSoundManager().play(activeSound);
         return activeSound;
     }

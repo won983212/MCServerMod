@@ -67,8 +67,9 @@ public class SkinRedirector {
     }
 
     private static void AppendSkin(Map<MinecraftProfileTexture.Type, MinecraftProfileTexture> map, MinecraftProfileTexture.Type type, String skinFilename) {
-        if (skinFilename != null)
+        if (skinFilename != null) {
             map.put(type, new MinecraftProfileTexture(ServerMod.HOST + "textures/" + skinFilename, null));
+        }
     }
 
     /**

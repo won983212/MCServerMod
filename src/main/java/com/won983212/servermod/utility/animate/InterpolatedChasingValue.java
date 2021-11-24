@@ -8,8 +8,9 @@ public class InterpolatedChasingValue extends InterpolatedValue {
 
     public void tick() {
         float diff = getCurrentDiff();
-        if (Math.abs(diff) < eps)
+        if (Math.abs(diff) < eps) {
             return;
+        }
         set(value + (diff) * speed);
     }
 

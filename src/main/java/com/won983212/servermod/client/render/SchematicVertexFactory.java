@@ -1,20 +1,11 @@
 package com.won983212.servermod.client.render;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import com.mojang.blaze3d.vertex.IVertexBuilder;
-import it.unimi.dsi.fastutil.longs.Long2IntMap;
-import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.WorldRenderer;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.math.vector.Vector3f;
 import net.minecraft.util.math.vector.Vector4f;
-import net.minecraft.world.LightType;
-import net.minecraft.world.World;
 import net.minecraftforge.client.model.pipeline.LightUtil;
 
 public class SchematicVertexFactory {
@@ -90,8 +81,9 @@ public class SchematicVertexFactory {
     }
 
     public void reset() {
-        while (!transforms.clear())
+        while (!transforms.clear()) {
             transforms.popPose();
+        }
         transforms.pushPose();
     }
 

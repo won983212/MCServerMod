@@ -47,8 +47,9 @@ public class ToolSelectionScreen extends Screen {
     }
 
     public void setSelectedElement(Tools tool) {
-        if (!tools.contains(tool))
+        if (!tools.contains(tool)) {
             return;
+        }
         selection = tools.indexOf(tool);
     }
 
@@ -60,8 +61,9 @@ public class ToolSelectionScreen extends Screen {
     private void draw(MatrixStack matrixStack, float partialTicks) {
         Minecraft mc = Minecraft.getInstance();
         MainWindow mainWindow = mc.getWindow();
-        if (!initialized)
+        if (!initialized) {
             init(mc, mainWindow.getGuiScaledWidth(), mainWindow.getGuiScaledHeight());
+        }
 
         int x = (mainWindow.getGuiScaledWidth() - w) / 2 + 15;
         int y = mainWindow.getGuiScaledHeight() - h - 75;
@@ -82,14 +84,18 @@ public class ToolSelectionScreen extends Screen {
             ModTextures.OVERLAY.draw(matrixStack, x - 15, y + 33, w, h + 22);
             RenderSystem.color4f(1, 1, 1, 1);
 
-            if (toolTip.size() > 0)
+            if (toolTip.size() > 0) {
                 font.draw(matrixStack, toolTip.get(0), x - 10, y + 38, 0xEEEEEE + stringAlphaComponent);
-            if (toolTip.size() > 1)
+            }
+            if (toolTip.size() > 1) {
                 font.draw(matrixStack, toolTip.get(1), x - 10, y + 50, 0xCCDDFF + stringAlphaComponent);
-            if (toolTip.size() > 2)
+            }
+            if (toolTip.size() > 2) {
                 font.draw(matrixStack, toolTip.get(2), x - 10, y + 60, 0xCCDDFF + stringAlphaComponent);
-            if (toolTip.size() > 3)
+            }
+            if (toolTip.size() > 3) {
                 font.draw(matrixStack, toolTip.get(3), x - 10, y + 72, 0xCCCCDD + stringAlphaComponent);
+            }
         }
 
         RenderSystem.color4f(1, 1, 1, 1);
@@ -129,10 +135,11 @@ public class ToolSelectionScreen extends Screen {
     }
 
     public void update() {
-        if (focused)
+        if (focused) {
             yOffset += (10 - yOffset) * .1f;
-        else
+        } else {
             yOffset *= .9f;
+        }
     }
 
     public void renderPassive(MatrixStack matrixStack, float partialTicks) {

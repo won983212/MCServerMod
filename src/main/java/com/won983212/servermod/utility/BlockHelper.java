@@ -39,11 +39,13 @@ public class BlockHelper {
     public static void placeSchematicBlock(World world, BlockState state, BlockPos target, ItemStack stack,
                                            @Nullable CompoundNBT data) {
         // Piston
-        if (state.hasProperty(BlockStateProperties.EXTENDED))
+        if (state.hasProperty(BlockStateProperties.EXTENDED)) {
             state = state.setValue(BlockStateProperties.EXTENDED, Boolean.FALSE);
+        }
 
-        if (state.hasProperty(BedBlock.PART) && state.getValue(BedBlock.PART) == BedPart.HEAD)
+        if (state.hasProperty(BedBlock.PART) && state.getValue(BedBlock.PART) == BedPart.HEAD) {
             return;
+        }
 
         if (world.dimensionType().ultraWarm() && state.getFluidState().getType().is(FluidTags.WATER)) {
             int i = target.getX();
@@ -84,25 +86,34 @@ public class BlockHelper {
 
     public static boolean shouldDeferBlock(BlockState state) {
         Block block = state.getBlock();
-        if (state.hasProperty(BlockStateProperties.HANGING))
+        if (state.hasProperty(BlockStateProperties.HANGING)) {
             return true;
+        }
 
-        if (block instanceof LadderBlock)
+        if (block instanceof LadderBlock) {
             return true;
-        if (block instanceof TorchBlock)
+        }
+        if (block instanceof TorchBlock) {
             return true;
-        if (block instanceof AbstractSignBlock)
+        }
+        if (block instanceof AbstractSignBlock) {
             return true;
-        if (block instanceof AbstractPressurePlateBlock)
+        }
+        if (block instanceof AbstractPressurePlateBlock) {
             return true;
-        if (block instanceof HorizontalFaceBlock && !(block instanceof GrindstoneBlock))
+        }
+        if (block instanceof HorizontalFaceBlock && !(block instanceof GrindstoneBlock)) {
             return true;
-        if (block instanceof AbstractRailBlock)
+        }
+        if (block instanceof AbstractRailBlock) {
             return true;
-        if (block instanceof RedstoneDiodeBlock)
+        }
+        if (block instanceof RedstoneDiodeBlock) {
             return true;
-        if (block instanceof RedstoneWireBlock)
+        }
+        if (block instanceof RedstoneWireBlock) {
             return true;
+        }
         return block instanceof CarpetBlock;
     }
 }

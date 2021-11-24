@@ -1,6 +1,5 @@
 package com.won983212.servermod.schematic;
 
-import com.won983212.servermod.Logger;
 import com.won983212.servermod.item.SchematicItem;
 import com.won983212.servermod.schematic.world.SchematicWorld;
 import com.won983212.servermod.utility.BlockHelper;
@@ -45,8 +44,9 @@ public class SchematicPrinter {
     }
 
     public void loadSchematic(ItemStack blueprint, World originalWorld, boolean processNBT) {
-        if (!blueprint.hasTag() || !blueprint.getTag().getBoolean("Deployed"))
+        if (!blueprint.hasTag() || !blueprint.getTag().getBoolean("Deployed")) {
             return;
+        }
 
         Template activeTemplate = SchematicItem.loadSchematic(blueprint);
         PlacementSettings settings = SchematicItem.getSettings(blueprint, processNBT);
@@ -73,8 +73,9 @@ public class SchematicPrinter {
     }
 
     public BlockPos getCurrentTarget() {
-        if (!isLoaded())
+        if (!isLoaded()) {
             return null;
+        }
         return schematicAnchor.offset(currentPos);
     }
 
@@ -114,11 +115,13 @@ public class SchematicPrinter {
     }
 
     public boolean shouldPlaceCurrent(World world, PlacementPredicate predicate) {
-        if (world == null)
+        if (world == null) {
             return false;
+        }
 
-        if (printStage == PrintStage.ENTITIES)
+        if (printStage == PrintStage.ENTITIES) {
             return true;
+        }
 
         return shouldPlaceBlock(world, predicate, getCurrentTarget());
     }
@@ -130,16 +133,20 @@ public class SchematicPrinter {
         BlockState toReplace = world.getBlockState(pos);
         BlockState toReplaceOther = null;
         if (state.hasProperty(BlockStateProperties.BED_PART) && state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)
-                && state.getValue(BlockStateProperties.BED_PART) == BedPart.FOOT)
+                && state.getValue(BlockStateProperties.BED_PART) == BedPart.FOOT) {
             toReplaceOther = world.getBlockState(pos.relative(state.getValue(BlockStateProperties.HORIZONTAL_FACING)));
+        }
         if (state.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)
-                && state.getValue(BlockStateProperties.DOUBLE_BLOCK_HALF) == DoubleBlockHalf.LOWER)
+                && state.getValue(BlockStateProperties.DOUBLE_BLOCK_HALF) == DoubleBlockHalf.LOWER) {
             toReplaceOther = world.getBlockState(pos.above());
+        }
 
-        if (!world.isLoaded(pos))
+        if (!world.isLoaded(pos)) {
             return false;
-        if (toReplace.getDestroySpeed(world, pos) == -1 || (toReplaceOther != null && toReplaceOther.getDestroySpeed(world, pos) == -1))
+        }
+        if (toReplace.getDestroySpeed(world, pos) == -1 || (toReplaceOther != null && toReplaceOther.getDestroySpeed(world, pos) == -1)) {
             return false;
+        }
 
         boolean isNormalCube = state.isRedstoneConductor(blockReader, currentPos);
         return predicate.shouldPlace(pos, state, tileEntity, toReplace, toReplaceOther, isNormalCube);
@@ -183,10 +190,12 @@ public class SchematicPrinter {
         MutableBoundingBox bounds = blockReader.getBounds();
         BlockPos posInBounds = currentPos.offset(-bounds.x0, -bounds.y0, -bounds.z0);
 
-        if (posInBounds.getX() > bounds.getXSpan())
+        if (posInBounds.getX() > bounds.getXSpan()) {
             currentPos = new BlockPos(bounds.x0, currentPos.getY(), currentPos.getZ() + 1).west();
-        if (posInBounds.getZ() > bounds.getZSpan())
+        }
+        if (posInBounds.getZ() > bounds.getZSpan()) {
             currentPos = new BlockPos(currentPos.getX(), currentPos.getY() + 1, bounds.z0).west();
+        }
 
         // End of blocks reached
         if (currentPos.getY() > bounds.getYSpan()) {

@@ -24,8 +24,9 @@ public class WorldAttached<T> {
     @Nonnull
     public T get(IWorld world) {
         T t = attached.get(world);
-        if (t != null)
+        if (t != null) {
             return t;
+        }
         T entry = factory.apply(world);
         put(world, entry);
         return entry;

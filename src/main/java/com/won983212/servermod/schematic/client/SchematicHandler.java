@@ -114,8 +114,9 @@ public class SchematicHandler {
         displayedSchematic = stack.getTag().getString("File");
         active = true;
         if (deployed) {
-            if (needsRendererUpdate)
+            if (needsRendererUpdate) {
                 setupRenderer();
+            }
             Tools toolBefore = currentTool;
             selectionScreen = new ToolSelectionScreen(Tools.getTools(player.isCreative()), this::equip);
             if (toolBefore != null) {
@@ -135,8 +136,9 @@ public class SchematicHandler {
 
         Template schematic = SchematicItem.loadSchematic(activeSchematicItem);
         BlockPos size = schematic.getSize();
-        if (size.equals(BlockPos.ZERO))
+        if (size.equals(BlockPos.ZERO)) {
             return;
+        }
 
         World clientWorld = Minecraft.getInstance().level;
         String schematicFilePath = activeSchematicItem.getTag().getString("File");
@@ -190,8 +192,9 @@ public class SchematicHandler {
     }
 
     public void render(MatrixStack ms, SuperRenderTypeBuffer buffer) {
-        if (!active)
+        if (!active) {
             return;
+        }
 
         ms.pushPose();
         currentTool.getTool().renderTool(ms, buffer);
@@ -204,12 +207,13 @@ public class SchematicHandler {
             float pt = AnimationTickHolder.getPartialTicks();
             boolean lr = transformation.getScaleLR().get(pt) < 0;
             boolean fb = transformation.getScaleFB().get(pt) < 0;
-            if (lr && !fb)
+            if (lr && !fb) {
                 renderers.get(2).render(ms, buffer);
-            else if (fb && !lr)
+            } else if (fb && !lr) {
                 renderers.get(1).render(ms, buffer);
-            else
+            } else {
                 renderers.get(0).render(ms, buffer);
+            }
         }
 
         currentTool.getTool().renderOnSchematic(ms, buffer);
@@ -217,30 +221,37 @@ public class SchematicHandler {
     }
 
     public void renderOverlay(MatrixStack ms, IRenderTypeBuffer buffer, float partialTicks) {
-        if (!active)
+        if (!active) {
             return;
+        }
         currentTool.getTool().renderOverlay(ms, buffer);
         selectionScreen.renderPassive(ms, partialTicks);
     }
 
     public void onMouseInput(int button, boolean pressed) {
-        if (!active)
+        if (!active) {
             return;
-        if (!pressed || button != 1)
+        }
+        if (!pressed || button != 1) {
             return;
-        if (Minecraft.getInstance().player.isShiftKeyDown())
+        }
+        if (Minecraft.getInstance().player.isShiftKeyDown()) {
             return;
+        }
         currentTool.getTool().handleRightClick();
     }
 
     public void onKeyInput(int key, boolean pressed) {
-        if (!active)
+        if (!active) {
             return;
-        if (key != ModKeys.KEY_TOOL_MENU.getKey().getValue())
+        }
+        if (key != ModKeys.KEY_TOOL_MENU.getKey().getValue()) {
             return;
+        }
 
-        if (pressed && !selectionScreen.focused)
+        if (pressed && !selectionScreen.focused) {
             selectionScreen.focused = true;
+        }
         if (!pressed && selectionScreen.focused) {
             selectionScreen.focused = false;
             selectionScreen.onClose();
@@ -248,24 +259,28 @@ public class SchematicHandler {
     }
 
     public boolean mouseScrolled(double delta) {
-        if (!active)
+        if (!active) {
             return false;
+        }
 
         if (selectionScreen.focused) {
             selectionScreen.cycle((int) delta);
             return true;
         }
-        if (Screen.hasControlDown())
+        if (Screen.hasControlDown()) {
             return currentTool.getTool().handleMouseWheel(delta);
+        }
         return false;
     }
 
     private ItemStack findBlueprintInHand(PlayerEntity player) {
         ItemStack stack = player.getMainHandItem();
-        if (stack.getItem() != ModItems.itemSchematic)
+        if (stack.getItem() != ModItems.itemSchematic) {
             return null;
-        if (!stack.hasTag())
+        }
+        if (!stack.hasTag()) {
             return null;
+        }
         activeSchematicItem = stack;
         activeHotbarSlot = player.inventory.selected;
         return stack;
@@ -273,10 +288,12 @@ public class SchematicHandler {
 
     private boolean itemLost(PlayerEntity player) {
         for (int i = 0; i < PlayerInventory.getSelectionSize(); i++) {
-            if (!player.inventory.getItem(i).sameItem(activeSchematicItem))
+            if (!player.inventory.getItem(i).sameItem(activeSchematicItem)) {
                 continue;
-            if (!ItemStack.tagMatches(player.inventory.getItem(i), activeSchematicItem))
+            }
+            if (!ItemStack.tagMatches(player.inventory.getItem(i), activeSchematicItem)) {
                 continue;
+            }
             return false;
         }
         return true;
@@ -287,8 +304,9 @@ public class SchematicHandler {
     }
 
     public void sync() {
-        if (activeSchematicItem == null)
+        if (activeSchematicItem == null) {
             return;
+        }
         NetworkDispatcher.sendToServer(new SchematicSyncPacket(activeHotbarSlot, transformation.toSettings(), transformation.getAnchor(), deployed));
     }
 
@@ -304,8 +322,9 @@ public class SchematicHandler {
         transformation = new SchematicTransformation();
 
         deployed = tag.getBoolean("Deployed");
-        if (deployed)
+        if (deployed) {
             anchor = NBTUtil.readBlockPos(tag.getCompound("Anchor"));
+        }
         BlockPos size = NBTUtil.readBlockPos(tag.getCompound("Bounds"));
 
         bounds = new AxisAlignedBB(BlockPos.ZERO, size);

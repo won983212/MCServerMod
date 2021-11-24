@@ -86,8 +86,9 @@ public class PlacementSimulationWorld extends WrappedWorld {
     @Override
     public BlockState getBlockState(BlockPos pos) {
         BlockState state = blocksAdded.get(pos);
-        if (state != null)
+        if (state != null) {
             return state;
+        }
         return Blocks.AIR.defaultBlockState();
     }
 }

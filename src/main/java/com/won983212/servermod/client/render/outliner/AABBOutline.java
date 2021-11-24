@@ -72,8 +72,9 @@ public class AABBOutline extends Outline {
 
     protected void renderFace(MatrixStack ms, SuperRenderTypeBuffer buffer, Direction direction, Vector3d p1, Vector3d p2,
                               Vector3d p3, Vector3d p4, boolean noCull) {
-        if (!params.faceTexture.isPresent())
+        if (!params.faceTexture.isPresent()) {
             return;
+        }
 
         ResourceLocation faceTexture = params.faceTexture.get().getLocation();
         float alphaBefore = params.alpha;

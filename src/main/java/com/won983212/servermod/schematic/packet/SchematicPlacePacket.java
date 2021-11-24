@@ -30,25 +30,29 @@ public class SchematicPlacePacket implements IMessage {
     public void handle(Supplier<Context> context) {
         context.get().enqueueWork(() -> {
             ServerPlayerEntity player = context.get().getSender();
-            if (player == null)
+            if (player == null) {
                 return;
+            }
 
             World world = player.getLevel();
             SchematicPrinter printer = new SchematicPrinter();
             printer.loadSchematic(stack, world, !player.canUseGameMasterBlocks());
-            if (!printer.isLoaded())
+            if (!printer.isLoaded()) {
                 return;
+            }
 
             boolean includeAir = true; // TODO Selectable include air
 
             while (printer.advanceCurrentPos()) {
-                if (!printer.shouldPlaceCurrent(world))
+                if (!printer.shouldPlaceCurrent(world)) {
                     continue;
+                }
 
                 printer.handleCurrentTarget((pos, state, tile) -> {
                     boolean placingAir = state.getBlock().isAir(state, world, pos);
-                    if (placingAir && !includeAir)
+                    if (placingAir && !includeAir) {
                         return;
+                    }
 
                     CompoundNBT tileData = tile != null ? tile.save(new CompoundNBT()) : null;
                     BlockHelper.placeSchematicBlock(world, state, pos, null, tileData);

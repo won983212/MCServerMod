@@ -25,27 +25,32 @@ public final class NBTProcessors {
     static {
         addProcessor(TileEntityType.SIGN, data -> {
             for (int i = 0; i < 4; ++i) {
-                if (textComponentHasClickEvent(data.getString("Text" + (i + 1))))
+                if (textComponentHasClickEvent(data.getString("Text" + (i + 1)))) {
                     return null;
+                }
             }
             return data;
         });
         addProcessor(TileEntityType.LECTERN, data -> {
-            if (!data.contains("Book", Constants.NBT.TAG_COMPOUND))
+            if (!data.contains("Book", Constants.NBT.TAG_COMPOUND)) {
                 return data;
+            }
             CompoundNBT book = data.getCompound("Book");
 
-            if (!book.contains("tag", Constants.NBT.TAG_COMPOUND))
+            if (!book.contains("tag", Constants.NBT.TAG_COMPOUND)) {
                 return data;
+            }
             CompoundNBT tag = book.getCompound("tag");
 
-            if (!tag.contains("pages", Constants.NBT.TAG_LIST))
+            if (!tag.contains("pages", Constants.NBT.TAG_LIST)) {
                 return data;
+            }
             ListNBT pages = tag.getList("pages", Constants.NBT.TAG_STRING);
 
             for (INBT inbt : pages) {
-                if (textComponentHasClickEvent(inbt.getAsString()))
+                if (textComponentHasClickEvent(inbt.getAsString())) {
                     return null;
+                }
             }
             return data;
         });
@@ -61,15 +66,19 @@ public final class NBTProcessors {
 
     @Nullable
     public static CompoundNBT process(TileEntity tileEntity, CompoundNBT compound) {
-        if (compound == null)
+        if (compound == null) {
             return null;
+        }
         TileEntityType<?> type = tileEntity.getType();
-        if (compound != null && processors.containsKey(type))
+        if (compound != null && processors.containsKey(type)) {
             return processors.get(type).apply(compound);
-        if (tileEntity instanceof MobSpawnerTileEntity)
+        }
+        if (tileEntity instanceof MobSpawnerTileEntity) {
             return compound;
-        if (tileEntity.onlyOpCanSetNbt())
+        }
+        if (tileEntity.onlyOpCanSetNbt()) {
             return null;
+        }
         return compound;
     }
 

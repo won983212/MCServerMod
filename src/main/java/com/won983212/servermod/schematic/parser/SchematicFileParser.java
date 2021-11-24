@@ -24,7 +24,7 @@ public class SchematicFileParser {
         extensionToReaderMap.put("nbt", new VanillaSchematicReader());
     }
 
-    public static boolean isSupportedExtension(String ext){
+    public static boolean isSupportedExtension(String ext) {
         return extensionToReaderMap.containsKey(ext);
     }
 
@@ -34,8 +34,8 @@ public class SchematicFileParser {
             return schematicCache.get(filePath, () -> cachingSchematic(file));
         } catch (ExecutionException e) {
             Throwable t = e.getCause();
-            if (t instanceof IOException){
-                throw (IOException)t;
+            if (t instanceof IOException) {
+                throw (IOException) t;
             } else {
                 throw new IOException(t);
             }
@@ -46,7 +46,7 @@ public class SchematicFileParser {
         String fileName = file.getName();
         String fileExtension = fileName.substring(fileName.lastIndexOf('.') + 1);
         AbstractSchematicReader reader = extensionToReaderMap.get(fileExtension);
-        if (reader != null){
+        if (reader != null) {
             return reader.parse(file);
         } else {
             throw new IOException("Unsupported type: " + fileExtension);

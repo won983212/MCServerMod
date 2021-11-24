@@ -33,16 +33,6 @@ public class MatrixTransformStack {
         return this;
     }
 
-    public MatrixTransformStack push() {
-        internal.pushPose();
-        return this;
-    }
-
-    public MatrixTransformStack pop() {
-        internal.popPose();
-        return this;
-    }
-
     public MatrixTransformStack rotateX(double angle) {
         return multiply(Vector3f.XP, angle);
     }
@@ -53,18 +43,6 @@ public class MatrixTransformStack {
 
     public MatrixTransformStack rotateZ(double angle) {
         return multiply(Vector3f.ZP, angle);
-    }
-
-    public MatrixTransformStack translateX(double x) {
-        return translate(x, 0, 0);
-    }
-
-    public MatrixTransformStack translateY(double y) {
-        return translate(0, y, 0);
-    }
-
-    public MatrixTransformStack translateZ(double z) {
-        return translate(0, 0, z);
     }
 
     public MatrixTransformStack translate(Vector3i vec) {
@@ -80,8 +58,9 @@ public class MatrixTransformStack {
     }
 
     public MatrixTransformStack multiply(Vector3f axis, double angle) {
-        if (angle == 0)
+        if (angle == 0) {
             return this;
+        }
         return multiply(axis.rotationDegrees((float) angle));
     }
 }

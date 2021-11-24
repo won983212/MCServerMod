@@ -53,16 +53,18 @@ public class SchematicSyncPacket implements IMessage {
     public void handle(Supplier<Context> context) {
         context.get().enqueueWork(() -> {
             ServerPlayerEntity player = context.get().getSender();
-            if (player == null)
+            if (player == null) {
                 return;
+            }
             ItemStack stack;
             if (slot == -1) {
                 stack = player.getMainHandItem();
             } else {
                 stack = player.inventory.getItem(slot);
             }
-            if (ModItems.itemSchematic != stack.getItem())
+            if (ModItems.itemSchematic != stack.getItem()) {
                 return;
+            }
             CompoundNBT tag = stack.getOrCreateTag();
             tag.putBoolean("Deployed", deployed);
             tag.put("Anchor", NBTUtil.writeBlockPos(anchor));

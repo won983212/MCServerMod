@@ -132,8 +132,9 @@ public class WrappedWorld extends World {
 
     @Override
     public boolean addFreshEntity(@Nullable Entity entityIn) {
-        if (entityIn == null)
+        if (entityIn == null) {
             return false;
+        }
         entityIn.setLevel(world);
         return world.addFreshEntity(entityIn);
     }

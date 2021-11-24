@@ -30,7 +30,7 @@ import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.gen.feature.template.Template;
 import net.minecraftforge.common.util.Constants;
 
-import java.io.*;
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -166,7 +166,7 @@ class MCEditSchematicReader extends AbstractSchematicReader {
                         blockStates.put(pt, state);
                     }
 
-                    if (state == null){
+                    if (state == null) {
                         short block = blocks[index];
                         byte data = blockData[index];
                         int combined = block << 8 | data;
@@ -184,7 +184,7 @@ class MCEditSchematicReader extends AbstractSchematicReader {
                     blockList.addBlock(pt, state, blockNBT);
 
                     // TODO Progress System
-                    if (current++ % (total / 20) == 0){
+                    if (current++ % (total / 20) == 0) {
                         System.out.println("Current Progress: " + (current * 100.0d / total) + "%");
                     }
                 }

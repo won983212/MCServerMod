@@ -82,8 +82,9 @@ public class ActiveStateTile extends TileEntity implements ITickableTileEntity {
     }
 
     public Direction getDirection() {
-        if (directionCache != null)
+        if (directionCache != null) {
             return directionCache;
+        }
 
         if (getLevel() != null) {
             return getBlockState().getValue(BlockStateProperties.FACING);
@@ -100,8 +101,9 @@ public class ActiveStateTile extends TileEntity implements ITickableTileEntity {
     }
 
     private void updatePower() {
-        if (level == null)
+        if (level == null) {
             return;
+        }
 
         boolean power = level.hasNeighborSignal(getBlockPos());
         if (redstone != power) {

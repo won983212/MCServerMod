@@ -66,7 +66,7 @@ import java.util.stream.Collectors;
  * receive the source version in the compound.
  * </p>
  */
-@SuppressWarnings({ "UnnecessarilyQualifiedStaticUsage", "unchecked", "rawtypes" })
+@SuppressWarnings({"UnnecessarilyQualifiedStaticUsage", "unchecked", "rawtypes"})
 class ForgeDataFixer extends DataFixerBuilder {
 
     @SuppressWarnings("unchecked")
@@ -147,7 +147,7 @@ class ForgeDataFixer extends DataFixerBuilder {
 
     private static String fixName(String key, int srcVer, TypeReference type) {
         return INSTANCE.fixer.update(type, new Dynamic<>(OPS_NBT, StringNBT.valueOf(key)), srcVer, DATA_VERSION)
-            .asString().result().orElse(key);
+                .asString().result().orElse(key);
     }
 
     private static final NBTDynamicOps OPS_NBT = NBTDynamicOps.INSTANCE;
@@ -1845,14 +1845,12 @@ class ForgeDataFixer extends DataFixerBuilder {
                                         object = new StringTextComponent("");
                                     }
                                 } catch (JsonParseException jsonparseexception) {
-                                    ;
                                 }
 
                                 if (object == null) {
                                     try {
                                         object = ITextComponent.Serializer.fromJson(s);
                                     } catch (JsonParseException jsonparseexception1) {
-                                        ;
                                     }
                                 }
 
@@ -1860,7 +1858,6 @@ class ForgeDataFixer extends DataFixerBuilder {
                                     try {
                                         object = ITextComponent.Serializer.fromJsonLenient(s);
                                     } catch (JsonParseException jsonparseexception2) {
-                                        ;
                                     }
                                 }
 
@@ -1923,7 +1920,6 @@ class ForgeDataFixer extends DataFixerBuilder {
                         try {
                             i = this.convert(cmp.getInt("VillagerProfession"));
                         } catch (RuntimeException runtimeexception) {
-                            ;
                         }
                     }
 
@@ -2285,7 +2281,7 @@ class ForgeDataFixer extends DataFixerBuilder {
 
     private static class DataConverterShulkerBoxItem implements DataConverter {
 
-        public static final String[] a = new String[] { "minecraft:white_shulker_box", "minecraft:orange_shulker_box", "minecraft:magenta_shulker_box", "minecraft:light_blue_shulker_box", "minecraft:yellow_shulker_box", "minecraft:lime_shulker_box", "minecraft:pink_shulker_box", "minecraft:gray_shulker_box", "minecraft:silver_shulker_box", "minecraft:cyan_shulker_box", "minecraft:purple_shulker_box", "minecraft:blue_shulker_box", "minecraft:brown_shulker_box", "minecraft:green_shulker_box", "minecraft:red_shulker_box", "minecraft:black_shulker_box" };
+        public static final String[] a = new String[]{"minecraft:white_shulker_box", "minecraft:orange_shulker_box", "minecraft:magenta_shulker_box", "minecraft:light_blue_shulker_box", "minecraft:yellow_shulker_box", "minecraft:lime_shulker_box", "minecraft:pink_shulker_box", "minecraft:gray_shulker_box", "minecraft:silver_shulker_box", "minecraft:cyan_shulker_box", "minecraft:purple_shulker_box", "minecraft:blue_shulker_box", "minecraft:brown_shulker_box", "minecraft:green_shulker_box", "minecraft:red_shulker_box", "minecraft:black_shulker_box"};
 
         DataConverterShulkerBoxItem() {
         }
@@ -2469,7 +2465,7 @@ class ForgeDataFixer extends DataFixerBuilder {
 
                     return iTextComponent;
                 } else {
-                    throw new JsonParseException("Don\'t know how to turn " + jsonelement + " into a Component");
+                    throw new JsonParseException("Don't know how to turn " + jsonelement + " into a Component");
                 }
             }
 
@@ -2510,14 +2506,12 @@ class ForgeDataFixer extends DataFixerBuilder {
                             object = new StringTextComponent("");
                         }
                     } catch (JsonParseException ignored) {
-                        ;
                     }
 
                     if (object == null) {
                         try {
                             object = ITextComponent.Serializer.fromJson(s1);
                         } catch (JsonParseException ignored) {
-                            ;
                         }
                     }
 
@@ -2525,7 +2519,6 @@ class ForgeDataFixer extends DataFixerBuilder {
                         try {
                             object = ITextComponent.Serializer.fromJsonLenient(s1);
                         } catch (JsonParseException ignored) {
-                            ;
                         }
                     }
 

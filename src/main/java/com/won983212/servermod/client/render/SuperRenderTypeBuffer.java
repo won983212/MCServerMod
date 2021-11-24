@@ -13,8 +13,9 @@ public class SuperRenderTypeBuffer implements IRenderTypeBuffer {
     static SuperRenderTypeBuffer instance;
 
     public static SuperRenderTypeBuffer getInstance() {
-        if (instance == null)
+        if (instance == null) {
             instance = new SuperRenderTypeBuffer();
+        }
         return instance;
     }
 
