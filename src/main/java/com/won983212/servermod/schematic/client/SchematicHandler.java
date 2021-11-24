@@ -1,5 +1,7 @@
 package com.won983212.servermod.schematic.client;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.won983212.servermod.Logger;
@@ -34,6 +36,7 @@ import net.minecraft.world.gen.feature.template.Template;
 import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class SchematicHandler {
 
@@ -50,14 +53,22 @@ public class SchematicHandler {
     private ItemStack activeSchematicItem;
     private AABBOutline outline;
 
+    private static final Cache<String, SchematicWorld[]> schematicWorldCache;
     private final Vector<SchematicRenderer> renderers;
     private ToolSelectionScreen selectionScreen;
-    private CompletableFuture<Void> placingTask = null;
+    private CompletableFuture<Void> loadingTask = null;
+
+    static {
+        schematicWorldCache = CacheBuilder.newBuilder()
+                .expireAfterAccess(5, TimeUnit.MINUTES)
+                .build();
+    }
 
     public SchematicHandler() {
         renderers = new Vector<>(3);
-        for (int i = 0; i < renderers.capacity(); i++)
+        for (int i = 0; i < renderers.capacity(); i++) {
             renderers.add(new SchematicRenderer());
+        }
 
         currentTool = Tools.Deploy;
         selectionScreen = new ToolSelectionScreen(ImmutableList.of(Tools.Deploy), this::equip);
@@ -67,8 +78,9 @@ public class SchematicHandler {
     public void tick() {
         ClientPlayerEntity player = Minecraft.getInstance().player;
 
-        if (activeSchematicItem != null && transformation != null)
+        if (activeSchematicItem != null && transformation != null) {
             transformation.tick();
+        }
 
         ItemStack stack = findBlueprintInHand(player);
         if (stack == null) {
@@ -82,27 +94,28 @@ public class SchematicHandler {
         }
 
         boolean needsUpdate = !stack.getTag().getString("File").equals(displayedSchematic);
-        if (!active) {
-            active = true;
-            if (needsUpdate || activeSchematicItem != stack) {
-                init(player, stack);
-            }
+        if (!active || needsUpdate) {
+            init(player, stack, needsUpdate);
         }
 
-        if (syncCooldown > 0)
+        if (syncCooldown > 0) {
             syncCooldown--;
-        if (syncCooldown == 1)
+        }
+        if (syncCooldown == 1) {
             sync();
+        }
 
         selectionScreen.update();
         currentTool.getTool().updateSelection();
     }
 
-    private void init(ClientPlayerEntity player, ItemStack stack) {
+    private void init(ClientPlayerEntity player, ItemStack stack, boolean needsRendererUpdate) {
         loadSettings(stack);
         displayedSchematic = stack.getTag().getString("File");
+        active = true;
         if (deployed) {
-            setupRenderer();
+            if (needsRendererUpdate)
+                setupRenderer();
             Tools toolBefore = currentTool;
             selectionScreen = new ToolSelectionScreen(Tools.getTools(player.isCreative()), this::equip);
             if (toolBefore != null) {
@@ -115,8 +128,8 @@ public class SchematicHandler {
     }
 
     private void setupRenderer() {
-        if (placingTask != null) {
-            placingTask.cancel(true);
+        if (loadingTask != null) {
+            loadingTask.cancel(true);
             Logger.debug("load schematic task is cancelled");
         }
 
@@ -126,34 +139,53 @@ public class SchematicHandler {
             return;
 
         World clientWorld = Minecraft.getInstance().level;
-        SchematicWorld w = new SchematicWorld(clientWorld);
-        SchematicWorld wMirroredFB = new SchematicWorld(clientWorld);
-        SchematicWorld wMirroredLR = new SchematicWorld(clientWorld);
+        String schematicFilePath = activeSchematicItem.getTag().getString("File");
+        SchematicWorld[] worlds;
 
-        CompletableFuture<Void> task1 = CompletableFuture.runAsync(() ->
-                placeSchematicWorld(schematic, w, BlockPos.ZERO, 0));
-        CompletableFuture<Void> task2 = CompletableFuture.runAsync(() ->
-                placeSchematicWorld(schematic, wMirroredFB, BlockPos.ZERO.east(size.getX() - 1), 1));
-        CompletableFuture<Void> task3 = CompletableFuture.runAsync(() ->
-                placeSchematicWorld(schematic, wMirroredLR, BlockPos.ZERO.south(size.getZ() - 1), 2));
-        placingTask = CompletableFuture.allOf(task1, task2, task3)
-                .whenComplete((t, u) -> placingTask = null);
+        worlds = schematicWorldCache.getIfPresent(schematicFilePath);
+        if (worlds == null) {
+            worlds = new SchematicWorld[3];
+            for (int i = 0; i < worlds.length; i++) {
+                worlds[i] = new SchematicWorld(clientWorld);
+            }
+            schematicWorldCache.put(schematicFilePath, worlds);
+
+            final SchematicWorld[] finalWorlds = worlds;
+            CompletableFuture<Void> task1 = CompletableFuture.runAsync(() ->
+                    placeSchematicWorld(schematic, finalWorlds[0], BlockPos.ZERO, 0));
+            CompletableFuture<Void> task2 = CompletableFuture.runAsync(() ->
+                    placeSchematicWorld(schematic, finalWorlds[1], BlockPos.ZERO.east(size.getX() - 1), 1));
+            CompletableFuture<Void> task3 = CompletableFuture.runAsync(() ->
+                    placeSchematicWorld(schematic, finalWorlds[2], BlockPos.ZERO.south(size.getZ() - 1), 2));
+            loadingTask = CompletableFuture.allOf(task1, task2, task3)
+                    .whenComplete((t, u) -> loadingTask = null);
+        } else {
+            Logger.debug("in cache: " + schematicFilePath);
+            final SchematicWorld[] finalWorlds = worlds;
+            loadingTask = CompletableFuture.runAsync(() -> {
+                for (int i = 0; i < finalWorlds.length; i++) {
+                    cacheSchematicWorld(finalWorlds[i], i);
+                }
+            }).whenComplete((t, u) -> loadingTask = null);
+        }
     }
 
-    private void placeSchematicWorld(Template schematic, SchematicWorld world, BlockPos position, int rendererIndex){
+    private void placeSchematicWorld(Template schematic, SchematicWorld world, BlockPos position, int rendererIndex) {
         PlacementSettings pSettings = new PlacementSettings();
-        if (rendererIndex == 1){
+        if (rendererIndex == 1) {
             pSettings.setMirror(Mirror.FRONT_BACK);
-        } else if (rendererIndex == 2){
+        } else if (rendererIndex == 2) {
             pSettings.setMirror(Mirror.LEFT_RIGHT);
         }
 
         Logger.debug("Placing" + rendererIndex + " schematic...");
         schematic.placeInWorldChunk(world, position, pSettings, world.getRandom());
+        cacheSchematicWorld(world, rendererIndex);
+    }
 
+    private void cacheSchematicWorld(SchematicWorld world, int rendererIndex) {
         Logger.debug("Caching" + rendererIndex + " schematic...");
         renderers.get(rendererIndex).cacheSchematicWorld(world);
-
         Logger.debug("Caching" + rendererIndex + " complete!");
     }
 

@@ -32,8 +32,6 @@ import java.util.List;
 
 public class SchematicItem extends Item {
 
-    private static final Logger LOGGER = LogManager.getLogger();
-
     public SchematicItem(Properties properties) {
         super(properties);
     }
