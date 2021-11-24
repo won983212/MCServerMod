@@ -42,6 +42,11 @@ public class ClientEventHandler {
     }
 
     @SubscribeEvent
+    public static void onCameraSetup(EntityViewRenderEvent.CameraSetup e){
+        SchematicRenderer.setCameraPosition(e.getInfo().getPosition());
+    }
+
+    @SubscribeEvent
     public static void onLoadWorld(WorldEvent.Load event) {
         IWorld world = event.getWorld();
         if (world.isClientSide() && world instanceof ClientWorld) {

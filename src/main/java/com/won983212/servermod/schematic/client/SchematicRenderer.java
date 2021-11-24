@@ -7,6 +7,7 @@ import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
 import com.won983212.servermod.schematic.world.SchematicWorld;
 import com.won983212.servermod.utility.MatrixTransformStack;
 import com.won983212.servermod.utility.animate.AnimationTickHolder;
+import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.*;
@@ -15,124 +16,143 @@ import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.renderer.vertex.VertexBuffer;
+import net.minecraft.fluid.FluidState;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MutableBoundingBox;
+import net.minecraft.util.math.vector.Vector3d;
 import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.client.model.data.EmptyModelData;
 import org.lwjgl.opengl.GL11;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 
 public class SchematicRenderer {
-    private final Set<RenderType> usedBlockRenderLayers = new HashSet<>(getLayerCount());
-    private final Map<RenderType, VertexBuffer> bufferCache = new HashMap<>(getLayerCount());
-    private boolean changed;
+    private static Vector3d cameraPosition = new Vector3d(0, 0, 0);
+    private final List<ChunkVertexBuffer> chunks = new ArrayList<>();
     protected SchematicWorld schematic;
     private BlockPos anchor;
     private BlockRendererDispatcher blockRendererDispatcher;
-    private CompletableFuture<Void> renderCachingTask;
+    private boolean loading = false;
 
-    public SchematicRenderer() {
-        changed = false;
+    public static void setCameraPosition(Vector3d pos) {
+        cameraPosition = pos;
     }
 
-    public void display(SchematicWorld world) {
+    public void cacheSchematicWorld(SchematicWorld world) {
         this.anchor = world.anchor;
         this.schematic = world;
-        update();
-    }
-
-    public void update() {
-        changed = true;
-    }
-
-    public void cancelRenderCachingTask(){
-        if (renderCachingTask != null){
-            renderCachingTask.cancel(true);
-            Logger.debug("Pre schematic loading task is cancelled");
-        }
-    }
-
-    public void tick() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null || mc.player == null || !changed)
-            return;
-
-        cancelRenderCachingTask();
-
-        Logger.debug("Schematic caching....");
-        renderCachingTask = CompletableFuture.runAsync(() -> {
-            redraw(mc);
-            renderCachingTask = null;
-            Logger.debug("Schematic renderer is ready!");
-        });
-
-        changed = false;
+        this.loading = true;
+        redraw();
+        this.loading = false;
     }
 
     public void render(MatrixStack ms, SuperRenderTypeBuffer buffer) {
-        if (renderCachingTask != null || schematic == null)
+        if (loading || schematic == null)
             return;
 
         for (RenderType layer : RenderType.chunkBufferLayers()) {
-            if (!usedBlockRenderLayers.contains(layer))
-                continue;
-            VertexBuffer buf = bufferCache.get(layer);
-            if (buf != null){
-                buf.bind();
-                layer.setupRenderState();
-                layer.format().setupBufferState(0L);
-                buf.draw(ms.last().pose(), layer.mode());
-                VertexBuffer.unbind();
-                layer.format().clearBufferState();
-                layer.clearRenderState();
+            if (layer == RenderType.solid()) {
+                buffer.getBuffer(RenderType.solid());
+                renderTileEntities(ms, buffer);
+            }
+            for (ChunkVertexBuffer vertexBuffer : chunks) {
+                vertexBuffer.render(ms, layer);
             }
         }
-
-        buffer.getBuffer(RenderType.solid());
-        renderTileEntities(ms, buffer);
     }
 
-    protected void redraw(Minecraft minecraft) {
-        usedBlockRenderLayers.clear();
-        bufferCache.clear();
+    protected void redraw() {
+        chunks.clear();
+        MutableBoundingBox bounds = schematic.getBounds();
+        int countX = (int) Math.ceil(bounds.getXSpan() / 16.0);
+        int countY = (int) Math.ceil(bounds.getYSpan() / 16.0);
+        int countZ = (int) Math.ceil(bounds.getZSpan() / 16.0);
+
+        for (int x = 0; x < countX; x++) {
+            for (int y = 0; y < countY; y++) {
+                for (int z = 0; z < countZ; z++) {
+                    ChunkVertexBuffer chunk = redrawChunk(x, y, z);
+                    if (!chunk.isEmpty()) {
+                        chunks.add(redrawChunk(x, y, z));
+                    }
+                }
+            }
+        }
+    }
+
+    protected ChunkVertexBuffer redrawChunk(int chunkX, int chunkY, int chunkZ) {
+        ChunkVertexBuffer buffer = new ChunkVertexBuffer(chunkX, chunkY, chunkZ);
+        Minecraft minecraft = Minecraft.getInstance();
         blockRendererDispatcher = minecraft.getBlockRenderer();
 
+        BlockPos pos1 = buffer.origin;
+        BlockPos pos2 = pos1.offset(15, 15, 15);
         Set<RenderType> startedBufferBuilders = new HashSet<>(getLayerCount());
         Map<RenderType, BufferBuilder> buffers = new HashMap<>();
         MatrixStack ms = new MatrixStack();
 
         BlockModelRenderer.enableCaching();
-        BlockPos.betweenClosedStream(schematic.getBounds())
+        BlockPos.betweenClosedStream(pos1, pos2)
                 .forEach(localPos -> {
-                    ms.pushPose();
-                    MatrixTransformStack.of(ms).translate(localPos);
                     BlockPos pos = localPos.offset(anchor);
                     BlockState state = schematic.getBlockState(pos);
+                    FluidState fluidState = schematic.getFluidState(pos);
 
-                    for (RenderType blockRenderLayer : RenderType.chunkBufferLayers()) {
-                        if (!RenderTypeLookup.canRenderInLayer(state, blockRenderLayer))
-                            continue;
-                        ForgeHooksClient.setRenderLayer(blockRenderLayer);
-                        if (!buffers.containsKey(blockRenderLayer))
-                            buffers.put(blockRenderLayer, new BufferBuilder(DefaultVertexFormats.BLOCK.getIntegerSize()));
+                    for (RenderType layer : RenderType.chunkBufferLayers()) {
+                        ForgeHooksClient.setRenderLayer(layer);
 
-                        BufferBuilder bufferBuilder = buffers.get(blockRenderLayer);
-                        if (startedBufferBuilders.add(blockRenderLayer))
-                            bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
+                        boolean isRenderFluid = !fluidState.isEmpty() && RenderTypeLookup.canRenderInLayer(fluidState, layer);
+                        boolean isRenderSolid = state.getRenderShape() != BlockRenderType.INVISIBLE && RenderTypeLookup.canRenderInLayer(state, layer);
 
-                        TileEntity tileEntity = schematic.getBlockEntity(localPos);
+                        BufferBuilder bufferBuilder = null;
+                        if (isRenderFluid || isRenderSolid) {
+                            if (!buffers.containsKey(layer)) {
+                                buffers.put(layer, new BufferBuilder(DefaultVertexFormats.BLOCK.getIntegerSize()));
+                            }
+                            bufferBuilder = buffers.get(layer);
+                            if (startedBufferBuilders.add(layer)) {
+                                bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
+                            }
+                        }
 
-                        if (blockRendererDispatcher.renderModel(state, pos, schematic, ms, bufferBuilder, true, minecraft.level.random,
-                                tileEntity != null ? tileEntity.getModelData() : EmptyModelData.INSTANCE)) {
-                            usedBlockRenderLayers.add(blockRenderLayer);
+                        if (isRenderFluid) {
+                            if (blockRendererDispatcher.renderLiquid(pos, schematic, bufferBuilder, fluidState)) {
+                                buffer.usedBlockRenderLayers.add(layer);
+                            }
+                        }
+
+                        if (isRenderSolid) {
+                            ms.pushPose();
+                            ms.translate(pos.getX() & 15, pos.getY() & 15, pos.getZ() & 15);
+                            TileEntity tileEntity = schematic.getBlockEntity(pos);
+                            if (blockRendererDispatcher.renderModel(state, pos, schematic, ms, bufferBuilder, true, minecraft.level.random,
+                                    tileEntity != null ? tileEntity.getModelData() : EmptyModelData.INSTANCE)) {
+                                buffer.usedBlockRenderLayers.add(layer);
+                            }
+
+                            // render floor
+                            if (localPos.getY() == 0) {
+                                BlockPos floorPos = pos.below();
+                                tileEntity = schematic.getBlockEntity(floorPos);
+                                if (blockRendererDispatcher.renderModel(state, floorPos, schematic, ms, bufferBuilder, true, minecraft.level.random,
+                                        tileEntity != null ? tileEntity.getModelData() : EmptyModelData.INSTANCE)) {
+                                    buffer.usedBlockRenderLayers.add(layer);
+                                }
+                            }
+
+                            ms.popPose();
                         }
                     }
-
-                    ForgeHooksClient.setRenderLayer(null);
-                    ms.popPose();
                 });
+
+        ForgeHooksClient.setRenderLayer(null);
+        if (buffer.usedBlockRenderLayers.contains(RenderType.translucent())) {
+            BufferBuilder bufferBuilder = buffers.get(RenderType.translucent());
+            bufferBuilder.sortQuads((float) cameraPosition.x - (float) pos1.getX(),
+                    (float) cameraPosition.y - (float) pos1.getY(),
+                    (float) cameraPosition.z - (float) pos1.getZ());
+        }
 
         // finishDrawing
         for (RenderType layer : RenderType.chunkBufferLayers()) {
@@ -144,9 +164,11 @@ public class SchematicRenderer {
             SchematicVertexFactory factory = new SchematicVertexFactory(buf);
             VertexBuffer vBuf = new VertexBuffer(layer.format());
             vBuf.upload(factory.makeBuffer(layer));
-            bufferCache.put(layer, vBuf);
+            buffer.blockBufferCache.put(layer, vBuf);
         }
+
         BlockModelRenderer.clearCache();
+        return buffer;
     }
 
     private static int getLayerCount() {
@@ -179,6 +201,40 @@ public class SchematicRenderer {
             }
 
             ms.popPose();
+        }
+    }
+
+    private static class ChunkVertexBuffer {
+        private final BlockPos origin;
+        private final Set<RenderType> usedBlockRenderLayers = new HashSet<>(getLayerCount());
+        private final Map<RenderType, VertexBuffer> blockBufferCache = new HashMap<>(getLayerCount());
+
+        private ChunkVertexBuffer(int chunkX, int chunkY, int chunkZ) {
+            origin = new BlockPos(chunkX * 16, chunkY * 16, chunkZ * 16);
+        }
+
+        public boolean isEmpty() {
+            return usedBlockRenderLayers.isEmpty();
+        }
+
+        public void render(MatrixStack ms, RenderType layer) {
+            if (!usedBlockRenderLayers.contains(layer))
+                return;
+            VertexBuffer buf = blockBufferCache.get(layer);
+            if (buf != null) {
+                buf.bind();
+                layer.setupRenderState();
+                layer.format().setupBufferState(0L);
+
+                ms.pushPose();
+                ms.translate(origin.getX(), origin.getY(), origin.getZ());
+                buf.draw(ms.last().pose(), layer.mode());
+                ms.popPose();
+
+                VertexBuffer.unbind();
+                layer.format().clearBufferState();
+                layer.clearRenderState();
+            }
         }
     }
 }

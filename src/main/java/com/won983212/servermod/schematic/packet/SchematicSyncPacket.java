@@ -2,7 +2,6 @@ package com.won983212.servermod.schematic.packet;
 
 import com.won983212.servermod.item.ModItems;
 import com.won983212.servermod.network.IMessage;
-import com.won983212.servermod.schematic.SchematicInstances;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
@@ -69,7 +68,6 @@ public class SchematicSyncPacket implements IMessage {
             tag.put("Anchor", NBTUtil.writeBlockPos(anchor));
             tag.putString("Rotation", rotation.name());
             tag.putString("Mirror", mirror.name());
-            SchematicInstances.clearHash(stack);
         });
         context.get().setPacketHandled(true);
     }

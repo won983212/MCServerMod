@@ -10,7 +10,6 @@ import com.won983212.servermod.client.render.outliner.AABBOutline;
 import com.won983212.servermod.item.ModItems;
 import com.won983212.servermod.item.SchematicItem;
 import com.won983212.servermod.network.NetworkDispatcher;
-import com.won983212.servermod.schematic.SchematicInstances;
 import com.won983212.servermod.schematic.client.tools.Tools;
 import com.won983212.servermod.schematic.packet.SchematicPlacePacket;
 import com.won983212.servermod.schematic.packet.SchematicSyncPacket;
@@ -85,11 +84,11 @@ public class SchematicHandler {
         boolean needsUpdate = !stack.getTag().getString("File").equals(displayedSchematic);
         if (!active) {
             active = true;
-            if (needsUpdate)
+            if (needsUpdate || activeSchematicItem != stack) {
                 init(player, stack);
+            }
         }
 
-        renderers.forEach(SchematicRenderer::tick);
         if (syncCooldown > 0)
             syncCooldown--;
         if (syncCooldown == 1)
@@ -118,7 +117,7 @@ public class SchematicHandler {
     private void setupRenderer() {
         if (placingTask != null) {
             placingTask.cancel(true);
-            Logger.debug("Pre schematic placing task is cancelled");
+            Logger.debug("load schematic task is cancelled");
         }
 
         Template schematic = SchematicItem.loadSchematic(activeSchematicItem);
@@ -126,29 +125,36 @@ public class SchematicHandler {
         if (size.equals(BlockPos.ZERO))
             return;
 
-        renderers.forEach(SchematicRenderer::cancelRenderCachingTask);
-
         World clientWorld = Minecraft.getInstance().level;
         SchematicWorld w = new SchematicWorld(clientWorld);
         SchematicWorld wMirroredFB = new SchematicWorld(clientWorld);
         SchematicWorld wMirroredLR = new SchematicWorld(clientWorld);
-        PlacementSettings placementSettings = new PlacementSettings();
 
-        // TODO 3개 world placing을 동시에 처리할 수는 없을까?
-        Logger.debug("Placing schematic...");
-        placingTask = CompletableFuture.runAsync(() -> {
-            schematic.placeInWorldChunk(w, BlockPos.ZERO, placementSettings, w.getRandom());
-            placementSettings.setMirror(Mirror.FRONT_BACK);
-            schematic.placeInWorldChunk(wMirroredFB, BlockPos.ZERO.east(size.getX() - 1), placementSettings, wMirroredFB.getRandom());
-            placementSettings.setMirror(Mirror.LEFT_RIGHT);
-            schematic.placeInWorldChunk(wMirroredLR, BlockPos.ZERO.south(size.getZ() - 1), placementSettings, wMirroredFB.getRandom());
-        }).whenComplete((t, u) -> {
-            renderers.get(0).display(w);
-            renderers.get(1).display(wMirroredFB);
-            renderers.get(2).display(wMirroredLR);
-            Logger.debug("Placing complete!");
-            placingTask = null;
-        });
+        CompletableFuture<Void> task1 = CompletableFuture.runAsync(() ->
+                placeSchematicWorld(schematic, w, BlockPos.ZERO, 0));
+        CompletableFuture<Void> task2 = CompletableFuture.runAsync(() ->
+                placeSchematicWorld(schematic, wMirroredFB, BlockPos.ZERO.east(size.getX() - 1), 1));
+        CompletableFuture<Void> task3 = CompletableFuture.runAsync(() ->
+                placeSchematicWorld(schematic, wMirroredLR, BlockPos.ZERO.south(size.getZ() - 1), 2));
+        placingTask = CompletableFuture.allOf(task1, task2, task3)
+                .whenComplete((t, u) -> placingTask = null);
+    }
+
+    private void placeSchematicWorld(Template schematic, SchematicWorld world, BlockPos position, int rendererIndex){
+        PlacementSettings pSettings = new PlacementSettings();
+        if (rendererIndex == 1){
+            pSettings.setMirror(Mirror.FRONT_BACK);
+        } else if (rendererIndex == 2){
+            pSettings.setMirror(Mirror.LEFT_RIGHT);
+        }
+
+        Logger.debug("Placing" + rendererIndex + " schematic...");
+        schematic.placeInWorldChunk(world, position, pSettings, world.getRandom());
+
+        Logger.debug("Caching" + rendererIndex + " schematic...");
+        renderers.get(rendererIndex).cacheSchematicWorld(world);
+
+        Logger.debug("Caching" + rendererIndex + " complete!");
     }
 
     public void render(MatrixStack ms, SuperRenderTypeBuffer buffer) {
@@ -272,9 +278,7 @@ public class SchematicHandler {
 
         bounds = new AxisAlignedBB(BlockPos.ZERO, size);
         outline = new AABBOutline(bounds);
-        outline.getParams()
-                .colored(0x6886c5)
-                .lineWidth(1 / 16f);
+        outline.getParams().colored(0x6886c5).lineWidth(1 / 16f);
         transformation.init(anchor, settings, bounds);
     }
 
@@ -292,7 +296,6 @@ public class SchematicHandler {
         CompoundNBT nbt = activeSchematicItem.getTag();
         nbt.putBoolean("Deployed", false);
         activeSchematicItem.setTag(nbt);
-        SchematicInstances.clearHash(activeSchematicItem);
         active = false;
         markDirty();
     }

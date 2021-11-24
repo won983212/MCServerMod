@@ -1,6 +1,5 @@
 package com.won983212.servermod.item;
 
-import com.won983212.servermod.schematic.SchematicInstances;
 import com.won983212.servermod.schematic.SchematicProcessor;
 import com.won983212.servermod.schematic.parser.SchematicFileParser;
 import com.won983212.servermod.utility.Lang;
@@ -75,7 +74,6 @@ public class SchematicItem extends Item {
         Template t = loadSchematic(blueprint);
         tag.put("Bounds", NBTUtil.writeBlockPos(t.getSize()));
         blueprint.setTag(tag);
-        SchematicInstances.clearHash(blueprint);
     }
 
     public static PlacementSettings getSettings(ItemStack blueprint) {
@@ -143,7 +141,7 @@ public class SchematicItem extends Item {
         // TODO Test Code
         if (player.isShiftKeyDown()) {
             ItemStack stack = player.getItemInHand(hand);
-            writeTo(stack, "270.schematic", player.getName().getString());
+            writeTo(stack, "ModernHouse137.schem", player.getName().getString());
             return true;
         }
 
