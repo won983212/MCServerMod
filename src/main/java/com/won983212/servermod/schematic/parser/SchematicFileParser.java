@@ -24,8 +24,8 @@ public class SchematicFileParser {
         extensionToReaderMap.put("nbt", new VanillaSchematicReader());
     }
 
-    public static boolean isSupportedExtension(String ext) {
-        return extensionToReaderMap.containsKey(ext);
+    public static boolean isSupportedExtension(String fileName) {
+        return extensionToReaderMap.containsKey(fileName.substring(fileName.lastIndexOf('.') + 1));
     }
 
     public static Template parseSchematicFile(File file) throws IOException {

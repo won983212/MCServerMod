@@ -2,15 +2,15 @@ package com.won983212.servermod.item;
 
 import com.won983212.servermod.schematic.SchematicProcessor;
 import com.won983212.servermod.schematic.parser.SchematicFileParser;
+import com.won983212.servermod.server.command.SchematicCommand;
 import com.won983212.servermod.utility.Lang;
 import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemUseContext;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.NBTUtil;
-import net.minecraft.util.*;
+import net.minecraft.util.Mirror;
+import net.minecraft.util.Rotation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
@@ -20,12 +20,9 @@ import net.minecraft.world.gen.feature.template.PlacementSettings;
 import net.minecraft.world.gen.feature.template.Template;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.common.thread.SidedThreadGroups;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 public class SchematicItem extends Item {
@@ -48,6 +45,7 @@ public class SchematicItem extends Item {
         tag.put("Anchor", NBTUtil.writeBlockPos(BlockPos.ZERO));
         tag.putString("Rotation", Rotation.NONE.name());
         tag.putString("Mirror", Mirror.NONE.name());
+        tag.putBoolean("IncludeAir", true);
         stack.setTag(tag);
         writeSize(stack);
     }
@@ -91,25 +89,16 @@ public class SchematicItem extends Item {
         Template t = new Template();
         String owner = blueprint.getTag().getString("Owner");
         String schematic = blueprint.getTag().getString("File");
-        String schematicExt = schematic.substring(schematic.lastIndexOf('.') + 1);
 
-        if (!SchematicFileParser.isSupportedExtension(schematicExt)) {
+        if (!SchematicFileParser.isSupportedExtension(schematic)) {
             return t;
         }
 
-        Path dir;
-        Path file;
-
-        if (Thread.currentThread().getThreadGroup() == SidedThreadGroups.SERVER) {
-            dir = Paths.get("schematics", "uploaded").toAbsolutePath();
-            file = Paths.get(owner, schematic);
-        } else {
-            dir = Paths.get("schematics").toAbsolutePath();
-            file = Paths.get(schematic);
-        }
-
-        Path path = dir.resolve(file).normalize();
-        if (!path.startsWith(dir)) {
+        Path path;
+        try {
+            path = SchematicCommand.getFilePath(owner, schematic);
+        } catch (IOException e) {
+            e.printStackTrace();
             return t;
         }
 
@@ -120,36 +109,4 @@ public class SchematicItem extends Item {
         }
         return t;
     }
-
-    @Nonnull
-    @Override
-    public ActionResultType useOn(ItemUseContext context) {
-        if (context.getPlayer() != null && !onItemUse(context.getPlayer(), context.getHand())) {
-            return super.useOn(context);
-        }
-        return ActionResultType.SUCCESS;
-    }
-
-    @Override
-    public ActionResult<ItemStack> use(World worldIn, PlayerEntity playerIn, Hand handIn) {
-        if (!onItemUse(playerIn, handIn)) {
-            return super.use(worldIn, playerIn, handIn);
-        }
-        return new ActionResult<>(ActionResultType.SUCCESS, playerIn.getItemInHand(handIn));
-    }
-
-    private boolean onItemUse(PlayerEntity player, Hand hand) {
-        // TODO Test Code
-        if (player.isShiftKeyDown()) {
-            ItemStack stack = player.getItemInHand(hand);
-            writeTo(stack, "ModernHouse137.schem", player.getName().getString());
-            return true;
-        }
-
-        if (!player.isShiftKeyDown() || hand != Hand.MAIN_HAND) {
-            return false;
-        }
-        return player.getItemInHand(hand).hasTag();
-    }
-
 }

@@ -15,29 +15,32 @@ import net.minecraftforge.fml.network.NetworkEvent.Context;
 
 import java.util.function.Supplier;
 
-public class SchematicSyncPacket implements IMessage {
+public class CSchematicSync implements IMessage {
 
     public int slot;
     public boolean deployed;
     public BlockPos anchor;
     public Rotation rotation;
     public Mirror mirror;
+    public boolean includeAir;
 
-    public SchematicSyncPacket(int slot, PlacementSettings settings,
-                               BlockPos anchor, boolean deployed) {
+    public CSchematicSync(int slot, PlacementSettings settings,
+                          BlockPos anchor, boolean deployed, boolean includeAir) {
         this.slot = slot;
         this.deployed = deployed;
         this.anchor = anchor;
         this.rotation = settings.getRotation();
         this.mirror = settings.getMirror();
+        this.includeAir = includeAir;
     }
 
-    public SchematicSyncPacket(PacketBuffer buffer) {
+    public CSchematicSync(PacketBuffer buffer) {
         slot = buffer.readVarInt();
         deployed = buffer.readBoolean();
         anchor = buffer.readBlockPos();
         rotation = buffer.readEnum(Rotation.class);
         mirror = buffer.readEnum(Mirror.class);
+        includeAir = buffer.readBoolean();
     }
 
     @Override
@@ -47,6 +50,7 @@ public class SchematicSyncPacket implements IMessage {
         buffer.writeBlockPos(anchor);
         buffer.writeEnum(rotation);
         buffer.writeEnum(mirror);
+        buffer.writeBoolean(includeAir);
     }
 
     @Override
@@ -70,6 +74,7 @@ public class SchematicSyncPacket implements IMessage {
             tag.put("Anchor", NBTUtil.writeBlockPos(anchor));
             tag.putString("Rotation", rotation.name());
             tag.putString("Mirror", mirror.name());
+            tag.putBoolean("IncludeAir", includeAir);
         });
         context.get().setPacketHandled(true);
     }

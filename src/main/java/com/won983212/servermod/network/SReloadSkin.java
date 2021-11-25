@@ -8,12 +8,12 @@ import net.minecraftforge.fml.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public class ReloadSkinClientMessage implements IMessage {
+public class SReloadSkin implements IMessage {
 
-    public ReloadSkinClientMessage() {
+    public SReloadSkin() {
     }
 
-    public ReloadSkinClientMessage(PacketBuffer buf) {
+    public SReloadSkin(PacketBuffer buf) {
     }
 
     @Override

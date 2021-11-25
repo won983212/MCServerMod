@@ -27,6 +27,7 @@ import org.lwjgl.opengl.GL11;
 
 import java.util.*;
 
+// TODO 작물이 제대로 rendering이 안된다...
 public class SchematicRenderer {
     private static Vector3d cameraPosition = new Vector3d(0, 0, 0);
     private final List<ChunkVertexBuffer> chunks = new ArrayList<>();

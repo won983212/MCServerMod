@@ -28,6 +28,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.apache.commons.lang3.StringUtils;
 
+import java.awt.*;
+
 @Mod.EventBusSubscriber(modid = ServerMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ClientEventHandler {
 
@@ -71,6 +73,7 @@ public class ClientEventHandler {
         }
         AnimationTickHolder.tick();
         ClientDist.SCHEMATIC_HANDLER.tick();
+        ClientDist.SCHEMATIC_SENDER.tick();
     }
 
     @SubscribeEvent
@@ -97,7 +100,9 @@ public class ClientEventHandler {
 
         MatrixStack ms = event.getMatrixStack();
         IRenderTypeBuffer.Impl buffers = Minecraft.getInstance().renderBuffers().bufferSource();
+        Point mousePos = getMousePosition();
         ClientDist.SCHEMATIC_HANDLER.renderOverlay(ms, buffers, event.getPartialTicks());
+        ClientDist.SCHEMATIC_UPLOAD_SCREEN.render(ms, mousePos.x, mousePos.y, event.getPartialTicks());
     }
 
     @SubscribeEvent
@@ -117,13 +122,15 @@ public class ClientEventHandler {
 
     @SubscribeEvent
     public static void onMouseInput(InputEvent.MouseInputEvent event) {
-        if (Minecraft.getInstance().screen != null) {
-            return;
-        }
-
         int button = event.getButton();
         boolean pressed = !(event.getAction() == 0);
-        ClientDist.SCHEMATIC_HANDLER.onMouseInput(button, pressed);
+
+        if (Minecraft.getInstance().screen == null) {
+            ClientDist.SCHEMATIC_HANDLER.onMouseInput(button, pressed);
+        } else {
+            Point p = getMousePosition();
+            ClientDist.SCHEMATIC_UPLOAD_SCREEN.onMouseInput(button, pressed, p.x, p.y);
+        }
     }
 
     @SubscribeEvent
@@ -134,5 +141,12 @@ public class ClientEventHandler {
 
         double delta = event.getScrollDelta();
         event.setCanceled(ClientDist.SCHEMATIC_HANDLER.mouseScrolled(delta));
+    }
+
+    private static Point getMousePosition(){
+        Minecraft mc = Minecraft.getInstance();
+        int i = (int)(mc.mouseHandler.xpos() * (double)mc.getWindow().getGuiScaledWidth() / (double)mc.getWindow().getScreenWidth());
+        int j = (int)(mc.mouseHandler.ypos() * (double)mc.getWindow().getGuiScaledHeight() / (double)mc.getWindow().getScreenHeight());
+        return new Point(i, j);
     }
 }

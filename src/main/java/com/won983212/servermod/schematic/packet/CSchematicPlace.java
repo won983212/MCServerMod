@@ -12,14 +12,14 @@ import net.minecraftforge.fml.network.NetworkEvent.Context;
 
 import java.util.function.Supplier;
 
-public class SchematicPlacePacket implements IMessage {
+public class CSchematicPlace implements IMessage {
     public ItemStack stack;
 
-    public SchematicPlacePacket(ItemStack stack) {
+    public CSchematicPlace(ItemStack stack) {
         this.stack = stack;
     }
 
-    public SchematicPlacePacket(PacketBuffer buffer) {
+    public CSchematicPlace(PacketBuffer buffer) {
         stack = buffer.readItem();
     }
 
@@ -41,24 +41,26 @@ public class SchematicPlacePacket implements IMessage {
                 return;
             }
 
-            boolean includeAir = true; // TODO Selectable include air
+            boolean includeAir = false;
+            if (stack.hasTag() && stack.getTag().getBoolean("IncludeAir")) {
+                includeAir = true;
+            }
 
             while (printer.advanceCurrentPos()) {
                 if (!printer.shouldPlaceCurrent(world)) {
                     continue;
                 }
 
+                boolean finalIncludeAir = includeAir;
                 printer.handleCurrentTarget((pos, state, tile) -> {
                     boolean placingAir = state.getBlock().isAir(state, world, pos);
-                    if (placingAir && !includeAir) {
+                    if (placingAir && !finalIncludeAir) {
                         return;
                     }
 
                     CompoundNBT tileData = tile != null ? tile.save(new CompoundNBT()) : null;
                     BlockHelper.placeSchematicBlock(world, state, pos, null, tileData);
-                }, (pos, entity) -> {
-                    world.addFreshEntity(entity);
-                });
+                }, (pos, entity) -> world.addFreshEntity(entity));
             }
         });
         context.get().setPacketHandled(true);

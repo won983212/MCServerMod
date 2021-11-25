@@ -14,12 +14,15 @@ public class ModIcons {
     private final int iconY;
 
     public static final ModIcons
-            I_CONFIRM = newRow(),
-            I_TOOL_MOVE_XZ = next(),
-            I_TOOL_MOVE_Y = next(),
-            I_TOOL_ROTATE = next(),
-            I_TOOL_MIRROR = next(),
-            I_TOOL_DEPLOY = next();
+            CONFIRM = newRow(),
+            TOOL_MOVE_XZ = next(),
+            TOOL_MOVE_Y = next(),
+            TOOL_ROTATE = next(),
+            TOOL_MIRROR = next(),
+            TOOL_DEPLOY = next(),
+            UPLOADING = next(),
+            CANCEL = next(),
+            EMPTY_BLOCK = next();
 
     public ModIcons(int x, int y) {
         iconX = x * 16;

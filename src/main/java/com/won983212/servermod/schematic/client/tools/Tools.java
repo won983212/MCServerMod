@@ -11,12 +11,13 @@ import java.util.List;
 
 public enum Tools {
 
-    Deploy(new DeployTool(), ModIcons.I_TOOL_DEPLOY),
-    Move(new MoveTool(), ModIcons.I_TOOL_MOVE_XZ),
-    MoveY(new MoveVerticalTool(), ModIcons.I_TOOL_MOVE_Y),
-    Rotate(new RotateTool(), ModIcons.I_TOOL_ROTATE),
-    Print(new PlaceTool(), ModIcons.I_CONFIRM),
-    Flip(new FlipTool(), ModIcons.I_TOOL_MIRROR);
+    Deploy(new DeployTool(), ModIcons.TOOL_DEPLOY),
+    Move(new MoveTool(), ModIcons.TOOL_MOVE_XZ),
+    MoveY(new MoveVerticalTool(), ModIcons.TOOL_MOVE_Y),
+    Rotate(new RotateTool(), ModIcons.TOOL_ROTATE),
+    Print(new PlaceTool(), ModIcons.CONFIRM),
+    Flip(new FlipTool(), ModIcons.TOOL_MIRROR),
+    ToggleAir(new ToggleAirTool(), ModIcons.EMPTY_BLOCK);
 
     private final ISchematicTool tool;
     private final ModIcons icon;
@@ -40,7 +41,7 @@ public enum Tools {
 
     public static List<Tools> getTools(boolean creative) {
         List<Tools> tools = new ArrayList<>();
-        Collections.addAll(tools, Move, MoveY, Deploy, Rotate, Flip);
+        Collections.addAll(tools, Move, MoveY, Deploy, Rotate, Flip, ToggleAir);
         if (creative) {
             tools.add(Print);
         }

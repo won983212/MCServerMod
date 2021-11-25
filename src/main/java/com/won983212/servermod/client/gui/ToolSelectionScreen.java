@@ -43,7 +43,7 @@ public class ToolSelectionScreen extends Screen {
         callback.accept(tools.get(selection));
 
         w = Math.max(tools.size() * 50 + 30, 220);
-        h = 30;
+        h = 32;
     }
 
     public void setSelectedElement(Tools tool) {
@@ -115,17 +115,24 @@ public class ToolSelectionScreen extends Screen {
         for (int i = 0; i < tools.size(); i++) {
             matrixStack.pushPose();
 
+            int startX = x + i * 50;
+            int bandColor = tools.get(i).getTool().getHighlightColor();
+            if(bandColor != 0) {
+                fill(matrixStack, startX, y, startX + 50, y + 2, bandColor);
+            }
+
             float alpha = focused ? 1 : .2f;
             if (i == selection) {
                 matrixStack.translate(0, -10, 0);
                 String toolName = tools.get(i).getDisplayName().getString();
-                drawCenteredString(matrixStack, minecraft.font, toolName, x + i * 50 + 24, y + 28, 0xCCDDFF);
+                drawCenteredString(matrixStack, minecraft.font, toolName, startX + 24, y + 30, 0xCCDDFF);
                 alpha = 1;
             }
+
             RenderSystem.color4f(0, 0, 0, alpha);
-            tools.get(i).getIcon().draw(matrixStack, this, x + i * 50 + 16, y + 12);
+            tools.get(i).getIcon().draw(matrixStack, this, startX + 16, y + 14);
             RenderSystem.color4f(1, 1, 1, alpha);
-            tools.get(i).getIcon().draw(matrixStack, this, x + i * 50 + 16, y + 11);
+            tools.get(i).getIcon().draw(matrixStack, this, startX + 16, y + 13);
 
             matrixStack.popPose();
         }

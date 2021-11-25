@@ -20,4 +20,5 @@ public interface ISchematicTool {
 
     void renderOnSchematic(MatrixStack ms, SuperRenderTypeBuffer buffer);
 
+    int getHighlightColor();
 }

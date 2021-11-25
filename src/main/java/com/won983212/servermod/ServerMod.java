@@ -12,7 +12,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 public class ServerMod {
     public static final String MODID = "servermod";
     public static final String HOST = "http://web.won983212.synology.me/skin/";
-    private final ModDist proxy;
+    private final CommonModDist proxy;
 
     public ServerMod() {
         proxy = DistExecutor.safeRunForDist(() -> ClientDist::new, () -> ServerDist::new);

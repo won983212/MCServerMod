@@ -148,4 +148,9 @@ public abstract class SchematicToolBase implements ISchematicTool {
         ms.popPose();
     }
 
+    @Override
+    public int getHighlightColor() {
+        return 0;
+    }
+
 }

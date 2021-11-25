@@ -1,21 +1,14 @@
-package com.won983212.servermod;
+package com.won983212.servermod.server.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.won983212.servermod.network.NetworkDispatcher;
-import com.won983212.servermod.network.ReloadSkinClientMessage;
+import com.won983212.servermod.network.SReloadSkin;
 import net.minecraft.command.CommandSource;
 import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
-@Mod.EventBusSubscriber(modid = ServerMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.DEDICATED_SERVER)
-public class Commands {
-    @SubscribeEvent
-    public static void onRegisterCommand(RegisterCommandsEvent e) {
-        CommandDispatcher<CommandSource> dispater = e.getDispatcher();
+public class ReloadSkinCommand {
+    public static void register(CommandDispatcher<CommandSource> dispater) {
         LiteralArgumentBuilder<CommandSource> skinCommand
                 = net.minecraft.command.Commands.literal("skin")
                 .requires((source) -> source.hasPermission(2))
@@ -25,7 +18,7 @@ public class Commands {
     }
 
     private static int reloadSkin(CommandSource source) {
-        NetworkDispatcher.sendToAll(new ReloadSkinClientMessage());
+        NetworkDispatcher.sendToAll(new SReloadSkin());
         source.sendSuccess(new TranslationTextComponent("servermod.command.reloaded"), true);
         return 1;
     }

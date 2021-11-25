@@ -11,23 +11,23 @@ import java.io.File;
 import java.io.IOException;
 
 public class SkinCacheCleaner {
-    private static final Minecraft MC_INST = Minecraft.getInstance();
+    private static final Minecraft MINECRAFT = Minecraft.getInstance();
 
     public static void clearSkinCache() {
         removeCacheFolder();
-        ClientPlayNetHandler connection = MC_INST.getConnection();
+        ClientPlayNetHandler connection = MINECRAFT.getConnection();
         if (connection == null) {
-            MC_INST.gui.getChat().addMessage(new TranslationTextComponent("servermod.message.cachecleared"));
+            MINECRAFT.gui.getChat().addMessage(new TranslationTextComponent("servermod.message.cachecleared"));
             return;
         }
         for (NetworkPlayerInfo info : connection.getOnlinePlayers()) {
             clearPlayerSkin(info);
         }
-        MC_INST.gui.getChat().addMessage(new TranslationTextComponent("servermod.message.cachecleared"));
+        MINECRAFT.gui.getChat().addMessage(new TranslationTextComponent("servermod.message.cachecleared"));
     }
 
     private static void removeCacheFolder() {
-        File cacheFolder = MC_INST.getSkinManager().skinsDirectory;
+        File cacheFolder = MINECRAFT.getSkinManager().skinsDirectory;
         if (cacheFolder.isDirectory()) {
             try {
                 FileUtils.deleteDirectory(cacheFolder);
@@ -39,16 +39,16 @@ public class SkinCacheCleaner {
 
     private static void clearPlayerSkin(NetworkPlayerInfo info) {
         ResourceLocation location = info.getSkinLocation();
-        MC_INST.textureManager.release(location);
+        MINECRAFT.textureManager.release(location);
 
         location = info.getCapeLocation();
         if (location != null) {
-            MC_INST.textureManager.release(location);
+            MINECRAFT.textureManager.release(location);
         }
 
         location = info.getElytraLocation();
         if (location != null) {
-            MC_INST.textureManager.release(location);
+            MINECRAFT.textureManager.release(location);
         }
 
         info.pendingTextures = false;

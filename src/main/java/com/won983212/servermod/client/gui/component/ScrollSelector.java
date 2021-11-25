@@ -1,0 +1,51 @@
+package com.won983212.servermod.client.gui.component;
+
+import com.mojang.blaze3d.matrix.MatrixStack;
+
+import java.util.List;
+
+public class ScrollSelector<T> extends HoveringCover {
+    private final List<T> elements;
+    private int selectedIndex = 0;
+
+    public ScrollSelector(int x, int y, int width, int height, List<T> elements) {
+        super(x, y, width, height, null);
+        this.elements = elements;
+        this.hoveredColor = 0x33ffffff;
+    }
+
+    private void selectNext(int delta) {
+        int max = elements.size();
+        if (max == 0)
+            return;
+
+        selectedIndex += delta;
+        if (selectedIndex < 0) {
+            selectedIndex += max;
+        }
+        if (selectedIndex >= max) {
+            selectedIndex %= max;
+        }
+    }
+
+    public int getSelectedIndex() {
+        if(selectedIndex >= elements.size())
+            selectedIndex = elements.size();
+        return selectedIndex;
+    }
+
+    @Override
+    public void render(MatrixStack ms, int x, int y, float partialTime) {
+        if (selectedIndex < elements.size()) {
+            String str = elements.get(selectedIndex).toString();
+            drawString(ms, font, str, this.x + 5, this.y + (height - font.lineHeight) / 2 + 1, 0xffffffff);
+        }
+        super.render(ms, x, y, partialTime);
+    }
+
+    @Override
+    public boolean mouseScrolled(double x, double y, double delta) {
+        selectNext((int) delta);
+        return true;
+    }
+}

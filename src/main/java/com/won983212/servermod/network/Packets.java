@@ -1,8 +1,6 @@
 package com.won983212.servermod.network;
 
-import com.won983212.servermod.schematic.packet.SchematicPlacePacket;
-import com.won983212.servermod.schematic.packet.SchematicSyncPacket;
-import com.won983212.servermod.schematic.packet.SchematicUploadPacket;
+import com.won983212.servermod.schematic.packet.*;
 import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.fml.network.NetworkDirection;
 import net.minecraftforge.fml.network.NetworkEvent;
@@ -13,10 +11,15 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 public enum Packets {
-    RELOAD_SKIN(ReloadSkinClientMessage.class, ReloadSkinClientMessage::new, NetworkDirection.PLAY_TO_CLIENT),
-    SCHEMATIC_UPLOAD(SchematicUploadPacket.class, SchematicUploadPacket::new, NetworkDirection.PLAY_TO_SERVER),
-    SCHEMATIC_PLACE(SchematicPlacePacket.class, SchematicPlacePacket::new, NetworkDirection.PLAY_TO_SERVER),
-    SCHEMATIC_SYNC(SchematicSyncPacket.class, SchematicSyncPacket::new, NetworkDirection.PLAY_TO_SERVER);
+    // from Server packets
+    RELOAD_SKIN(SReloadSkin.class, SReloadSkin::new, NetworkDirection.PLAY_TO_CLIENT),
+    OPEN_SCHEMATIC_MENU(SOpenSchematicMenu.class, SOpenSchematicMenu::new, NetworkDirection.PLAY_TO_CLIENT),
+    SCHEMATIC_LOAD_STATUS(SSchematicReceivedProgress.class, SSchematicReceivedProgress::new, NetworkDirection.PLAY_TO_CLIENT),
+
+    // from Client packets
+    SCHEMATIC_UPLOAD(CSchematicUpload.class, CSchematicUpload::new, NetworkDirection.PLAY_TO_SERVER),
+    SCHEMATIC_PLACE(CSchematicPlace.class, CSchematicPlace::new, NetworkDirection.PLAY_TO_SERVER),
+    SCHEMATIC_SYNC(CSchematicSync.class, CSchematicSync::new, NetworkDirection.PLAY_TO_SERVER);
 
     private final PacketLoader<?> loader;
 

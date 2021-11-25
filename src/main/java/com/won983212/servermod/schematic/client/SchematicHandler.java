@@ -13,8 +13,8 @@ import com.won983212.servermod.item.ModItems;
 import com.won983212.servermod.item.SchematicItem;
 import com.won983212.servermod.network.NetworkDispatcher;
 import com.won983212.servermod.schematic.client.tools.Tools;
-import com.won983212.servermod.schematic.packet.SchematicPlacePacket;
-import com.won983212.servermod.schematic.packet.SchematicSyncPacket;
+import com.won983212.servermod.schematic.packet.CSchematicPlace;
+import com.won983212.servermod.schematic.packet.CSchematicSync;
 import com.won983212.servermod.schematic.world.SchematicWorld;
 import com.won983212.servermod.utility.animate.AnimationTickHolder;
 import net.minecraft.client.Minecraft;
@@ -44,6 +44,7 @@ public class SchematicHandler {
     private SchematicTransformation transformation;
     private AxisAlignedBB bounds;
     private boolean deployed;
+    private boolean includeAir;
     private boolean active;
     private Tools currentTool;
 
@@ -307,7 +308,9 @@ public class SchematicHandler {
         if (activeSchematicItem == null) {
             return;
         }
-        NetworkDispatcher.sendToServer(new SchematicSyncPacket(activeHotbarSlot, transformation.toSettings(), transformation.getAnchor(), deployed));
+        CSchematicSync packet = new CSchematicSync(activeHotbarSlot, transformation.toSettings(),
+                transformation.getAnchor(), deployed, includeAir);
+        NetworkDispatcher.sendToServer(packet);
     }
 
     public void equip(Tools tool) {
@@ -322,6 +325,7 @@ public class SchematicHandler {
         transformation = new SchematicTransformation();
 
         deployed = tag.getBoolean("Deployed");
+        includeAir = tag.getBoolean("IncludeAir");
         if (deployed) {
             anchor = NBTUtil.readBlockPos(tag.getCompound("Anchor"));
         }
@@ -343,12 +347,21 @@ public class SchematicHandler {
     }
 
     public void printInstantly() {
-        NetworkDispatcher.sendToServer(new SchematicPlacePacket(activeSchematicItem.copy()));
+        NetworkDispatcher.sendToServer(new CSchematicPlace(activeSchematicItem.copy()));
         CompoundNBT nbt = activeSchematicItem.getTag();
         nbt.putBoolean("Deployed", false);
         activeSchematicItem.setTag(nbt);
         active = false;
         markDirty();
+    }
+
+    public void toggleIncludeAir() {
+        includeAir = !includeAir;
+        markDirty();
+    }
+
+    public boolean isIncludeAir(){
+        return includeAir;
     }
 
     public boolean isActive() {
@@ -374,5 +387,4 @@ public class SchematicHandler {
     public AABBOutline getOutline() {
         return outline;
     }
-
 }
