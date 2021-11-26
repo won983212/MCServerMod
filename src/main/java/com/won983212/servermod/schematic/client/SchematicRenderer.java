@@ -2,13 +2,13 @@ package com.won983212.servermod.schematic.client;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.won983212.servermod.Logger;
-import com.won983212.servermod.client.render.SchematicVertexFactory;
 import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
 import com.won983212.servermod.schematic.world.SchematicWorld;
 import com.won983212.servermod.utility.MatrixTransformStack;
 import com.won983212.servermod.utility.animate.AnimationTickHolder;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.BushBlock;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -27,7 +27,6 @@ import org.lwjgl.opengl.GL11;
 
 import java.util.*;
 
-// TODO 작물이 제대로 rendering이 안된다...
 public class SchematicRenderer {
     private static Vector3d cameraPosition = new Vector3d(0, 0, 0);
     private final List<ChunkVertexBuffer> chunks = new ArrayList<>();
@@ -76,7 +75,7 @@ public class SchematicRenderer {
                 for (int z = 0; z < countZ; z++) {
                     ChunkVertexBuffer chunk = redrawChunk(x, y, z);
                     if (!chunk.isEmpty()) {
-                        chunks.add(redrawChunk(x, y, z));
+                        chunks.add(chunk);
                     }
                 }
             }
@@ -161,12 +160,12 @@ public class SchematicRenderer {
             if (!startedBufferBuilders.contains(layer)) {
                 continue;
             }
+
             BufferBuilder buf = buffers.get(layer);
             buf.end();
 
-            SchematicVertexFactory factory = new SchematicVertexFactory(buf);
             VertexBuffer vBuf = new VertexBuffer(layer.format());
-            vBuf.upload(factory.makeBuffer(layer));
+            vBuf.upload(buf);
             buffer.blockBufferCache.put(layer, vBuf);
         }
 
@@ -193,9 +192,8 @@ public class SchematicRenderer {
             MatrixTransformStack.of(ms).translate(pos);
 
             try {
-                int worldLight = WorldRenderer.getLightColor(schematic, pos);
                 float pt = AnimationTickHolder.getPartialTicks();
-                renderer.render(tileEntity, pt, ms, buffer, worldLight, OverlayTexture.NO_OVERLAY);
+                renderer.render(tileEntity, pt, ms, buffer, 15728880, OverlayTexture.NO_OVERLAY);
             } catch (Exception e) {
                 iterator.remove();
                 String message = "TileEntity " + tileEntity.getType().getRegistryName().toString()

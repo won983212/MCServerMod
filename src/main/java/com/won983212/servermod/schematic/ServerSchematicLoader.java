@@ -51,6 +51,23 @@ public class ServerSchematicLoader extends SchematicNetwork {
 		new HashSet<>(activeUploads.keySet()).forEach(this::cancelUpload);
 	}
 
+	public boolean deleteSchematic(ServerPlayerEntity player, String schematic){
+		Path playerSchematicsPath = Paths.get(getSchematicPath(), player.getGameProfile().getName()).toAbsolutePath();
+		Path path = playerSchematicsPath.resolve(schematic).normalize();
+		if (!path.startsWith(playerSchematicsPath)) {
+			Logger.warn("Attempted Schematic Upload with directory escape: " + schematic);
+			return false;
+		}
+
+		try {
+			Files.deleteIfExists(path);
+			return true;
+		} catch (IOException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+
 	public boolean handleNewUpload(ServerPlayerEntity player, String schematic, long size) {
 		String playerPath = getSchematicPath() + "/" + player.getGameProfile().getName();
 		String playerSchematicId = player.getGameProfile().getName() + "/" + schematic;
@@ -68,6 +85,12 @@ public class ServerSchematicLoader extends SchematicNetwork {
 		Path uploadPath = playerSchematicsPath.resolve(schematic).normalize();
 		if (!uploadPath.startsWith(playerSchematicsPath)) {
 			Logger.warn("Attempted Schematic Upload with directory escape: " + playerSchematicId);
+			return false;
+		}
+
+		if (Files.exists(uploadPath)){
+			Logger.warn("Already exists file: " + playerSchematicId + ". So, it will use that cached file");
+			giveSchematicItem(player, schematic);
 			return false;
 		}
 
@@ -174,9 +197,7 @@ public class ServerSchematicLoader extends SchematicNetwork {
 				activeUploads.remove(playerSchematicId);
 
 				Logger.info("New Schematic Uploaded: " + playerSchematicId);
-
-				ItemStack item = SchematicItem.create(schematic, player.getGameProfile().getName());
-				player.inventory.add(item);
+				giveSchematicItem(player, schematic);
 
 				return true;
 			} catch (IOException e) {
@@ -185,6 +206,11 @@ public class ServerSchematicLoader extends SchematicNetwork {
 			}
 		}
 		return false;
+	}
+
+	private void giveSchematicItem(ServerPlayerEntity player, String schematic){
+		ItemStack item = SchematicItem.create(schematic, player.getGameProfile().getName());
+		player.inventory.add(item);
 	}
 
 	public static class SchematicDownloadEntry {

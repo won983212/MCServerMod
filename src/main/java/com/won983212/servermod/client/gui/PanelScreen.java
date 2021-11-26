@@ -12,6 +12,9 @@ import java.awt.*;
 
 public class PanelScreen extends Screen {
 
+    private long lastAlertTime = 0;
+    private String lastAlertMessage = "";
+
     PanelScreen(ITextComponent title) {
         super(title);
     }
@@ -23,6 +26,24 @@ public class PanelScreen extends Screen {
             if (child instanceof IRenderable) {
                 ((IRenderable) child).render(ms, mouseX, mouseY, partialTime);
             }
+        }
+        renderAlert(ms);
+    }
+
+    private void renderAlert(MatrixStack ms){
+        long currentTime = System.currentTimeMillis();
+        if (currentTime < lastAlertTime){
+            int alertWidth = font.width(lastAlertMessage) + 50;
+            final int alertHeight = 30;
+            final int x0 = (width - alertWidth) / 2;
+            final int x1 = (width + alertWidth) / 2;
+            final int y0 = (height - alertHeight) / 2;
+            final int y1 = (height + alertHeight) / 2;
+
+            fill(ms, x0 - 1, y0 - 1, x1 + 1, y1 + 1, 0xffaaaaaa);
+            fill(ms, x0, y0, x1, y1, 0xff000000);
+            drawCenteredString(ms, font, lastAlertMessage, width / 2,
+                    (height - font.lineHeight) / 2, 0xffffffff);
         }
     }
 
@@ -41,5 +62,14 @@ public class PanelScreen extends Screen {
                 ((AbstractComponent) child).addOffset(x, y);
             }
         }
+    }
+
+    protected void alert(String message){
+        alert(message, 3000);
+    }
+
+    protected void alert(String message, long duration){
+        lastAlertTime = System.currentTimeMillis() + duration;
+        lastAlertMessage = message;
     }
 }

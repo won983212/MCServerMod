@@ -16,8 +16,9 @@ public class ScrollSelector<T> extends HoveringCover {
 
     private void selectNext(int delta) {
         int max = elements.size();
-        if (max == 0)
+        if (max == 0) {
             return;
+        }
 
         selectedIndex += delta;
         if (selectedIndex < 0) {
@@ -29,17 +30,16 @@ public class ScrollSelector<T> extends HoveringCover {
     }
 
     public int getSelectedIndex() {
-        if(selectedIndex >= elements.size())
-            selectedIndex = elements.size();
+        if (selectedIndex >= elements.size()) {
+            selectedIndex = elements.size() - 1;
+        }
         return selectedIndex;
     }
 
     @Override
     public void render(MatrixStack ms, int x, int y, float partialTime) {
-        if (selectedIndex < elements.size()) {
-            String str = elements.get(selectedIndex).toString();
-            drawString(ms, font, str, this.x + 5, this.y + (height - font.lineHeight) / 2 + 1, 0xffffffff);
-        }
+        String str = elements.get(getSelectedIndex()).toString();
+        drawString(ms, font, str, this.x + 5, this.y + (height - font.lineHeight) / 2 + 1, 0xffffffff);
         super.render(ms, x, y, partialTime);
     }
 
