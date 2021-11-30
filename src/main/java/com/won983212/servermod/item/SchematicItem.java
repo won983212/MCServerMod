@@ -1,6 +1,7 @@
 package com.won983212.servermod.item;
 
 import com.won983212.servermod.schematic.SchematicProcessor;
+import com.won983212.servermod.schematic.IProgressEvent;
 import com.won983212.servermod.schematic.parser.SchematicFileParser;
 import com.won983212.servermod.server.command.SchematicCommand;
 import com.won983212.servermod.utility.Lang;
@@ -65,8 +66,8 @@ public class SchematicItem extends Item {
 
     public static void writeSize(ItemStack blueprint) {
         CompoundNBT tag = blueprint.getTag();
-        Template t = loadSchematic(blueprint);
-        tag.put("Bounds", NBTUtil.writeBlockPos(t.getSize()));
+        BlockPos bounds = loadSchematicSize(blueprint);
+        tag.put("Bounds", NBTUtil.writeBlockPos(bounds));
         blueprint.setTag(tag);
     }
 
@@ -85,28 +86,33 @@ public class SchematicItem extends Item {
         return settings;
     }
 
-    public static Template loadSchematic(ItemStack blueprint) {
-        Template t = new Template();
-        String owner = blueprint.getTag().getString("Owner");
-        String schematic = blueprint.getTag().getString("File");
-
-        if (!SchematicFileParser.isSupportedExtension(schematic)) {
-            return t;
-        }
-
-        Path path;
+    public static BlockPos loadSchematicSize(ItemStack blueprint) {
         try {
-            path = SchematicCommand.getFilePath(owner, schematic);
+            Path path = getSchematicPath(blueprint);
+            return SchematicFileParser.parseSchematicBounds(path.toFile());
         } catch (IOException e) {
             e.printStackTrace();
-            return t;
         }
+        return BlockPos.ZERO;
+    }
 
+    public static Template loadSchematic(ItemStack blueprint, IProgressEvent event) {
+        Template t = new Template();
         try {
-            return SchematicFileParser.parseSchematicFile(path.toFile());
+            Path path = getSchematicPath(blueprint);
+            return SchematicFileParser.parseSchematicFile(path.toFile(), event);
         } catch (IOException e) {
             e.printStackTrace();
         }
         return t;
+    }
+
+    private static Path getSchematicPath(ItemStack blueprint) throws IOException {
+        String owner = blueprint.getTag().getString("Owner");
+        String schematic = blueprint.getTag().getString("File");
+        if (!SchematicFileParser.isSupportedExtension(schematic)) {
+           throw new IOException("Unsupported file!");
+        }
+        return SchematicCommand.getFilePath(owner, schematic);
     }
 }

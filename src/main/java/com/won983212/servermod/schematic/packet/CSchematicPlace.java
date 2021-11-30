@@ -7,11 +7,13 @@ import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.PacketBuffer;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.network.NetworkEvent.Context;
 
 import java.util.function.Supplier;
 
+// TODO Place it in multithreaded environment.
 public class CSchematicPlace implements IMessage {
     public ItemStack stack;
 
@@ -34,9 +36,17 @@ public class CSchematicPlace implements IMessage {
                 return;
             }
 
+            final int[] percentIndex = {0};
             World world = player.getLevel();
             SchematicPrinter printer = new SchematicPrinter();
-            printer.loadSchematic(stack, world, !player.canUseGameMasterBlocks());
+            printer.loadSchematic(stack, world, !player.canUseGameMasterBlocks(), (s, p) -> {
+                int percent = (int) Math.floor(p * 100);
+                if(percent >= percentIndex[0] * 20) {
+                    percentIndex[0]++;
+                    player.sendMessage(new StringTextComponent("§6[Schematic] §r" + s + ": " + percent + "%"), player.getUUID());
+                }
+            });
+
             if (!printer.isLoaded()) {
                 return;
             }

@@ -15,9 +15,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @OnlyIn(Dist.CLIENT)
-public class ClientSchematicLoader extends SchematicNetwork implements IUploadEntryProducer {
+public class ClientSchematicLoader extends SchematicNetwork implements IProgressEntryProducer {
     private final Map<String, SchematicUploadEntry> activeUploads = new HashMap<>();
     private int packetCycle;
 
@@ -63,7 +64,7 @@ public class ClientSchematicLoader extends SchematicNetwork implements IUploadEn
             }
 
             in = Files.newInputStream(path, StandardOpenOption.READ);
-            activeUploads.put(schematic, new SchematicUploadEntry(in, size));
+            activeUploads.put(schematic, new SchematicUploadEntry(schematic, in, size));
             NetworkDispatcher.sendToServer(CSchematicUpload.begin(schematic, size));
         } catch (IOException e) {
             e.printStackTrace();
@@ -72,7 +73,7 @@ public class ClientSchematicLoader extends SchematicNetwork implements IUploadEn
 
     private void continueUpload(String schematic) {
         if (activeUploads.containsKey(schematic)) {
-            final int maxPacketSize = MAX_SCHEMATIC_PACKET_SIZE;
+            final int maxPacketSize = SCHEMATIC_PACKET_SIZE;
             byte[] data = new byte[maxPacketSize];
             try {
                 SchematicUploadEntry ent = activeUploads.get(schematic);
@@ -118,8 +119,9 @@ public class ClientSchematicLoader extends SchematicNetwork implements IUploadEn
         }
     }
 
-    public Iterable<Map.Entry<String, SchematicUploadEntry>> getUploadEntries(){
-        return activeUploads.entrySet();
+    @Override
+    public Iterable<SchematicUploadEntry> getProgressEntries(){
+        return activeUploads.values();
     }
 
     @Override
@@ -127,23 +129,27 @@ public class ClientSchematicLoader extends SchematicNetwork implements IUploadEn
         return activeUploads.size();
     }
 
-    public static class SchematicUploadEntry {
+    public static class SchematicUploadEntry implements IProgressEntry {
         private static final String[] SIZE_UNITS = {"B", "KB", "MB", "GB"};
+        private final String key;
         private final InputStream stream;
         private final long totalBytes;
         private float serverSideProgress;
 
-        SchematicUploadEntry(InputStream stream, long size) {
+        SchematicUploadEntry(String key, InputStream stream, long size) {
+            this.key = key;
             this.stream = stream;
             this.totalBytes = size;
             this.serverSideProgress = 0;
         }
 
-        public float getServerReceivedProgress() {
-            return serverSideProgress;
+        @Override
+        public String getTitle() {
+            return key;
         }
 
-        public String getSizeString() {
+        @Override
+        public String getSubtitle() {
             long size = totalBytes;
             int unitIdx = 0;
             while (size >= 1024) {
@@ -151,6 +157,11 @@ public class ClientSchematicLoader extends SchematicNetwork implements IUploadEn
                 size /= 1024;
             }
             return size + SIZE_UNITS[unitIdx];
+        }
+
+        @Override
+        public double getProgress() {
+            return serverSideProgress;
         }
     }
 }

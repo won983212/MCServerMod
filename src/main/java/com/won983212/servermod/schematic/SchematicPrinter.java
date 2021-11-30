@@ -43,21 +43,23 @@ public class SchematicPrinter {
         deferredBlocks = new LinkedList<>();
     }
 
-    public void loadSchematic(ItemStack blueprint, World originalWorld, boolean processNBT) {
+    public void loadSchematic(ItemStack blueprint, World originalWorld, boolean processNBT, IProgressEvent event) {
         if (!blueprint.hasTag() || !blueprint.getTag().getBoolean("Deployed")) {
             return;
         }
 
-        Template activeTemplate = SchematicItem.loadSchematic(blueprint);
+        Template activeTemplate = SchematicItem.loadSchematic(blueprint, (s, p) -> event.onProgress(s, p * 0.3));
         PlacementSettings settings = SchematicItem.getSettings(blueprint, processNBT);
 
-        schematicAnchor = NBTUtil.readBlockPos(blueprint.getTag()
-                .getCompound("Anchor"));
+        schematicAnchor = NBTUtil.readBlockPos(blueprint.getTag().getCompound("Anchor"));
         blockReader = new SchematicWorld(schematicAnchor, originalWorld);
+        
+        final long totalSize = (long) activeTemplate.size.getX() * activeTemplate.size.getY() * activeTemplate.size.getZ();
+        blockReader.setBlockPlaceProgressEvent((s, p) -> event.onProgress(s, 0.3 + 0.7 * p / totalSize));
         activeTemplate.placeInWorldChunk(blockReader, schematicAnchor, settings, blockReader.getRandom());
+        blockReader.setBlockPlaceProgressEvent(null);
 
-        BlockPos extraBounds = Template.calculateRelativePosition(settings, activeTemplate.getSize()
-                .offset(-1, -1, -1));
+        BlockPos extraBounds = Template.calculateRelativePosition(settings, activeTemplate.getSize().offset(-1, -1, -1));
         blockReader.getBounds().expand(new MutableBoundingBox(extraBounds, extraBounds));
 
         printingEntityIndex = -1;

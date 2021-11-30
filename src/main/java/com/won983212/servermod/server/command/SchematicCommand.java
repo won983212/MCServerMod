@@ -33,7 +33,7 @@ public class SchematicCommand {
     private static int openSchematicDialog(CommandSource source) {
         Entity e = source.getEntity();
         if (!(e instanceof ServerPlayerEntity)) {
-            source.sendSuccess(new TranslationTextComponent("servermod.command.error.cantexecuteentity"), true);
+            source.sendFailure(new TranslationTextComponent("servermod.command.error.cantexecuteentity"));
             return 0;
         }
 

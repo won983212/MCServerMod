@@ -4,7 +4,7 @@ import com.won983212.servermod.LegacyMapper;
 import com.won983212.servermod.CommonModDist;
 import com.won983212.servermod.ModKeys;
 import com.won983212.servermod.client.gui.ConfigScreen;
-import com.won983212.servermod.client.gui.SchematicUploadStatusScreen;
+import com.won983212.servermod.client.gui.SchematicStatusScreen;
 import com.won983212.servermod.client.render.tile.RenderIndustrialAlarm;
 import com.won983212.servermod.schematic.ClientSchematicLoader;
 import com.won983212.servermod.schematic.client.SchematicHandler;
@@ -18,8 +18,13 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 public class ClientDist extends CommonModDist {
     public static final SchematicHandler SCHEMATIC_HANDLER = new SchematicHandler();
     public static final ClientSchematicLoader SCHEMATIC_SENDER = new ClientSchematicLoader();
-    public static final SchematicUploadStatusScreen SCHEMATIC_UPLOAD_SCREEN = new SchematicUploadStatusScreen(SCHEMATIC_SENDER);
+    public static final SchematicStatusScreen SCHEMATIC_UPLOAD_SCREEN = new SchematicStatusScreen();
     public static Template t;
+
+    static {
+        SCHEMATIC_UPLOAD_SCREEN.registerProgressProducer(SCHEMATIC_SENDER);
+        SCHEMATIC_UPLOAD_SCREEN.registerProgressProducer(SCHEMATIC_HANDLER.getRendererManager());
+    }
 
     @Override
     public void onCommonSetup(FMLCommonSetupEvent event) {

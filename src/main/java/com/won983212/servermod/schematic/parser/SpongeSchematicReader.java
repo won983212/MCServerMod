@@ -16,11 +16,20 @@ import net.minecraftforge.common.util.Constants;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 class SpongeSchematicReader extends AbstractSchematicReader {
 
     private ForgeDataFixer fixer = null;
     private int dataVersion = -1;
+
+    @Override
+    protected BlockPos parseSize(CompoundNBT schematic) throws IOException {
+        int width = checkTag(schematic, "Width", ShortNBT.class).getAsInt();
+        int height = checkTag(schematic, "Height", ShortNBT.class).getAsInt();
+        int length = checkTag(schematic, "Length", ShortNBT.class).getAsInt();
+        return new BlockPos(width, height, length);
+    }
 
     @Override
     protected Template parse(CompoundNBT schematic) throws IOException {
@@ -53,9 +62,12 @@ class SpongeSchematicReader extends AbstractSchematicReader {
     }
 
     private Template readVersion1(CompoundNBT schematicTag) throws IOException {
-        int width = checkTag(schematicTag, "Width", ShortNBT.class).getAsInt();
-        int height = checkTag(schematicTag, "Height", ShortNBT.class).getAsInt();
-        int length = checkTag(schematicTag, "Length", ShortNBT.class).getAsInt();
+        notifyProgress("Metadata 읽는 중...", 0);
+
+        BlockPos size = parseSize(schematicTag);
+        int width = size.getX();
+        int height = size.getY();
+        int length = size.getZ();
 
         IntArrayNBT offsetTag = getTag(schematicTag, "Offset", IntArrayNBT.class);
         int[] offsetParts;
@@ -72,8 +84,10 @@ class SpongeSchematicReader extends AbstractSchematicReader {
             throw new IOException("Block palette size does not match expected size.");
         }
 
+        long current = 0;
         Map<Integer, BlockState> palette = new HashMap<>();
-        for (String palettePart : paletteObject.getAllKeys()) {
+        Set<String> palettes = paletteObject.getAllKeys();
+        for (String palettePart : palettes) {
             int id = checkTag(paletteObject, palettePart, IntNBT.class).getAsInt();
             if (fixer != null) {
                 palettePart = fixer.fixUp(ForgeDataFixer.FixTypes.BLOCK_STATE, palettePart, dataVersion);
@@ -85,6 +99,7 @@ class SpongeSchematicReader extends AbstractSchematicReader {
                 Logger.warn("Invalid BlockState in palette: " + palettePart + ". Block will be replaced with air.");
                 state = Blocks.AIR.defaultBlockState();
             }
+            notifyProgress("Palette 읽는 중...", 0.1 * (current++) / palettes.size());
             palette.put(id, state);
         }
 
@@ -95,6 +110,8 @@ class SpongeSchematicReader extends AbstractSchematicReader {
         if (tileEntities == null) {
             tileEntities = getTag(schematicTag, "TileEntities", ListNBT.class);
         }
+
+        current = 0;
         if (tileEntities != null) {
             for (INBT tileEntity : tileEntities) {
                 CompoundNBT tag = (CompoundNBT) tileEntity;
@@ -110,6 +127,7 @@ class SpongeSchematicReader extends AbstractSchematicReader {
                     tag = fixer.fixUp(ForgeDataFixer.FixTypes.BLOCK_ENTITY, tag.copy(), dataVersion);
                 }
                 tileEntitiesMap.put(pt, tag);
+                notifyProgress("TileEntity 읽는 중...", 0.1 + 0.3 * (current++) / tileEntities.size());
             }
         }
 
@@ -148,7 +166,7 @@ class SpongeSchematicReader extends AbstractSchematicReader {
             } else {
                 blockList.addBlock(pt, state, null);
             }
-            index++;
+            notifyProgress("Block 읽는 중...", 0.4 + 0.59 * (index++) / blocks.length);
         }
 
         blockList.addNewPaletteTo(template);
@@ -157,6 +175,7 @@ class SpongeSchematicReader extends AbstractSchematicReader {
 
     private Template readVersion2(Template version1, CompoundNBT schematicTag) throws IOException {
         if (schematicTag.contains("Entities")) {
+            notifyProgress("Entity 읽는 중...", 0.99);
             readEntities(version1, schematicTag);
         }
         return version1;

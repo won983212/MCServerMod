@@ -143,7 +143,7 @@ public class ServerSchematicLoader extends SchematicNetwork {
 			entry.bytesUploaded += data.length;
 
 			// Size Validations
-			if (data.length > MAX_SCHEMATIC_PACKET_SIZE) {
+			if (data.length > SCHEMATIC_PACKET_SIZE) {
 				Logger.warn("Oversized Upload Packet received: " + playerSchematicId);
 				cancelUpload(playerSchematicId);
 				return false;

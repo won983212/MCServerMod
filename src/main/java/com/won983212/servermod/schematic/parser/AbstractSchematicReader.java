@@ -20,6 +20,7 @@
 package com.won983212.servermod.schematic.parser;
 
 import com.google.common.collect.Lists;
+import com.won983212.servermod.schematic.IProgressEvent;
 import net.minecraft.block.BlockState;
 import net.minecraft.nbt.*;
 import net.minecraft.util.math.BlockPos;
@@ -38,12 +39,26 @@ import java.util.zip.GZIPInputStream;
  * Base class for NBT schematic readers.
  */
 public abstract class AbstractSchematicReader {
+    private IProgressEvent progressEvent;
 
     protected abstract Template parse(CompoundNBT schematic) throws IOException;
 
+    protected abstract BlockPos parseSize(CompoundNBT schematic) throws IOException;
+
     public Template parse(File file) throws IOException {
         CompoundNBT schematicNBT = readNBT(file);
-        return parse(schematicNBT);
+        notifyProgress("NBT 데이터 읽는 중...", 0);
+        Template t = parse(schematicNBT);
+        notifyProgress("완료", 1);
+        return t;
+    }
+
+    public BlockPos parseSize(File file) throws IOException {
+        CompoundNBT schematicNBT = readNBT(file);
+        notifyProgress("NBT 데이터 읽는 중...", 0);
+        BlockPos pos = parseSize(schematicNBT);
+        notifyProgress("완료", 1);
+        return pos;
     }
 
     private static CompoundNBT readNBT(File file) throws IOException {
@@ -52,6 +67,16 @@ public abstract class AbstractSchematicReader {
             return CompressedStreamTools.read(stream, new NBTSizeTracker(0x20000000L));
         } catch (IOException e) {
             throw new IOException("Failed to read schematic", e);
+        }
+    }
+
+    public void setProgressEvent(IProgressEvent event){
+        this.progressEvent = event;
+    }
+
+    protected void notifyProgress(String status, double progress) {
+        if (progressEvent != null) {
+            progressEvent.onProgress(status, progress);
         }
     }
 

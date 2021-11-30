@@ -6,7 +6,8 @@ import com.won983212.servermod.LegacyMapper;
 import com.won983212.servermod.ModKeys;
 import com.won983212.servermod.ServerMod;
 import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
-import com.won983212.servermod.schematic.client.SchematicRenderer;
+import com.won983212.servermod.schematic.client.render.ChunkVertexBuffer;
+import com.won983212.servermod.schematic.client.render.SchematicRenderer;
 import com.won983212.servermod.skin.SkinCacheCleaner;
 import com.won983212.servermod.utility.animate.AnimationTickHolder;
 import net.minecraft.client.Minecraft;
@@ -45,7 +46,7 @@ public class ClientEventHandler {
 
     @SubscribeEvent
     public static void onCameraSetup(EntityViewRenderEvent.CameraSetup e) {
-        SchematicRenderer.setCameraPosition(e.getInfo().getPosition());
+        ChunkVertexBuffer.setCameraPosition(e.getInfo().getPosition());
     }
 
     @SubscribeEvent

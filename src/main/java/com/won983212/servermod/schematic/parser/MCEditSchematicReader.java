@@ -53,6 +53,13 @@ class MCEditSchematicReader extends AbstractSchematicReader {
             new Pre13HangingCompatibilityHandler()
     );
 
+    protected BlockPos parseSize(CompoundNBT schematic) throws IOException {
+        short width = checkTag(schematic, "Width", ShortNBT.class).getAsShort();
+        short height = checkTag(schematic, "Height", ShortNBT.class).getAsShort();
+        short length = checkTag(schematic, "Length", ShortNBT.class).getAsShort();
+        return new BlockPos(width, height, length);
+    }
+
     protected Template parse(CompoundNBT schematic) throws IOException {
         Template template = new Template();
 
@@ -67,15 +74,12 @@ class MCEditSchematicReader extends AbstractSchematicReader {
             throw new IOException("Schematic file is not an Alpha schematic");
         }
 
-        // ====================================================================
-        // Metadata
-        // ====================================================================
-
-        // Get information
-        short width = checkTag(schematic, "Width", ShortNBT.class).getAsShort();
-        short height = checkTag(schematic, "Height", ShortNBT.class).getAsShort();
-        short length = checkTag(schematic, "Length", ShortNBT.class).getAsShort();
-        template.size = new BlockPos(width, height, length);
+        // Template size
+        BlockPos size = parseSize(schematic);
+        int width = size.getX();
+        int height = size.getY();
+        int length = size.getZ();
+        template.size = size;
 
         // ====================================================================
         // Blocks
@@ -104,6 +108,7 @@ class MCEditSchematicReader extends AbstractSchematicReader {
                     blocks[index] = (short) (((addId[index >> 1] & 0xF0) << 4) + (blockId[index] & 0xFF));
                 }
             }
+            notifyProgress("Block Metadata 읽는 중...", 0.1 + 0.2 * index / blockId.length);
         }
 
         // Need to pull out tile entities
@@ -113,7 +118,9 @@ class MCEditSchematicReader extends AbstractSchematicReader {
         Map<BlockPos, BlockState> blockStates = new HashMap<>();
         LegacyMapper legacyMapper = LegacyMapper.getInstance();
 
+        long current = 0;
         for (INBT tag : tileEntities) {
+            notifyProgress("TileEntity 데이터 읽는 중...", 0.3 + 0.2 * (current++) / tileEntities.size());
             if (!(tag instanceof CompoundNBT)) {
                 continue;
             }
@@ -153,7 +160,7 @@ class MCEditSchematicReader extends AbstractSchematicReader {
 
         template.palettes.clear();
         long total = (long) width * height * length;
-        long current = 0;
+        current = 0;
         for (int y = 0; y < height; ++y) {
             for (int x = 0; x < width; ++x) {
                 for (int z = 0; z < length; ++z) {
@@ -182,11 +189,7 @@ class MCEditSchematicReader extends AbstractSchematicReader {
                         blockNBT = tileEntitiesMap.get(pt).copy();
                     }
                     blockList.addBlock(pt, state, blockNBT);
-
-                    // TODO Progress System
-                    if (current++ % (total / 20) == 0) {
-                        System.out.println("Current Progress: " + (current * 100.0d / total) + "%");
-                    }
+                    notifyProgress("Block 읽는 중...", 0.5 + 0.45 * (current++) / total);
                 }
             }
         }
@@ -199,6 +202,7 @@ class MCEditSchematicReader extends AbstractSchematicReader {
         template.entityInfoList.clear();
         ListNBT entityList = getTag(schematic, "Entities", ListNBT.class);
         if (entityList != null) {
+            current = 0;
             for (INBT tag : entityList) {
                 if (tag instanceof CompoundNBT) {
                     CompoundNBT compound = (CompoundNBT) tag;
@@ -217,6 +221,7 @@ class MCEditSchematicReader extends AbstractSchematicReader {
                         template.entityInfoList.add(entityInfo);
                     }
                 }
+                notifyProgress("Entity 읽는 중...", 0.95 + 0.04 * (current++) / entityList.size());
             }
         }
 

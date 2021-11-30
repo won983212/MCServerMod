@@ -1,10 +1,7 @@
 package com.won983212.servermod.schematic.client;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import com.won983212.servermod.Logger;
 import com.won983212.servermod.ModKeys;
 import com.won983212.servermod.client.gui.ToolSelectionScreen;
 import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
@@ -15,8 +12,6 @@ import com.won983212.servermod.network.NetworkDispatcher;
 import com.won983212.servermod.schematic.client.tools.Tools;
 import com.won983212.servermod.schematic.packet.CSchematicPlace;
 import com.won983212.servermod.schematic.packet.CSchematicSync;
-import com.won983212.servermod.schematic.world.SchematicWorld;
-import com.won983212.servermod.utility.animate.AnimationTickHolder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.gui.screen.Screen;
@@ -26,17 +21,11 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.NBTUtil;
-import net.minecraft.util.Mirror;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 import net.minecraft.world.gen.feature.template.PlacementSettings;
-import net.minecraft.world.gen.feature.template.Template;
 
 import java.util.List;
-import java.util.Vector;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 public class SchematicHandler {
 
@@ -54,24 +43,12 @@ public class SchematicHandler {
     private ItemStack activeSchematicItem;
     private AABBOutline outline;
 
-    private static final Cache<String, SchematicWorld[]> schematicWorldCache;
-    private final Vector<SchematicRenderer> renderers;
     private ToolSelectionScreen selectionScreen;
-    private CompletableFuture<Void> loadingTask = null;
-
-    static {
-        schematicWorldCache = CacheBuilder.newBuilder()
-                .expireAfterAccess(5, TimeUnit.MINUTES)
-                .build();
-    }
+    private final SchematicRendererManager rendererManager;
 
     public SchematicHandler() {
-        renderers = new Vector<>(3);
-        for (int i = 0; i < renderers.capacity(); i++) {
-            renderers.add(new SchematicRenderer());
-        }
-
         currentTool = Tools.Deploy;
+        rendererManager = new SchematicRendererManager();
         selectionScreen = new ToolSelectionScreen(ImmutableList.of(Tools.Deploy), this::equip);
         transformation = new SchematicTransformation();
     }
@@ -90,6 +67,7 @@ public class SchematicHandler {
             if (activeSchematicItem != null && itemLost(player)) {
                 activeHotbarSlot = 0;
                 activeSchematicItem = null;
+                rendererManager.cancelSetupTask();
             }
             return;
         }
@@ -116,7 +94,7 @@ public class SchematicHandler {
         active = true;
         if (deployed) {
             if (needsRendererUpdate) {
-                setupRenderer();
+                rendererManager.setupRenderer(activeSchematicItem);
             }
             Tools toolBefore = currentTool;
             selectionScreen = new ToolSelectionScreen(Tools.getTools(player.isCreative()), this::equip);
@@ -127,69 +105,6 @@ public class SchematicHandler {
         } else {
             selectionScreen = new ToolSelectionScreen(ImmutableList.of(Tools.Deploy), this::equip);
         }
-    }
-
-    private void setupRenderer() {
-        if (loadingTask != null) {
-            loadingTask.cancel(true);
-            Logger.debug("load schematic task is cancelled");
-        }
-
-        Template schematic = SchematicItem.loadSchematic(activeSchematicItem);
-        BlockPos size = schematic.getSize();
-        if (size.equals(BlockPos.ZERO)) {
-            return;
-        }
-
-        World clientWorld = Minecraft.getInstance().level;
-        String schematicFilePath = activeSchematicItem.getTag().getString("File");
-        SchematicWorld[] worlds;
-
-        worlds = schematicWorldCache.getIfPresent(schematicFilePath);
-        if (worlds == null) {
-            worlds = new SchematicWorld[3];
-            for (int i = 0; i < worlds.length; i++) {
-                worlds[i] = new SchematicWorld(clientWorld);
-            }
-            schematicWorldCache.put(schematicFilePath, worlds);
-
-            final SchematicWorld[] finalWorlds = worlds;
-            CompletableFuture<Void> task1 = CompletableFuture.runAsync(() ->
-                    placeSchematicWorld(schematic, finalWorlds[0], BlockPos.ZERO, 0));
-            CompletableFuture<Void> task2 = CompletableFuture.runAsync(() ->
-                    placeSchematicWorld(schematic, finalWorlds[1], BlockPos.ZERO.east(size.getX() - 1), 1));
-            CompletableFuture<Void> task3 = CompletableFuture.runAsync(() ->
-                    placeSchematicWorld(schematic, finalWorlds[2], BlockPos.ZERO.south(size.getZ() - 1), 2));
-            loadingTask = CompletableFuture.allOf(task1, task2, task3)
-                    .whenComplete((t, u) -> loadingTask = null);
-        } else {
-            Logger.debug("in cache: " + schematicFilePath);
-            final SchematicWorld[] finalWorlds = worlds;
-            loadingTask = CompletableFuture.runAsync(() -> {
-                for (int i = 0; i < finalWorlds.length; i++) {
-                    cacheSchematicWorld(finalWorlds[i], i);
-                }
-            }).whenComplete((t, u) -> loadingTask = null);
-        }
-    }
-
-    private void placeSchematicWorld(Template schematic, SchematicWorld world, BlockPos position, int rendererIndex) {
-        PlacementSettings pSettings = new PlacementSettings();
-        if (rendererIndex == 1) {
-            pSettings.setMirror(Mirror.FRONT_BACK);
-        } else if (rendererIndex == 2) {
-            pSettings.setMirror(Mirror.LEFT_RIGHT);
-        }
-
-        Logger.debug("Placing" + rendererIndex + " schematic...");
-        schematic.placeInWorldChunk(world, position, pSettings, world.getRandom());
-        cacheSchematicWorld(world, rendererIndex);
-    }
-
-    private void cacheSchematicWorld(SchematicWorld world, int rendererIndex) {
-        Logger.debug("Caching" + rendererIndex + " schematic...");
-        renderers.get(rendererIndex).cacheSchematicWorld(world);
-        Logger.debug("Caching" + rendererIndex + " complete!");
     }
 
     public void render(MatrixStack ms, SuperRenderTypeBuffer buffer) {
@@ -203,19 +118,7 @@ public class SchematicHandler {
 
         ms.pushPose();
         transformation.applyGLTransformations(ms);
-
-        if (!renderers.isEmpty()) {
-            float pt = AnimationTickHolder.getPartialTicks();
-            boolean lr = transformation.getScaleLR().get(pt) < 0;
-            boolean fb = transformation.getScaleFB().get(pt) < 0;
-            if (lr && !fb) {
-                renderers.get(2).render(ms, buffer);
-            } else if (fb && !lr) {
-                renderers.get(1).render(ms, buffer);
-            } else {
-                renderers.get(0).render(ms, buffer);
-            }
-        }
+        rendererManager.render(ms, buffer, transformation);
 
         currentTool.getTool().renderOnSchematic(ms, buffer);
         ms.popPose();
@@ -341,7 +244,7 @@ public class SchematicHandler {
         if (!deployed) {
             List<Tools> tools = Tools.getTools(Minecraft.getInstance().player.isCreative());
             selectionScreen = new ToolSelectionScreen(tools, this::equip);
-            setupRenderer();
+            rendererManager.setupRenderer(activeSchematicItem);
         }
         deployed = true;
     }
@@ -360,7 +263,11 @@ public class SchematicHandler {
         markDirty();
     }
 
-    public boolean isIncludeAir(){
+    public SchematicRendererManager getRendererManager(){
+        return rendererManager;
+    }
+
+    public boolean isIncludeAir() {
         return includeAir;
     }
 
