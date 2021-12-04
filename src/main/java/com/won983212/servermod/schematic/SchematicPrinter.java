@@ -55,9 +55,9 @@ public class SchematicPrinter {
         blockReader = new SchematicWorld(schematicAnchor, originalWorld);
         
         final long totalSize = (long) activeTemplate.size.getX() * activeTemplate.size.getY() * activeTemplate.size.getZ();
-        blockReader.setBlockPlaceProgressEvent((s, p) -> event.onProgress(s, 0.3 + 0.7 * p / totalSize));
+        blockReader.setBlockCountProgressEvent((s, p) -> event.onProgress(s, 0.3 + 0.7 * p / totalSize));
         activeTemplate.placeInWorldChunk(blockReader, schematicAnchor, settings, blockReader.getRandom());
-        blockReader.setBlockPlaceProgressEvent(null);
+        blockReader.setBlockCountProgressEvent(null);
 
         BlockPos extraBounds = Template.calculateRelativePosition(settings, activeTemplate.getSize().offset(-1, -1, -1));
         blockReader.getBounds().expand(new MutableBoundingBox(extraBounds, extraBounds));

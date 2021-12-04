@@ -20,12 +20,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+// TODO 먼 곳의 chunk는 안보이게!
 public class SchematicRenderer {
     private final List<ChunkVertexBuffer> chunks = new ArrayList<>();
     protected SchematicWorld schematic;
     private BlockPos anchor;
 
-    public void cacheSchematicWorld(SchematicWorld world, IProgressEvent event) {
+    public void setSchematicWorld(SchematicWorld world, IProgressEvent event) {
         this.anchor = world.anchor;
         this.schematic = world;
         redraw(event);

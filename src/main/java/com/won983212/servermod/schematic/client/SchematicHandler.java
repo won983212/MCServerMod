@@ -67,7 +67,7 @@ public class SchematicHandler {
             if (activeSchematicItem != null && itemLost(player)) {
                 activeHotbarSlot = 0;
                 activeSchematicItem = null;
-                rendererManager.cancelSetupTask();
+                rendererManager.setCurrentSchematic(null);
             }
             return;
         }
@@ -94,7 +94,7 @@ public class SchematicHandler {
         active = true;
         if (deployed) {
             if (needsRendererUpdate) {
-                rendererManager.setupRenderer(activeSchematicItem);
+                rendererManager.setCurrentSchematic(activeSchematicItem);
             }
             Tools toolBefore = currentTool;
             selectionScreen = new ToolSelectionScreen(Tools.getTools(player.isCreative()), this::equip);
@@ -244,7 +244,7 @@ public class SchematicHandler {
         if (!deployed) {
             List<Tools> tools = Tools.getTools(Minecraft.getInstance().player.isCreative());
             selectionScreen = new ToolSelectionScreen(tools, this::equip);
-            rendererManager.setupRenderer(activeSchematicItem);
+            rendererManager.setCurrentSchematic(activeSchematicItem);
         }
         deployed = true;
     }

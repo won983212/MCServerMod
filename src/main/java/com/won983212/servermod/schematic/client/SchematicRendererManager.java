@@ -16,87 +16,86 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Mirror;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 import net.minecraft.world.gen.feature.template.PlacementSettings;
 import net.minecraft.world.gen.feature.template.Template;
 
-import java.util.Vector;
 import java.util.concurrent.*;
 
 public class SchematicRendererManager implements IProgressEntryProducer {
 
-    private static final Cache<ItemStack, SchematicWorld[]> schematicWorldCache;
-    private final Vector<SchematicRenderer> renderers;
+    private static final Cache<ItemStack, SchematicRenderer[]> rendererCache;
     private final ConcurrentHashMap<String, LoadingEntry> loadingEntries;
-    private ExecutorService executor = new ForkJoinPool();
+    private final ExecutorService executor = new ForkJoinPool();
+    private volatile ItemStack currentStack;
+    private SchematicRenderer[] renderers;
 
     static {
-        schematicWorldCache = CacheBuilder.newBuilder()
-                .expireAfterAccess(1, TimeUnit.MINUTES)
+        rendererCache = CacheBuilder.newBuilder()
+                .expireAfterAccess(5, TimeUnit.MINUTES)
                 .build();
     }
 
     public SchematicRendererManager() {
-        renderers = new Vector<>(3);
-        for (int i = 0; i < renderers.capacity(); i++) {
-            renderers.add(new SchematicRenderer());
-        }
+        renderers = null;
+        currentStack = null;
         loadingEntries = new ConcurrentHashMap<>();
     }
 
     public void render(MatrixStack ms, SuperRenderTypeBuffer buffer, SchematicTransformation transformation) {
-        if (!renderers.isEmpty()) {
+        if (renderers != null && loadingEntries.isEmpty()) {
             float pt = AnimationTickHolder.getPartialTicks();
             boolean lr = transformation.getScaleLR().get(pt) < 0;
             boolean fb = transformation.getScaleFB().get(pt) < 0;
             if (lr && !fb) {
-                renderers.get(2).render(ms, buffer);
+                renderers[2].render(ms, buffer);
             } else if (fb && !lr) {
-                renderers.get(1).render(ms, buffer);
+                renderers[1].render(ms, buffer);
             } else {
-                renderers.get(0).render(ms, buffer);
+                renderers[0].render(ms, buffer);
             }
         }
     }
 
-    public void setupRenderer(ItemStack activeSchematicItem) {
+    public void setCurrentSchematic(ItemStack activeSchematicItem) {
+        currentStack = activeSchematicItem;
+        if (activeSchematicItem == null) {
+            return;
+        }
+
         final String schematicFilePath = activeSchematicItem.getTag().getString("File");
-        World clientWorld = Minecraft.getInstance().level;
+        if (loadingEntries.containsKey(schematicFilePath)) {
+            Logger.debug("Already loading file: " + schematicFilePath);
+            return;
+        }
 
         LoadingEntry loadingEntry = new LoadingEntry(schematicFilePath);
         loadingEntries.put(schematicFilePath, loadingEntry);
 
-        if (executor.isShutdown()) {
-            executor = new ForkJoinPool();
-        }
-
-        SchematicWorld[] worlds = schematicWorldCache.getIfPresent(activeSchematicItem);
-        if (worlds == null) {
-            worlds = new SchematicWorld[3];
-            for (int i = 0; i < worlds.length; i++) {
-                worlds[i] = new SchematicWorld(clientWorld);
-            }
-            schematicWorldCache.put(activeSchematicItem, worlds);
-
-            final SchematicWorld[] finalWorlds = worlds;
+        SchematicRenderer[] renderers = rendererCache.getIfPresent(activeSchematicItem);
+        if (renderers == null) {
             CompletableFuture.supplyAsync(() ->
                     SchematicItem.loadSchematic(activeSchematicItem, (s, p) -> loadingEntry.onProgress(s, 0.6 * p)), executor)
-                    .thenCompose((t) -> setupRendererImpl(t, finalWorlds, (s, p) -> loadingEntry.onProgress(s, 0.6 + 0.4 * p)))
-                    .whenComplete((t, u) -> loadingEntries.remove(schematicFilePath));
+                    .thenCompose((t) -> prepareSchematicRenderer(t, (s, p) -> loadingEntry.onProgress(s, 0.6 + 0.4 * p)))
+                    .whenComplete((t, u) -> {
+                        loadingEntries.remove(schematicFilePath);
+                        if (t != null) {
+                            if (currentStack == activeSchematicItem) {
+                                this.renderers = t;
+                            }
+                            rendererCache.put(activeSchematicItem, t);
+                        }
+                    });
         } else {
             Logger.debug("in cache: " + schematicFilePath);
-            final SchematicWorld[] finalWorlds = worlds;
-            CompletableFuture.runAsync(() -> {
-                for (int i = 0; i < finalWorlds.length; i++) {
-                    renderers.get(i).cacheSchematicWorld(finalWorlds[i], loadingEntry);
-                }
-            }, executor).whenComplete((t, u) -> loadingEntries.remove(schematicFilePath));
+            this.renderers = renderers;
+            loadingEntries.remove(schematicFilePath);
         }
     }
 
-    private CompletableFuture<Void> setupRendererImpl(Template schematic, SchematicWorld[] worlds, IProgressEvent event) {
+    private CompletableFuture<SchematicRenderer[]> prepareSchematicRenderer(Template schematic, IProgressEvent event) {
         BlockPos size = schematic.getSize();
         if (size.equals(BlockPos.ZERO)) {
+            Logger.warn("Template size is zero!");
             return CompletableFuture.completedFuture(null);
         }
 
@@ -105,9 +104,14 @@ public class SchematicRendererManager implements IProgressEntryProducer {
         CompletableFuture<?>[] tasks = new CompletableFuture<?>[taskSize];
         BlockPos[] pos = new BlockPos[]{BlockPos.ZERO, BlockPos.ZERO.east(size.getX() - 1), BlockPos.ZERO.south(size.getZ() - 1)};
 
+        SchematicRenderer[] renderers = new SchematicRenderer[3];
+        for (int i = 0; i < renderers.length; i++) {
+            renderers[i] = new SchematicRenderer();
+        }
+
         for (int i = 0; i < taskSize; i++) {
             final int index = i;
-            tasks[i] = CompletableFuture.runAsync(() -> placeSchematicWorld(schematic, worlds[index], pos[index], index,
+            tasks[i] = CompletableFuture.runAsync(() -> placeSchematicWorld(schematic, pos[index], renderers, index,
                     (s, p) -> {
                         progress[index] = p;
                         event.onProgress("Block 렌더링 준비중...", (progress[0] + progress[1] + progress[2]) / 3.0);
@@ -115,10 +119,11 @@ public class SchematicRendererManager implements IProgressEntryProducer {
             ), executor);
         }
 
-        return CompletableFuture.allOf(tasks);
+        return CompletableFuture.allOf(tasks)
+                .thenApply((t) -> renderers);
     }
 
-    private void placeSchematicWorld(Template schematic, SchematicWorld world, BlockPos position, int rendererIndex, IProgressEvent event) {
+    private void placeSchematicWorld(Template schematic, BlockPos position, SchematicRenderer[] renderers, int rendererIndex, IProgressEvent event) {
         PlacementSettings pSettings = new PlacementSettings();
         if (rendererIndex == 1) {
             pSettings.setMirror(Mirror.FRONT_BACK);
@@ -130,17 +135,14 @@ public class SchematicRendererManager implements IProgressEntryProducer {
         BlockPos size = schematic.getSize();
         long totalBlocks = (long) size.getX() * size.getY() * size.getZ();
 
-        world.setBlockPlaceProgressEvent((s, p) -> event.onProgress(s, 0.7 * p / totalBlocks));
+        SchematicWorld world = new SchematicWorld(Minecraft.getInstance().level);
+        world.setBlockCountProgressEvent((s, p) -> event.onProgress(s, 0.7 * p / totalBlocks));
         schematic.placeInWorld(world, position, pSettings, world.getRandom());
-        world.setBlockPlaceProgressEvent(null);
+        world.setBlockCountProgressEvent(null);
 
         Logger.debug("Draw buffer caching " + rendererIndex + " schematic...");
-        renderers.get(rendererIndex).cacheSchematicWorld(world, (s, p) -> event.onProgress(s, 0.7 + 0.3 * p));
+        renderers[rendererIndex].setSchematicWorld(world, (s, p) -> event.onProgress(s, 0.7 + 0.3 * p));
         Logger.debug("Draw buffer caching " + rendererIndex + " complete!");
-    }
-
-    public void cancelSetupTask() {
-        executor.shutdownNow();
     }
 
     @Override

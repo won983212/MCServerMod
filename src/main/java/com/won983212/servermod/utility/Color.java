@@ -1,7 +1,6 @@
 package com.won983212.servermod.utility;
 
 public class Color {
-    public final static Color BLACK = new Color(0, 0, 0);
     public final static Color WHITE = new Color(255, 255, 255);
 
     protected final int value;
