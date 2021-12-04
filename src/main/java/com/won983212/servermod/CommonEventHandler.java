@@ -1,6 +1,7 @@
 package com.won983212.servermod;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.won983212.servermod.schematic.SchematicPrinter;
 import com.won983212.servermod.server.Commands;
 import net.minecraft.command.CommandSource;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -14,9 +15,15 @@ public class CommonEventHandler {
 
     @SubscribeEvent
     public static void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase == TickEvent.Phase.START)
+        if (event.phase == TickEvent.Phase.START) {
             return;
+        }
+
         CommonModDist.SCHEMATIC_RECEIVER.tick();
+        SchematicPrinter printer = CommonModDist.PRINTERS.peek();
+        if (printer != null && !printer.placeBatch()) {
+            CommonModDist.PRINTERS.poll();
+        }
     }
 
     @SubscribeEvent

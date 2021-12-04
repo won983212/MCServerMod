@@ -172,7 +172,7 @@ public class SchematicWorld extends WrappedWorld implements IServerWorld {
         bounds.expand(new MutableBoundingBox(pos, pos));
         blocks.put(pos, arg1);
         if (event != null) {
-            event.onProgress("Block 설치중..", blocks.size());
+            event.onProgress("Block 위치 계산중..", blocks.size());
         }
         if (tileEntities.containsKey(pos)) {
             TileEntity tileEntity = tileEntities.get(pos);

@@ -14,6 +14,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkSection;
+import net.minecraftforge.common.util.Constants;
 
 import javax.annotation.Nullable;
 
@@ -47,25 +48,14 @@ public class BlockHelper {
             return;
         }
 
-        if (world.dimensionType().ultraWarm() && state.getFluidState().getType().is(FluidTags.WATER)) {
-            int i = target.getX();
-            int j = target.getY();
-            int k = target.getZ();
-            world.playSound(null, target, SoundEvents.FIRE_EXTINGUISH, SoundCategory.BLOCKS, 0.5F,
-                    2.6F + (world.random.nextFloat() - world.random.nextFloat()) * 0.8F);
-
-            for (int l = 0; l < 8; ++l) {
-                world.addParticle(ParticleTypes.LARGE_SMOKE, i + Math.random(), j + Math.random(), k + Math.random(),
-                        0.0D, 0.0D, 0.0D);
-            }
-            Block.dropResources(state, world, target);
-            return;
+        if(state.hasProperty(BlockStateProperties.WATERLOGGED)){
+            state = state.setValue(BlockStateProperties.WATERLOGGED, Boolean.FALSE);
         }
 
         if (state.getBlock() instanceof AbstractRailBlock) {
             placeRailWithoutUpdate(world, state, target);
         } else {
-            world.setBlock(target, state, 18);
+            world.setBlock(target, state, Constants.BlockFlags.BLOCK_UPDATE | Constants.BlockFlags.UPDATE_NEIGHBORS);
         }
 
         if (data != null) {

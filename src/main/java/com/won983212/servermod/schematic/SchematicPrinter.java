@@ -1,15 +1,14 @@
 package com.won983212.servermod.schematic;
 
+import com.won983212.servermod.Logger;
 import com.won983212.servermod.item.SchematicItem;
 import com.won983212.servermod.schematic.world.SchematicWorld;
 import com.won983212.servermod.utility.BlockHelper;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.NBTUtil;
-import net.minecraft.state.properties.BedPart;
-import net.minecraft.state.properties.BlockStateProperties;
-import net.minecraft.state.properties.DoubleBlockHalf;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
@@ -20,42 +19,65 @@ import net.minecraft.world.gen.feature.template.Template;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class SchematicPrinter {
 
     public enum PrintStage {
-        BLOCKS, DEFERRED_BLOCKS, ENTITIES
+        LOADING, ERROR, BLOCKS, DEFERRED_BLOCKS, ENTITIES
     }
 
-    private boolean schematicLoaded;
+    public static final int BATCH_COUNT = 20 * 20 * 20;
+
+    private final boolean isIncludeAir;
     private SchematicWorld blockReader;
     private BlockPos schematicAnchor;
 
     private BlockPos currentPos;
     private int printingEntityIndex;
-    private PrintStage printStage;
+    private volatile PrintStage printStage;
     private final List<BlockPos> deferredBlocks;
 
-    public SchematicPrinter() {
-        printingEntityIndex = -1;
-        printStage = PrintStage.BLOCKS;
-        deferredBlocks = new LinkedList<>();
+    private World originalWorld;
+    private IProgressEvent event;
+    private long processed = 0;
+    private long total = 0;
+
+
+    public SchematicPrinter(boolean isIncludeAir) {
+        this.printingEntityIndex = -1;
+        this.printStage = PrintStage.LOADING;
+        this.deferredBlocks = new LinkedList<>();
+        this.isIncludeAir = isIncludeAir;
     }
 
-    public void loadSchematic(ItemStack blueprint, World originalWorld, boolean processNBT, IProgressEvent event) {
+    public CompletableFuture<Boolean> loadSchematicAsync(ItemStack blueprint, World originalWorld, boolean processNBT, IProgressEvent event) {
         if (!blueprint.hasTag() || !blueprint.getTag().getBoolean("Deployed")) {
-            return;
+            return CompletableFuture.completedFuture(null);
         }
 
-        Template activeTemplate = SchematicItem.loadSchematic(blueprint, (s, p) -> event.onProgress(s, p * 0.3));
+        this.event = event;
+        this.originalWorld = originalWorld;
+
+        return CompletableFuture.supplyAsync(() -> SchematicItem.loadSchematic(blueprint, (s, p) -> event.onProgress(s, p * 0.2)))
+                .thenApply((t) -> load(t, processNBT, blueprint))
+                .exceptionally((e) -> {
+                    Logger.error(e);
+                    printStage = PrintStage.ERROR;
+                    return false;
+                });
+    }
+
+    private boolean load(Template activeTemplate, boolean processNBT, ItemStack blueprint) {
         PlacementSettings settings = SchematicItem.getSettings(blueprint, processNBT);
+        final long totalSize = (long) activeTemplate.size.getX() * activeTemplate.size.getY() * activeTemplate.size.getZ();
+        this.total = totalSize;
 
         schematicAnchor = NBTUtil.readBlockPos(blueprint.getTag().getCompound("Anchor"));
         blockReader = new SchematicWorld(schematicAnchor, originalWorld);
-        
-        final long totalSize = (long) activeTemplate.size.getX() * activeTemplate.size.getY() * activeTemplate.size.getZ();
-        blockReader.setBlockCountProgressEvent((s, p) -> event.onProgress(s, 0.3 + 0.7 * p / totalSize));
+
+        blockReader.setBlockCountProgressEvent((s, p) -> event.onProgress(s, 0.2 + 0.3 * p / totalSize));
         activeTemplate.placeInWorldChunk(blockReader, schematicAnchor, settings, blockReader.getRandom());
         blockReader.setBlockCountProgressEvent(null);
 
@@ -67,11 +89,43 @@ public class SchematicPrinter {
         deferredBlocks.clear();
         MutableBoundingBox bounds = blockReader.getBounds();
         currentPos = new BlockPos(bounds.x0 - 1, bounds.y0, bounds.z0);
-        schematicLoaded = true;
+        return true;
+    }
+
+    public boolean placeBatch() {
+        if (!isLoaded()) {
+            return printStage == PrintStage.LOADING;
+        }
+
+        int count = 0;
+        boolean end;
+        while ((end = advanceCurrentPos()) && count < BATCH_COUNT) {
+            if (!shouldPlaceCurrent(originalWorld)) {
+                continue;
+            }
+
+            count++;
+            BlockPos target = getCurrentTarget();
+            if (printStage == PrintStage.ENTITIES) {
+                Entity entity = blockReader.getEntities().collect(Collectors.toList()).get(printingEntityIndex);
+                originalWorld.addFreshEntity(entity);
+            } else {
+                BlockState blockState = blockReader.getBlockState(target);
+                TileEntity tileEntity = blockReader.getBlockEntity(target);
+                boolean placingAir = blockState.getBlock().isAir(blockState, originalWorld, target);
+                if (placingAir && !isIncludeAir) {
+                    continue;
+                }
+                CompoundNBT tileData = tileEntity != null ? tileEntity.save(new CompoundNBT()) : null;
+                BlockHelper.placeSchematicBlock(originalWorld, blockState, target, null, tileData);
+            }
+        }
+        event.onProgress("월드에 블록 설치중...", 0.5 + 0.5 * processed / total);
+        return end;
     }
 
     public boolean isLoaded() {
-        return schematicLoaded;
+        return printStage != PrintStage.LOADING && printStage != PrintStage.ERROR;
     }
 
     public BlockPos getCurrentTarget() {
@@ -81,42 +135,7 @@ public class SchematicPrinter {
         return schematicAnchor.offset(currentPos);
     }
 
-    @FunctionalInterface
-    public interface BlockTargetHandler {
-        void handle(BlockPos target, BlockState blockState, TileEntity tileEntity);
-    }
-
-    @FunctionalInterface
-    public interface EntityTargetHandler {
-        void handle(BlockPos target, Entity entity);
-    }
-
-    public void handleCurrentTarget(BlockTargetHandler blockHandler, EntityTargetHandler entityHandler) {
-        BlockPos target = getCurrentTarget();
-
-        if (printStage == PrintStage.ENTITIES) {
-            Entity entity = blockReader.getEntities()
-                    .collect(Collectors.toList())
-                    .get(printingEntityIndex);
-            entityHandler.handle(target, entity);
-        } else {
-            BlockState blockState = blockReader.getBlockState(target);
-            TileEntity tileEntity = blockReader.getBlockEntity(target);
-            blockHandler.handle(target, blockState, tileEntity);
-        }
-    }
-
-    @FunctionalInterface
-    public interface PlacementPredicate {
-        boolean shouldPlace(BlockPos target, BlockState blockState, TileEntity tileEntity,
-                            BlockState toReplace, BlockState toReplaceOther, boolean isNormalCube);
-    }
-
-    public boolean shouldPlaceCurrent(World world) {
-        return shouldPlaceCurrent(world, (a, b, c, d, e, f) -> true);
-    }
-
-    public boolean shouldPlaceCurrent(World world, PlacementPredicate predicate) {
+    private boolean shouldPlaceCurrent(World world) {
         if (world == null) {
             return false;
         }
@@ -125,36 +144,14 @@ public class SchematicPrinter {
             return true;
         }
 
-        return shouldPlaceBlock(world, predicate, getCurrentTarget());
+        return shouldPlaceBlock(world, getCurrentTarget());
     }
 
-    public boolean shouldPlaceBlock(World world, PlacementPredicate predicate, BlockPos pos) {
-        BlockState state = blockReader.getBlockState(pos);
-        TileEntity tileEntity = blockReader.getBlockEntity(pos);
-
-        BlockState toReplace = world.getBlockState(pos);
-        BlockState toReplaceOther = null;
-        if (state.hasProperty(BlockStateProperties.BED_PART) && state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)
-                && state.getValue(BlockStateProperties.BED_PART) == BedPart.FOOT) {
-            toReplaceOther = world.getBlockState(pos.relative(state.getValue(BlockStateProperties.HORIZONTAL_FACING)));
-        }
-        if (state.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)
-                && state.getValue(BlockStateProperties.DOUBLE_BLOCK_HALF) == DoubleBlockHalf.LOWER) {
-            toReplaceOther = world.getBlockState(pos.above());
-        }
-
-        if (!world.isLoaded(pos)) {
-            return false;
-        }
-        if (toReplace.getDestroySpeed(world, pos) == -1 || (toReplaceOther != null && toReplaceOther.getDestroySpeed(world, pos) == -1)) {
-            return false;
-        }
-
-        boolean isNormalCube = state.isRedstoneConductor(blockReader, currentPos);
-        return predicate.shouldPlace(pos, state, tileEntity, toReplace, toReplaceOther, isNormalCube);
+    private boolean shouldPlaceBlock(World world, BlockPos pos) {
+        return world.isLoaded(pos);
     }
 
-    public boolean advanceCurrentPos() {
+    private boolean advanceCurrentPos() {
         List<Entity> entities = blockReader.getEntities().collect(Collectors.toList());
 
         do {
@@ -187,7 +184,8 @@ public class SchematicPrinter {
         return true;
     }
 
-    public boolean tryAdvanceCurrentPos() {
+    private boolean tryAdvanceCurrentPos() {
+        processed++;
         currentPos = currentPos.relative(Direction.EAST);
         MutableBoundingBox bounds = blockReader.getBounds();
         BlockPos posInBounds = currentPos.offset(-bounds.x0, -bounds.y0, -bounds.z0);
@@ -200,7 +198,7 @@ public class SchematicPrinter {
         }
 
         // End of blocks reached
-        if (currentPos.getY() > bounds.getYSpan()) {
+        if (currentPos.getY() > bounds.getYSpan() || currentPos.getY() >= 256) {
             printStage = PrintStage.DEFERRED_BLOCKS;
             return false;
         }
