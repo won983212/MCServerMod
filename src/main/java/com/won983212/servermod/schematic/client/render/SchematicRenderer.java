@@ -7,6 +7,7 @@ import com.won983212.servermod.schematic.IProgressEvent;
 import com.won983212.servermod.schematic.world.SchematicWorld;
 import com.won983212.servermod.utility.MatrixTransformStack;
 import com.won983212.servermod.utility.animate.AnimationTickHolder;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -20,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-// TODO 먼 곳의 chunk는 안보이게!
 public class SchematicRenderer {
     private final List<ChunkVertexBuffer> chunks = new ArrayList<>();
     protected SchematicWorld schematic;
@@ -32,7 +32,7 @@ public class SchematicRenderer {
         redraw(event);
     }
 
-    public void render(MatrixStack ms, SuperRenderTypeBuffer buffer) {
+    public void render(MatrixStack ms, BlockPos worldAnchor, SuperRenderTypeBuffer buffer) {
         if (schematic == null) {
             return;
         }
@@ -41,10 +41,13 @@ public class SchematicRenderer {
             for (RenderType layer : RenderType.chunkBufferLayers()) {
                 if (layer == RenderType.solid()) {
                     buffer.getBuffer(RenderType.solid());
-                    renderTileEntities(ms, buffer);
+                    renderTileEntities(ms, worldAnchor, buffer);
                 }
                 for (ChunkVertexBuffer vertexBuffer : chunks) {
-                    vertexBuffer.render(ms, layer);
+                    if (isInViewDistance(worldAnchor.offset(vertexBuffer.getOrigin()).offset(8, 8, 8))) {
+                        worldAnchor.offset(vertexBuffer.getOrigin()).offset(8, 8, 8);
+                        vertexBuffer.render(ms, layer);
+                    }
                 }
             }
         }
@@ -81,17 +84,21 @@ public class SchematicRenderer {
         }
     }
 
-    private void renderTileEntities(MatrixStack ms, IRenderTypeBuffer buffer) {
+    private void renderTileEntities(MatrixStack ms, BlockPos worldAnchor, IRenderTypeBuffer buffer) {
         Iterator<TileEntity> iterator = schematic.getRenderedTileEntities().iterator();
         while (iterator.hasNext()) {
             TileEntity tileEntity = iterator.next();
+            BlockPos pos = tileEntity.getBlockPos();
+            if (!isInViewDistance(pos.offset(worldAnchor))) {
+                continue;
+            }
+
             TileEntityRenderer<TileEntity> renderer = TileEntityRendererDispatcher.instance.getRenderer(tileEntity);
             if (renderer == null) {
                 iterator.remove();
                 continue;
             }
 
-            BlockPos pos = tileEntity.getBlockPos();
             ms.pushPose();
             MatrixTransformStack.of(ms).translate(pos);
 
@@ -107,5 +114,12 @@ public class SchematicRenderer {
 
             ms.popPose();
         }
+    }
+
+    private static boolean isInViewDistance(BlockPos pos) {
+        Minecraft mc = Minecraft.getInstance();
+        BlockPos playerPos = mc.player.blockPosition();
+        int renderDistance = mc.options.renderDistance * 16;
+        return playerPos.distSqr(pos) < renderDistance * renderDistance;
     }
 }

@@ -20,7 +20,7 @@
 package com.won983212.servermod.schematic.parser;
 
 import com.google.common.collect.ImmutableList;
-import com.won983212.servermod.LegacyMapper;
+import com.won983212.servermod.WorldeditLegacyMapper;
 import com.won983212.servermod.Logger;
 import com.won983212.servermod.schematic.parser.legacycompat.*;
 import net.minecraft.block.BlockState;
@@ -36,6 +36,7 @@ import java.util.*;
 /**
  * Reads schematic files that are compatible with MCEdit and other editors.
  */
+//TODO load palette
 class MCEditSchematicReader extends AbstractSchematicReader {
 
     private static final ImmutableList<NBTCompatibilityHandler> COMPATIBILITY_HANDLERS
@@ -45,7 +46,8 @@ class MCEditSchematicReader extends AbstractSchematicReader {
             new NoteBlockCompatibilityHandler(),
             new SkullBlockCompatibilityHandler(),
             new BannerBlockCompatibilityHandler(),
-            new BedBlockCompatibilityHandler()
+            new BedBlockCompatibilityHandler(),
+            new DoorBlockCompatibilityHandler()
     );
 
     private static final ImmutableList<EntityNBTCompatibilityHandler> ENTITY_COMPATIBILITY_HANDLERS
@@ -116,7 +118,7 @@ class MCEditSchematicReader extends AbstractSchematicReader {
         List<INBT> tileEntities = tileEntityTag == null ? new ArrayList<>() : tileEntityTag;
         Map<BlockPos, CompoundNBT> tileEntitiesMap = new HashMap<>();
         Map<BlockPos, BlockState> blockStates = new HashMap<>();
-        LegacyMapper legacyMapper = LegacyMapper.getInstance();
+        WorldeditLegacyMapper legacyMapper = WorldeditLegacyMapper.getInstance();
 
         long current = 0;
         for (INBT tag : tileEntities) {
@@ -161,23 +163,23 @@ class MCEditSchematicReader extends AbstractSchematicReader {
         template.palettes.clear();
         long total = (long) width * height * length;
         current = 0;
+
         for (int y = 0; y < height; ++y) {
             for (int x = 0; x < width; ++x) {
                 for (int z = 0; z < length; ++z) {
                     int index = y * width * length + z * width + x;
                     BlockPos pt = new BlockPos(x, y, z);
                     BlockState state = blockStates.get(pt);
+                    short block = blocks[index];
+                    byte data = blockData[index];
 
                     if (state == null) {
-                        state = legacyMapper.getBlockFromLegacy(blocks[index], blockData[index]);
+                        state = legacyMapper.getBlockFromLegacy(block, data);
                         blockStates.put(pt, state);
                     }
 
                     if (state == null) {
-                        short block = blocks[index];
-                        byte data = blockData[index];
-                        int combined = block << 8 | data;
-                        if (unknownBlocks.add(combined)) {
+                        if (unknownBlocks.add(block << 8 | data)) {
                             Logger.warn("Unknown block when loading schematic: "
                                     + block + ":" + data + ". This is most likely a bad schematic.");
                         }

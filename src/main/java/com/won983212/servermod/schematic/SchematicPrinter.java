@@ -148,7 +148,7 @@ public class SchematicPrinter {
     }
 
     private boolean shouldPlaceBlock(World world, BlockPos pos) {
-        return world.isLoaded(pos);
+        return !World.isOutsideBuildHeight(pos);
     }
 
     private boolean advanceCurrentPos() {
@@ -198,7 +198,7 @@ public class SchematicPrinter {
         }
 
         // End of blocks reached
-        if (currentPos.getY() > bounds.getYSpan() || currentPos.getY() >= 256) {
+        if (currentPos.getY() > bounds.getYSpan() || World.isOutsideBuildHeight(currentPos.getY())) {
             printStage = PrintStage.DEFERRED_BLOCKS;
             return false;
         }

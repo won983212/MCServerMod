@@ -34,12 +34,16 @@ public class ChunkVertexBuffer {
         blockBufferCache = new HashMap<>(layerCount);
     }
 
-    public static void setCameraPosition(Vector3d pos){
+    public static void setCameraPosition(Vector3d pos) {
         cameraPosition = pos;
     }
 
     public boolean isEmpty() {
         return usedBlockRenderLayers.isEmpty();
+    }
+
+    public BlockPos getOrigin() {
+        return origin;
     }
 
     public void render(MatrixStack ms, RenderType layer) {

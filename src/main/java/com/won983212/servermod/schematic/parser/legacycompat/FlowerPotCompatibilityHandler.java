@@ -19,7 +19,7 @@
 
 package com.won983212.servermod.schematic.parser.legacycompat;
 
-import com.won983212.servermod.LegacyMapper;
+import com.won983212.servermod.WorldeditLegacyMapper;
 import com.won983212.servermod.utility.RegistryHelper;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -84,7 +84,7 @@ public class FlowerPotCompatibilityHandler implements NBTCompatibilityHandler {
         if (newId == 0 && id.startsWith("minecraft:")) {
             plantedName = id.substring(10);
         } else {
-            BlockState plantedWithData = LegacyMapper.getInstance().getBlockFromLegacy(newId, data);
+            BlockState plantedWithData = WorldeditLegacyMapper.getInstance().getBlockFromLegacy(newId, data);
             if (plantedWithData != null) {
                 plantedName = plantedWithData.getBlock().getRegistryName().getPath();
             }

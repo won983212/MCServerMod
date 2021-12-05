@@ -19,14 +19,16 @@
 
 package com.won983212.servermod;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.won983212.servermod.client.ResourceUtil;
 import com.won983212.servermod.utility.RegistryHelper;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.command.arguments.BlockStateArgument;
@@ -40,23 +42,21 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 
-public final class LegacyMapper {
+public final class WorldeditLegacyMapper {
     private static final ResourceLocation LEGACY_MAP_FILE = ResourceUtil.getResource("legacy.json");
-    private static LegacyMapper INSTANCE;
+    private static WorldeditLegacyMapper INSTANCE;
 
-    private final Map<String, BlockState> stringToBlockMap = new HashMap<>();
-    private final Multimap<BlockState, String> blockToStringMap = HashMultimap.create();
-    private final Map<String, Item> stringToItemMap = new HashMap<>();
-    private final Multimap<Item, String> itemToStringMap = HashMultimap.create();
+    private final Int2ObjectMap<BlockState> idToBlockMap = new Int2ObjectOpenHashMap<>();
+    private final Object2IntMap<BlockState> blockToIdMap = new Object2IntOpenHashMap<>();
+    private final Int2ObjectMap<Item> idToItemMap = new Int2ObjectOpenHashMap<>();
+    private final Object2IntMap<Item> itemToIdMap = new Object2IntOpenHashMap<>();
 
     /**
      * Create a new instance.
      */
-    private LegacyMapper() {
+    private WorldeditLegacyMapper() {
         try {
             loadFromResource();
         } catch (Throwable e) {
@@ -81,7 +81,7 @@ public final class LegacyMapper {
         }.getType());
 
         for (Map.Entry<String, String> blockEntry : dataFile.blocks.entrySet()) {
-            String id = blockEntry.getKey();
+            int id = getIdFromText(blockEntry.getKey());
             String value = blockEntry.getValue();
             BlockState state = null;
 
@@ -96,22 +96,29 @@ public final class LegacyMapper {
                 Logger.warn("Unknown block: " + value);
             } else {
                 // it's not null so one of them succeeded, now use it
-                blockToStringMap.put(state, id);
-                stringToBlockMap.put(id, state);
+                blockToIdMap.put(state, id);
+                idToBlockMap.put(id, state);
             }
         }
 
         for (Map.Entry<String, String> itemEntry : dataFile.items.entrySet()) {
-            String id = itemEntry.getKey();
+            int id = getIdFromText(itemEntry.getKey());
             String value = itemEntry.getValue();
             Item type = RegistryHelper.getItemFromId(value, null);
             if (type != null) {
-                itemToStringMap.put(type, id);
-                stringToItemMap.put(id, type);
+                itemToIdMap.put(type, id);
+                idToItemMap.put(id, type);
             } else {
                 Logger.warn("Unknown item ID: " + value);
             }
         }
+    }
+
+    private int getIdFromText(String idText) {
+        String[] idToken = idText.split(":");
+        int id = Integer.parseInt(idToken[0]);
+        int data = Integer.parseInt(idToken[1]);
+        return (id << 4) | data;
     }
 
     @Nullable
@@ -121,14 +128,14 @@ public final class LegacyMapper {
 
     @Nullable
     public Item getItemFromLegacy(int legacyId, int data) {
-        return stringToItemMap.get(legacyId + ":" + data);
+        return idToItemMap.get((legacyId << 4) | data);
     }
 
     @Nullable
     public int[] getLegacyFromItem(Item itemType) {
-        if (itemToStringMap.containsKey(itemType)) {
-            String value = itemToStringMap.get(itemType).stream().findFirst().get();
-            return Arrays.stream(value.split(":")).mapToInt(Integer::parseInt).toArray();
+        if (itemToIdMap.containsKey(itemType)) {
+            int value = itemToIdMap.getOrDefault(itemType, 0);
+            return new int[]{value >> 4, value & 15};
         } else {
             return null;
         }
@@ -141,22 +148,22 @@ public final class LegacyMapper {
 
     @Nullable
     public BlockState getBlockFromLegacy(int legacyId, int data) {
-        return stringToBlockMap.get(legacyId + ":" + data);
+        return idToBlockMap.get((legacyId << 4) | data);
     }
 
     @Nullable
     public int[] getLegacyFromBlock(BlockState blockState) {
-        if (blockToStringMap.containsKey(blockState)) {
-            String value = blockToStringMap.get(blockState).stream().findFirst().get();
-            return Arrays.stream(value.split(":")).mapToInt(Integer::parseInt).toArray();
+        if (blockToIdMap.containsKey(blockState)) {
+            int value = blockToIdMap.getOrDefault(blockState, 0);
+            return new int[]{value >> 4, value & 15};
         } else {
             return null;
         }
     }
 
-    public static LegacyMapper getInstance() {
+    public static WorldeditLegacyMapper getInstance() {
         if (INSTANCE == null) {
-            INSTANCE = new LegacyMapper();
+            INSTANCE = new WorldeditLegacyMapper();
         }
         return INSTANCE;
     }

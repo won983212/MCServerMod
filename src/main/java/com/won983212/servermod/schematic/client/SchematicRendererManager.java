@@ -46,12 +46,13 @@ public class SchematicRendererManager implements IProgressEntryProducer {
             float pt = AnimationTickHolder.getPartialTicks();
             boolean lr = transformation.getScaleLR().get(pt) < 0;
             boolean fb = transformation.getScaleFB().get(pt) < 0;
+            BlockPos pos = transformation.getAnchor();
             if (lr && !fb) {
-                renderers[2].render(ms, buffer);
+                renderers[2].render(ms, pos, buffer);
             } else if (fb && !lr) {
-                renderers[1].render(ms, buffer);
+                renderers[1].render(ms, pos, buffer);
             } else {
-                renderers[0].render(ms, buffer);
+                renderers[0].render(ms, pos, buffer);
             }
         }
     }
