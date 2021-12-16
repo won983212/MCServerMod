@@ -13,8 +13,12 @@ public class Logger {
         LOGGER.warn("[" + ServerMod.MODID + "] " + obj);
     }
 
-    public static void error(Object obj) {
-        LOGGER.error("[" + ServerMod.MODID + "] " + obj);
+    public static void error(String message) {
+        LOGGER.error("[" + ServerMod.MODID + "] " + message);
+    }
+
+    public static void error(Throwable obj) {
+        LOGGER.error("[" + ServerMod.MODID + "] ", obj);
     }
 
     public static void debug(Object obj) {

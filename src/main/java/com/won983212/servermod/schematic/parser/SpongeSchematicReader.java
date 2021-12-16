@@ -3,15 +3,13 @@ package com.won983212.servermod.schematic.parser;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.won983212.servermod.Logger;
+import com.won983212.servermod.schematic.parser.container.SchematicContainer;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.command.arguments.BlockStateArgument;
 import net.minecraft.nbt.*;
 import net.minecraft.util.SharedConstants;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.world.gen.feature.template.Template;
-import net.minecraftforge.common.util.Constants;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -32,7 +30,7 @@ class SpongeSchematicReader extends AbstractSchematicReader {
     }
 
     @Override
-    protected Template parse(CompoundNBT schematic) throws IOException {
+    protected SchematicContainer parse(CompoundNBT schematic) throws IOException {
         int liveDataVersion = SharedConstants.getCurrentVersion().getWorldVersion();
         int schematicVersion = checkTag(schematic, "Version", IntNBT.class).getAsInt();
         if (schematicVersion == 1) {
@@ -55,13 +53,13 @@ class SpongeSchematicReader extends AbstractSchematicReader {
                         + dataVersion + " < " + liveDataVersion + "), will attempt DFU.");
             }
 
-            Template template = readVersion1(schematic);
-            return readVersion2(template, schematic);
+            SchematicContainer schem = readVersion1(schematic);
+            return readVersion2(schem, schematic);
         }
         throw new IOException("This schematic version is currently not supported");
     }
 
-    private Template readVersion1(CompoundNBT schematicTag) throws IOException {
+    private SchematicContainer readVersion1(CompoundNBT schematicTag) throws IOException {
         notifyProgress("Metadata 읽는 중...", 0);
 
         BlockPos size = parseSize(schematicTag);
@@ -131,14 +129,14 @@ class SpongeSchematicReader extends AbstractSchematicReader {
             }
         }
 
-        Template template = new Template();
-        template.size = new BlockPos(width, height, length);
+        SchematicContainer schem = new SchematicContainer();
+        schem.resizeBlockContainer(new BlockPos(width, height, length));
 
-        PriorityBlockList blockList = new PriorityBlockList();
         int index = 0;
         int i = 0;
         int value;
         int varintLength;
+
         while (i < blocks.length) {
             value = 0;
             varintLength = 0;
@@ -162,18 +160,17 @@ class SpongeSchematicReader extends AbstractSchematicReader {
             BlockState state = palette.get(value);
             BlockPos pt = new BlockPos(x, y, z);
             if (tileEntitiesMap.containsKey(pt)) {
-                blockList.addBlock(pt, state, tileEntitiesMap.get(pt).copy());
+                schem.addBlock(pt, state, tileEntitiesMap.get(pt).copy());
             } else {
-                blockList.addBlock(pt, state, null);
+                schem.addBlock(pt, state, null);
             }
             notifyProgress("Block 읽는 중...", 0.4 + 0.59 * (index++) / blocks.length);
         }
 
-        blockList.addNewPaletteTo(template);
-        return template;
+        return schem;
     }
 
-    private Template readVersion2(Template version1, CompoundNBT schematicTag) throws IOException {
+    private SchematicContainer readVersion2(SchematicContainer version1, CompoundNBT schematicTag) throws IOException {
         if (schematicTag.contains("Entities")) {
             notifyProgress("Entity 읽는 중...", 0.99);
             readEntities(version1, schematicTag);
@@ -181,8 +178,7 @@ class SpongeSchematicReader extends AbstractSchematicReader {
         return version1;
     }
 
-    private void readEntities(Template template, CompoundNBT schematic) throws IOException {
-        template.entityInfoList.clear();
+    private void readEntities(SchematicContainer schem, CompoundNBT schematic) throws IOException {
         ListNBT entList = checkTag(schematic, "Entities", ListNBT.class);
         if (entList.isEmpty()) {
             return;
@@ -191,6 +187,7 @@ class SpongeSchematicReader extends AbstractSchematicReader {
             if (!(et instanceof CompoundNBT)) {
                 continue;
             }
+
             CompoundNBT entityTag = (CompoundNBT) et;
             String id = checkTag(entityTag, "Id", StringNBT.class).getAsString();
             entityTag.putString("id", id);
@@ -200,11 +197,7 @@ class SpongeSchematicReader extends AbstractSchematicReader {
                 entityTag = fixer.fixUp(ForgeDataFixer.FixTypes.ENTITY, entityTag, dataVersion);
             }
 
-            ListNBT pos = entityTag.getList("Pos", Constants.NBT.TAG_DOUBLE);
-            Vector3d posVector = new Vector3d(pos.getDouble(0), pos.getDouble(1), pos.getDouble(2));
-            BlockPos blockPos = new BlockPos(pos.getInt(0), pos.getInt(1), pos.getInt(2));
-            Template.EntityInfo entityInfo = new Template.EntityInfo(posVector, blockPos, entityTag);
-            template.entityInfoList.add(entityInfo);
+            schem.addEntity(entityTag);
         }
     }
 }

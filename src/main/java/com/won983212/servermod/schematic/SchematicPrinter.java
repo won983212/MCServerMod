@@ -2,6 +2,7 @@ package com.won983212.servermod.schematic;
 
 import com.won983212.servermod.Logger;
 import com.won983212.servermod.item.SchematicItem;
+import com.won983212.servermod.schematic.parser.container.SchematicContainer;
 import com.won983212.servermod.schematic.world.SchematicWorld;
 import com.won983212.servermod.utility.BlockHelper;
 import net.minecraft.block.BlockState;
@@ -69,16 +70,17 @@ public class SchematicPrinter {
                 });
     }
 
-    private boolean load(Template activeTemplate, boolean processNBT, ItemStack blueprint) {
+    private boolean load(SchematicContainer activeTemplate, boolean processNBT, ItemStack blueprint) {
         PlacementSettings settings = SchematicItem.getSettings(blueprint, processNBT);
-        final long totalSize = (long) activeTemplate.size.getX() * activeTemplate.size.getY() * activeTemplate.size.getZ();
+        BlockPos size = activeTemplate.getSize();
+        final long totalSize = (long) size.getX() * size.getY() * size.getZ();
         this.total = totalSize;
 
         schematicAnchor = NBTUtil.readBlockPos(blueprint.getTag().getCompound("Anchor"));
         blockReader = new SchematicWorld(schematicAnchor, originalWorld);
 
         blockReader.setBlockCountProgressEvent((s, p) -> event.onProgress(s, 0.2 + 0.3 * p / totalSize));
-        activeTemplate.placeInWorldChunk(blockReader, schematicAnchor, settings, blockReader.getRandom());
+        activeTemplate.placeSchematicToWorld(blockReader, schematicAnchor, settings);
         blockReader.setBlockCountProgressEvent(null);
 
         BlockPos extraBounds = Template.calculateRelativePosition(settings, activeTemplate.getSize().offset(-1, -1, -1));

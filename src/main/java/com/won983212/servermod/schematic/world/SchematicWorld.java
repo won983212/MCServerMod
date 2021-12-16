@@ -204,6 +204,7 @@ public class SchematicWorld extends WrappedWorld implements IServerWorld {
         return EmptyTickList.empty();
     }
 
+    // TODO schematiccontainer로 옮기자.
     /** 0~1사이 값이 아니라 설치된 count of block을 return한다. */
     public void setBlockCountProgressEvent(IProgressEvent event) {
         this.event = event;

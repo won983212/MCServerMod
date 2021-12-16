@@ -20,14 +20,13 @@
 package com.won983212.servermod.schematic.parser;
 
 import com.google.common.collect.ImmutableList;
-import com.won983212.servermod.WorldeditLegacyMapper;
+import com.won983212.servermod.LegacyMapper;
 import com.won983212.servermod.Logger;
+import com.won983212.servermod.schematic.parser.container.SchematicContainer;
 import com.won983212.servermod.schematic.parser.legacycompat.*;
 import net.minecraft.block.BlockState;
 import net.minecraft.nbt.*;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.world.gen.feature.template.Template;
 import net.minecraftforge.common.util.Constants;
 
 import java.io.IOException;
@@ -36,7 +35,6 @@ import java.util.*;
 /**
  * Reads schematic files that are compatible with MCEdit and other editors.
  */
-//TODO load palette
 class MCEditSchematicReader extends AbstractSchematicReader {
 
     private static final ImmutableList<NBTCompatibilityHandler> COMPATIBILITY_HANDLERS
@@ -55,6 +53,7 @@ class MCEditSchematicReader extends AbstractSchematicReader {
             new Pre13HangingCompatibilityHandler()
     );
 
+
     protected BlockPos parseSize(CompoundNBT schematic) throws IOException {
         short width = checkTag(schematic, "Width", ShortNBT.class).getAsShort();
         short height = checkTag(schematic, "Height", ShortNBT.class).getAsShort();
@@ -62,8 +61,27 @@ class MCEditSchematicReader extends AbstractSchematicReader {
         return new BlockPos(width, height, length);
     }
 
-    protected Template parse(CompoundNBT schematic) throws IOException {
-        Template template = new Template();
+    private void addBlocksToPalette(int id, String key, BlockState[] palette) {
+        int keyId = LegacyMapper.getOldNameToBlockId(key);
+        if (keyId == -1) {
+            keyId = LegacyMapper.getNameToBlockId(key);
+        }
+        if (keyId != -1) {
+            keyId = keyId >> 4;
+            for (int meta = 0; meta < 16; ++meta) {
+                BlockState state1 = LegacyMapper.getBlockFromLegacy(keyId, meta);
+                if (state1 != null) {
+                    palette[(id << 4) | meta] = state1;
+                }
+            }
+        } else {
+            Logger.warn("Can't find legacy id : " + key);
+        }
+    }
+
+    protected SchematicContainer parse(CompoundNBT schematic) throws IOException {
+        SchematicContainer schem = new SchematicContainer();
+        BlockState[] palette = new BlockState[1 << 16];
 
         // Check
         if (!schematic.contains("Blocks")) {
@@ -81,7 +99,48 @@ class MCEditSchematicReader extends AbstractSchematicReader {
         int width = size.getX();
         int height = size.getY();
         int length = size.getZ();
-        template.size = size;
+        schem.resizeBlockContainer(size);
+
+        if (schematic.contains("SchematicMapping", Constants.NBT.TAG_COMPOUND)) {
+            Logger.warn("This file is not supported file. It will be not loaded successfully.");
+        } else if (schematic.contains("SchematicaMapping", Constants.NBT.TAG_COMPOUND)) {
+            CompoundNBT tag = schematic.getCompound("SchematicaMapping");
+            Set<String> keys = tag.getAllKeys();
+
+            for (String key : keys) {
+                int id = tag.getShort(key);
+                if (id < 0 || id >= 4096) {
+                    throw new IOException("Invalid ID '" + id + "' in SchematicaMapping for block '" + key + "', range: 0 - 4095");
+                }
+                addBlocksToPalette(id, key, palette);
+            }
+        } else if (schematic.contains("BlockIDs", Constants.NBT.TAG_COMPOUND)) {
+            CompoundNBT tag = schematic.getCompound("BlockIDs");
+            Set<String> keys = tag.getAllKeys();
+
+            for (String idStr : keys) {
+                String key = tag.getString(idStr);
+                int id;
+                try {
+                    id = Integer.parseInt(idStr);
+                } catch (NumberFormatException e) {
+                    throw new IOException("Invalid ID '" + idStr + "' (not a number) in MCEdit2 palette for block '" + key + "'");
+                }
+                if (id < 0 || id >= 4096) {
+                    throw new IOException("Invalid ID '" + id + "' in BlockIDs for block '" + key + "', range: 0 - 4095");
+                }
+                addBlocksToPalette(id, key, palette);
+            }
+        } else {
+            for (int id = 0; id < 4096; ++id) {
+                for (int meta = 0; meta < 16; ++meta) {
+                    BlockState state = LegacyMapper.getBlockFromLegacy(id, meta);
+                    if (state != null) {
+                        palette[(id << 4) | meta] = state;
+                    }
+                }
+            }
+        }
 
         // ====================================================================
         // Blocks
@@ -110,7 +169,7 @@ class MCEditSchematicReader extends AbstractSchematicReader {
                     blocks[index] = (short) (((addId[index >> 1] & 0xF0) << 4) + (blockId[index] & 0xFF));
                 }
             }
-            notifyProgress("Block Metadata 읽는 중...", 0.1 + 0.2 * index / blockId.length);
+            notifyProgress("Block 읽는 중...", 0.1 + 0.2 * index / blockId.length);
         }
 
         // Need to pull out tile entities
@@ -118,7 +177,6 @@ class MCEditSchematicReader extends AbstractSchematicReader {
         List<INBT> tileEntities = tileEntityTag == null ? new ArrayList<>() : tileEntityTag;
         Map<BlockPos, CompoundNBT> tileEntitiesMap = new HashMap<>();
         Map<BlockPos, BlockState> blockStates = new HashMap<>();
-        WorldeditLegacyMapper legacyMapper = WorldeditLegacyMapper.getInstance();
 
         long current = 0;
         for (INBT tag : tileEntities) {
@@ -134,7 +192,19 @@ class MCEditSchematicReader extends AbstractSchematicReader {
             int z = t.getInt("z");
             int index = y * width * length + z * width + x;
 
-            BlockState block = legacyMapper.getBlockFromLegacy(blocks[index], blockData[index]);
+            BlockState block = palette[(blocks[index] << 4) | blockData[index]];
+            if (block == null) {
+                for (int meta = 0; meta < 16; ++meta) {
+                    block = palette[(blocks[index] << 4) | meta];
+                    if (block != null) {
+                        palette[(blocks[index] << 4) | blockData[index]] = block;
+                        Logger.warn(blocks[index] + ":" + blockData[index] + " is replaced to " + block +
+                                ". Because this block id is not in palette.");
+                        break;
+                    }
+                }
+            }
+
             BlockState newBlock = block;
             if (newBlock != null) {
                 for (NBTCompatibilityHandler handler : COMPATIBILITY_HANDLERS) {
@@ -145,7 +215,11 @@ class MCEditSchematicReader extends AbstractSchematicReader {
                         }
                     }
                 }
+            } else {
+                Logger.warn("No block is in palette: " + blocks[index] + ":" + blockData[index]);
+                continue;
             }
+
             if (t.isEmpty()) {
                 t = null;
             }
@@ -157,10 +231,7 @@ class MCEditSchematicReader extends AbstractSchematicReader {
             blockStates.put(vec, newBlock);
         }
 
-        PriorityBlockList blockList = new PriorityBlockList();
         Set<Integer> unknownBlocks = new HashSet<>();
-
-        template.palettes.clear();
         long total = (long) width * height * length;
         current = 0;
 
@@ -174,7 +245,7 @@ class MCEditSchematicReader extends AbstractSchematicReader {
                     byte data = blockData[index];
 
                     if (state == null) {
-                        state = legacyMapper.getBlockFromLegacy(block, data);
+                        state = palette[(block << 4) | data];
                         blockStates.put(pt, state);
                     }
 
@@ -190,18 +261,17 @@ class MCEditSchematicReader extends AbstractSchematicReader {
                     if (tileEntitiesMap.containsKey(pt)) {
                         blockNBT = tileEntitiesMap.get(pt).copy();
                     }
-                    blockList.addBlock(pt, state, blockNBT);
+
+                    schem.addBlock(pt, state, blockNBT);
                     notifyProgress("Block 읽는 중...", 0.5 + 0.45 * (current++) / total);
                 }
             }
         }
-        blockList.addNewPaletteTo(template);
 
         // ====================================================================
         // Entities
         // ====================================================================
 
-        template.entityInfoList.clear();
         ListNBT entityList = getTag(schematic, "Entities", ListNBT.class);
         if (entityList != null) {
             current = 0;
@@ -209,7 +279,6 @@ class MCEditSchematicReader extends AbstractSchematicReader {
                 if (tag instanceof CompoundNBT) {
                     CompoundNBT compound = (CompoundNBT) tag;
                     String id = convertEntityId(compound.getString("id"));
-                    ListNBT pos = compound.getList("Pos", Constants.NBT.TAG_DOUBLE);
                     if (!id.isEmpty()) {
                         CompoundNBT entityNBTTag = compound.copy();
                         for (EntityNBTCompatibilityHandler compatibilityHandler : ENTITY_COMPATIBILITY_HANDLERS) {
@@ -217,17 +286,14 @@ class MCEditSchematicReader extends AbstractSchematicReader {
                                 entityNBTTag = compatibilityHandler.updateNBT(id, entityNBTTag);
                             }
                         }
-                        Vector3d posVector = new Vector3d(pos.getDouble(0), pos.getDouble(1), pos.getDouble(2));
-                        BlockPos blockPos = new BlockPos(pos.getInt(0), pos.getInt(1), pos.getInt(2));
-                        Template.EntityInfo entityInfo = new Template.EntityInfo(posVector, blockPos, entityNBTTag);
-                        template.entityInfoList.add(entityInfo);
+                        schem.addEntity(entityNBTTag);
                     }
                 }
                 notifyProgress("Entity 읽는 중...", 0.95 + 0.04 * (current++) / entityList.size());
             }
         }
 
-        return template;
+        return schem;
     }
 
     protected String convertEntityId(String id) {

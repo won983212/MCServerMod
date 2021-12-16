@@ -3,6 +3,7 @@ package com.won983212.servermod.item;
 import com.won983212.servermod.schematic.SchematicProcessor;
 import com.won983212.servermod.schematic.IProgressEvent;
 import com.won983212.servermod.schematic.parser.SchematicFileParser;
+import com.won983212.servermod.schematic.parser.container.SchematicContainer;
 import com.won983212.servermod.server.command.SchematicCommand;
 import com.won983212.servermod.utility.Lang;
 import net.minecraft.client.util.ITooltipFlag;
@@ -96,15 +97,14 @@ public class SchematicItem extends Item {
         return BlockPos.ZERO;
     }
 
-    public static Template loadSchematic(ItemStack blueprint, IProgressEvent event) {
-        Template t = new Template();
+    public static SchematicContainer loadSchematic(ItemStack blueprint, IProgressEvent event) {
         try {
             Path path = getSchematicPath(blueprint);
             return SchematicFileParser.parseSchematicFile(path.toFile(), event);
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return t;
+        return new SchematicContainer();
     }
 
     private static Path getSchematicPath(ItemStack blueprint) throws IOException {

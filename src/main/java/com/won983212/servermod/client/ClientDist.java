@@ -1,6 +1,6 @@
 package com.won983212.servermod.client;
 
-import com.won983212.servermod.WorldeditLegacyMapper;
+import com.won983212.servermod.LegacyMapper;
 import com.won983212.servermod.CommonModDist;
 import com.won983212.servermod.ModKeys;
 import com.won983212.servermod.client.gui.ConfigScreen;
@@ -34,6 +34,5 @@ public class ClientDist extends CommonModDist {
         );
         ClientRegistry.bindTileEntityRenderer(ModTiles.tileEntityIndustrialAlarm, RenderIndustrialAlarm::new);
         ModKeys.registerKeys();
-        WorldeditLegacyMapper.getInstance();
     }
 }

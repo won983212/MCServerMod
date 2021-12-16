@@ -2,16 +2,21 @@ package com.won983212.servermod.client;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.won983212.servermod.WorldeditLegacyMapper;
+import com.won983212.servermod.LegacyMapper;
 import com.won983212.servermod.ModKeys;
 import com.won983212.servermod.ServerMod;
 import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
+import com.won983212.servermod.schematic.client.SchematicRendererManager;
 import com.won983212.servermod.schematic.client.render.ChunkVertexBuffer;
+import com.won983212.servermod.schematic.client.render.SchematicRenderer;
+import com.won983212.servermod.schematic.parser.SchematicFileParser;
 import com.won983212.servermod.skin.SkinCacheCleaner;
 import com.won983212.servermod.utility.animate.AnimationTickHolder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.world.ClientWorld;
+import net.minecraft.item.BlockItem;
+import net.minecraft.item.Item;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
@@ -26,7 +31,6 @@ import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import org.apache.commons.lang3.StringUtils;
 
 import java.awt.*;
 
@@ -36,9 +40,12 @@ public class ClientEventHandler {
     @SubscribeEvent
     public static void onTooltipShow(ItemTooltipEvent e) {
         if (e.getFlags().isAdvanced()) {
-            int[] legacyId = WorldeditLegacyMapper.getInstance().getLegacyFromItem(e.getItemStack().getItem());
-            if (legacyId != null) {
-                e.getToolTip().add((new StringTextComponent("# " + StringUtils.join(legacyId, ':')).withStyle(TextFormatting.DARK_GRAY)));
+            Item item = e.getItemStack().getItem();
+            if (item instanceof BlockItem) {
+                int legacyId = LegacyMapper.getLegacyFromBlock(((BlockItem) item).getBlock().defaultBlockState());
+                if (legacyId != -1) {
+                    e.getToolTip().add((new StringTextComponent("# " + (legacyId >> 4) + ":" + (legacyId & 15)).withStyle(TextFormatting.DARK_GRAY)));
+                }
             }
         }
     }
@@ -60,6 +67,8 @@ public class ClientEventHandler {
     public static void onUnloadWorld(WorldEvent.Unload event) {
         if (event.getWorld().isClientSide()) {
             AnimationTickHolder.reset();
+            SchematicFileParser.clearCache();
+            ClientDist.SCHEMATIC_HANDLER.clearCache();
         }
     }
 
@@ -143,10 +152,10 @@ public class ClientEventHandler {
         event.setCanceled(ClientDist.SCHEMATIC_HANDLER.mouseScrolled(delta));
     }
 
-    private static Point getMousePosition(){
+    private static Point getMousePosition() {
         Minecraft mc = Minecraft.getInstance();
-        int i = (int)(mc.mouseHandler.xpos() * (double)mc.getWindow().getGuiScaledWidth() / (double)mc.getWindow().getScreenWidth());
-        int j = (int)(mc.mouseHandler.ypos() * (double)mc.getWindow().getGuiScaledHeight() / (double)mc.getWindow().getScreenHeight());
+        int i = (int) (mc.mouseHandler.xpos() * (double) mc.getWindow().getGuiScaledWidth() / (double) mc.getWindow().getScreenWidth());
+        int j = (int) (mc.mouseHandler.ypos() * (double) mc.getWindow().getGuiScaledHeight() / (double) mc.getWindow().getScreenHeight());
         return new Point(i, j);
     }
 }

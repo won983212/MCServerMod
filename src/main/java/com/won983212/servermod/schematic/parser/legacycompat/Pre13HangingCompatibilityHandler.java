@@ -36,13 +36,16 @@ public class Pre13HangingCompatibilityHandler implements EntityNBTCompatibilityH
 
     @Override
     public CompoundNBT updateNBT(String id, CompoundNBT tag) {
+        CompoundNBT result = tag.copy();
         boolean hasLegacyDir = tag.contains("Dir");
         boolean hasLegacyDirection = tag.contains("Direction");
         boolean hasPre113Facing = tag.contains("Facing");
         Direction newDirection;
         if (hasLegacyDir) {
+            result.remove("Dir");
             newDirection = fromPre13Hanging(fromLegacyHanging((byte) tag.getInt("Dir")));
         } else if (hasLegacyDirection) {
+            result.remove("Direction");
             newDirection = fromPre13Hanging(tag.getInt("Direction"));
         } else if (hasPre113Facing) {
             newDirection = fromPre13Hanging(tag.getInt("Facing"));
@@ -50,7 +53,6 @@ public class Pre13HangingCompatibilityHandler implements EntityNBTCompatibilityH
             return tag;
         }
         byte hangingByte = (byte) newDirection.ordinal();
-        CompoundNBT result = new CompoundNBT();
         result.putByte("Facing", hangingByte);
         return result;
     }

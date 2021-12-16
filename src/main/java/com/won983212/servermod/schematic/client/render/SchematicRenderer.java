@@ -109,7 +109,8 @@ public class SchematicRenderer {
                 iterator.remove();
                 String message = "TileEntity " + tileEntity.getType().getRegistryName().toString()
                         + " didn't want to render while moved.\n";
-                Logger.error(message + e.toString());
+                Logger.error(message);
+                e.printStackTrace();
             }
 
             ms.popPose();

@@ -9,7 +9,9 @@ import com.won983212.servermod.item.SchematicItem;
 import com.won983212.servermod.schematic.IProgressEntry;
 import com.won983212.servermod.schematic.IProgressEntryProducer;
 import com.won983212.servermod.schematic.IProgressEvent;
+import com.won983212.servermod.schematic.SchematicPrinter;
 import com.won983212.servermod.schematic.client.render.SchematicRenderer;
+import com.won983212.servermod.schematic.parser.container.SchematicContainer;
 import com.won983212.servermod.schematic.world.SchematicWorld;
 import com.won983212.servermod.utility.animate.AnimationTickHolder;
 import net.minecraft.client.Minecraft;
@@ -17,7 +19,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.Mirror;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.gen.feature.template.PlacementSettings;
-import net.minecraft.world.gen.feature.template.Template;
 
 import java.util.concurrent.*;
 
@@ -85,7 +86,11 @@ public class SchematicRendererManager implements IProgressEntryProducer {
                             }
                             rendererCache.put(activeSchematicItem, t);
                         }
-                    });
+                    })
+                    .exceptionally((e) -> {
+                        Logger.error(e);
+                        return null;
+                    });;
         } else {
             Logger.debug("in cache: " + schematicFilePath);
             this.renderers = renderers;
@@ -93,7 +98,7 @@ public class SchematicRendererManager implements IProgressEntryProducer {
         }
     }
 
-    private CompletableFuture<SchematicRenderer[]> prepareSchematicRenderer(Template schematic, IProgressEvent event) {
+    private CompletableFuture<SchematicRenderer[]> prepareSchematicRenderer(SchematicContainer schematic, IProgressEvent event) {
         BlockPos size = schematic.getSize();
         if (size.equals(BlockPos.ZERO)) {
             Logger.warn("Template size is zero!");
@@ -124,7 +129,7 @@ public class SchematicRendererManager implements IProgressEntryProducer {
                 .thenApply((t) -> renderers);
     }
 
-    private void placeSchematicWorld(Template schematic, BlockPos position, SchematicRenderer[] renderers, int rendererIndex, IProgressEvent event) {
+    private void placeSchematicWorld(SchematicContainer schematic, BlockPos position, SchematicRenderer[] renderers, int rendererIndex, IProgressEvent event) {
         PlacementSettings pSettings = new PlacementSettings();
         if (rendererIndex == 1) {
             pSettings.setMirror(Mirror.FRONT_BACK);
@@ -138,12 +143,16 @@ public class SchematicRendererManager implements IProgressEntryProducer {
 
         SchematicWorld world = new SchematicWorld(Minecraft.getInstance().level);
         world.setBlockCountProgressEvent((s, p) -> event.onProgress(s, 0.7 * p / totalBlocks));
-        schematic.placeInWorld(world, position, pSettings, world.getRandom());
+        schematic.placeSchematicToWorld(world, position, pSettings);
         world.setBlockCountProgressEvent(null);
 
         Logger.debug("Draw buffer caching " + rendererIndex + " schematic...");
         renderers[rendererIndex].setSchematicWorld(world, (s, p) -> event.onProgress(s, 0.7 + 0.3 * p));
         Logger.debug("Draw buffer caching " + rendererIndex + " complete!");
+    }
+
+    public static void clearCache(){
+        rendererCache.invalidateAll();
     }
 
     @Override

@@ -1,54 +1,25 @@
-/*
- * WorldEdit, a Minecraft world manipulation toolkit
- * Copyright (C) sk89q <http://www.sk89q.com>
- * Copyright (C) WorldEdit team and contributors
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
-
 package com.won983212.servermod.schematic.parser;
 
-import com.google.common.collect.Lists;
 import com.won983212.servermod.schematic.IProgressEvent;
-import net.minecraft.block.BlockState;
+import com.won983212.servermod.schematic.parser.container.SchematicContainer;
 import net.minecraft.nbt.*;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.EmptyBlockReader;
-import net.minecraft.world.gen.feature.template.Template;
 import net.minecraftforge.common.util.Constants;
 
-import javax.annotation.Nullable;
 import java.io.*;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.List;
 import java.util.zip.GZIPInputStream;
 
-/**
- * Base class for NBT schematic readers.
- */
 public abstract class AbstractSchematicReader {
     private IProgressEvent progressEvent;
 
-    protected abstract Template parse(CompoundNBT schematic) throws IOException;
+    protected abstract SchematicContainer parse(CompoundNBT schematic) throws IOException;
 
     protected abstract BlockPos parseSize(CompoundNBT schematic) throws IOException;
 
-    public Template parse(File file) throws IOException {
+    public SchematicContainer parse(File file) throws IOException {
         CompoundNBT schematicNBT = readNBT(file);
         notifyProgress("NBT 데이터 읽는 중...", 0);
-        Template t = parse(schematicNBT);
+        SchematicContainer t = parse(schematicNBT);
         notifyProgress("완료", 1);
         return t;
     }
@@ -70,7 +41,7 @@ public abstract class AbstractSchematicReader {
         }
     }
 
-    public void setProgressEvent(IProgressEvent event){
+    public void setProgressEvent(IProgressEvent event) {
         this.progressEvent = event;
     }
 
@@ -137,39 +108,5 @@ public abstract class AbstractSchematicReader {
             return Constants.NBT.TAG_ANY_NUMERIC;
         }
         throw new IOException("Invaild type: " + cls);
-    }
-
-    static class PriorityBlockList {
-        private final List<Template.BlockInfo> plainBlocks = Lists.newArrayList();
-        private final List<Template.BlockInfo> tileBlocks = Lists.newArrayList();
-        private final List<Template.BlockInfo> specialBlocks = Lists.newArrayList();
-
-        public void addBlock(BlockPos pt, BlockState state, @Nullable CompoundNBT blockNBT) {
-            Template.BlockInfo tempBlock = new Template.BlockInfo(pt, state, blockNBT);
-            if (tempBlock.nbt != null) {
-                tileBlocks.add(tempBlock);
-            } else if (!tempBlock.state.getBlock().hasDynamicShape() && tempBlock.state.isCollisionShapeFullBlock(EmptyBlockReader.INSTANCE, BlockPos.ZERO)) {
-                plainBlocks.add(tempBlock);
-            } else {
-                specialBlocks.add(tempBlock);
-            }
-        }
-
-        public void addNewPaletteTo(Template template) throws IOException {
-            List<Template.BlockInfo> list = Lists.newArrayList();
-            list.addAll(plainBlocks);
-            list.addAll(specialBlocks);
-            list.addAll(tileBlocks);
-
-            Template.Palette palette;
-            try {
-                Constructor<Template.Palette> con = Template.Palette.class.getDeclaredConstructor(List.class);
-                con.setAccessible(true);
-                palette = con.newInstance(list);
-            } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
-                throw new IOException("Can't create palette", e);
-            }
-            template.palettes.add(palette);
-        }
     }
 }

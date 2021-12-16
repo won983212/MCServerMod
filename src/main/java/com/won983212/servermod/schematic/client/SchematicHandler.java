@@ -53,6 +53,11 @@ public class SchematicHandler {
         transformation = new SchematicTransformation();
     }
 
+    public void clearCache(){
+        SchematicRendererManager.clearCache();
+        rendererManager.setCurrentSchematic(null);
+    }
+
     public void tick() {
         ClientPlayerEntity player = Minecraft.getInstance().player;
 
