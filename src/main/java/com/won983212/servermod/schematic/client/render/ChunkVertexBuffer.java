@@ -1,17 +1,11 @@
 package com.won983212.servermod.schematic.client.render;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import com.won983212.servermod.Logger;
 import com.won983212.servermod.schematic.world.SchematicWorld;
-import com.won983212.servermod.utility.MatrixTransformStack;
-import com.won983212.servermod.utility.animate.AnimationTickHolder;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.*;
-import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
-import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.renderer.vertex.VertexBuffer;
 import net.minecraft.fluid.FluidState;
@@ -74,15 +68,14 @@ public class ChunkVertexBuffer {
     protected boolean buildChunkBuffer(SchematicWorld schematic, BlockPos anchor) {
         BlockPos pos1 = origin;
         BlockPos pos2 = pos1.offset(15, 15, 15);
-        BlockBufferContext context = new BlockBufferContext(schematic, anchor);
+        BlockBufferRenderer bufferRenderer = new BlockBufferRenderer(schematic, anchor);
 
         BlockModelRenderer.enableCaching();
-        BlockPos.betweenClosedStream(pos1, pos2)
-                .forEach(localPos -> process(localPos, context));
+        BlockPos.betweenClosedStream(pos1, pos2).forEach(bufferRenderer::renderBlock);
         ForgeHooksClient.setRenderLayer(null);
 
         if (usedBlockRenderLayers.contains(RenderType.translucent())) {
-            BufferBuilder bufferBuilder = context.buffers.get(RenderType.translucent());
+            BufferBuilder bufferBuilder = bufferRenderer.buffers.get(RenderType.translucent());
             bufferBuilder.sortQuads((float) cameraPosition.x - (float) pos1.getX(),
                     (float) cameraPosition.y - (float) pos1.getY(),
                     (float) cameraPosition.z - (float) pos1.getZ());
@@ -90,11 +83,11 @@ public class ChunkVertexBuffer {
 
         // finishDrawing
         for (RenderType layer : RenderType.chunkBufferLayers()) {
-            if (!context.startedBufferBuilders.contains(layer)) {
+            if (!bufferRenderer.startedBufferBuilders.contains(layer)) {
                 continue;
             }
 
-            BufferBuilder buf = context.buffers.get(layer);
+            BufferBuilder buf = bufferRenderer.buffers.get(layer);
             buf.end();
 
             VertexBuffer vBuf = new VertexBuffer(layer.format());
@@ -106,59 +99,7 @@ public class ChunkVertexBuffer {
         return !isEmpty();
     }
 
-    private void process(BlockPos localPos, BlockBufferContext ctx) {
-        BlockPos pos = localPos.offset(ctx.anchor);
-        BlockState state = ctx.schematic.getBlockState(pos);
-        FluidState fluidState = ctx.schematic.getFluidState(pos);
-
-        for (RenderType layer : RenderType.chunkBufferLayers()) {
-            ForgeHooksClient.setRenderLayer(layer);
-
-            boolean isRenderFluid = !fluidState.isEmpty() && RenderTypeLookup.canRenderInLayer(fluidState, layer);
-            boolean isRenderSolid = state.getRenderShape() != BlockRenderType.INVISIBLE && RenderTypeLookup.canRenderInLayer(state, layer);
-
-            BufferBuilder bufferBuilder = null;
-            if (isRenderFluid || isRenderSolid) {
-                if (!ctx.buffers.containsKey(layer)) {
-                    ctx.buffers.put(layer, new BufferBuilder(DefaultVertexFormats.BLOCK.getIntegerSize()));
-                }
-                bufferBuilder = ctx.buffers.get(layer);
-                if (ctx.startedBufferBuilders.add(layer)) {
-                    bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
-                }
-            }
-
-            if (isRenderFluid) {
-                if (ctx.blockRendererDispatcher.renderLiquid(pos, ctx.schematic, bufferBuilder, fluidState)) {
-                    usedBlockRenderLayers.add(layer);
-                }
-            }
-
-            if (isRenderSolid) {
-                ctx.ms.pushPose();
-                ctx.ms.translate(pos.getX() & 15, pos.getY() & 15, pos.getZ() & 15);
-                TileEntity tileEntity = ctx.schematic.getBlockEntity(pos);
-                if (ctx.blockRendererDispatcher.renderModel(state, pos, ctx.schematic, ctx.ms, bufferBuilder, true, ctx.random,
-                        tileEntity != null ? tileEntity.getModelData() : EmptyModelData.INSTANCE)) {
-                    usedBlockRenderLayers.add(layer);
-                }
-
-                // render floor
-                if (localPos.getY() == 0) {
-                    BlockPos floorPos = pos.below();
-                    tileEntity = ctx.schematic.getBlockEntity(floorPos);
-                    if (ctx.blockRendererDispatcher.renderModel(state, floorPos, ctx.schematic, ctx.ms, bufferBuilder, true, ctx.random,
-                            tileEntity != null ? tileEntity.getModelData() : EmptyModelData.INSTANCE)) {
-                        usedBlockRenderLayers.add(layer);
-                    }
-                }
-
-                ctx.ms.popPose();
-            }
-        }
-    }
-
-    private static class BlockBufferContext {
+    private class BlockBufferRenderer {
         private final BlockRendererDispatcher blockRendererDispatcher;
         private final Random random;
 
@@ -168,7 +109,7 @@ public class ChunkVertexBuffer {
         private final SchematicWorld schematic;
         private final BlockPos anchor;
 
-        private BlockBufferContext(SchematicWorld schematic, BlockPos anchor) {
+        private BlockBufferRenderer(SchematicWorld schematic, BlockPos anchor) {
             this.startedBufferBuilders = new HashSet<>(RenderType.chunkBufferLayers().size());
             this.buffers = new HashMap<>();
             this.ms = new MatrixStack();
@@ -178,6 +119,58 @@ public class ChunkVertexBuffer {
             Minecraft mc = Minecraft.getInstance();
             this.blockRendererDispatcher = mc.getBlockRenderer();
             this.random = mc.level.random;
+        }
+
+        private void renderBlock(BlockPos localPos) {
+            BlockPos pos = localPos.offset(anchor);
+            BlockState state = schematic.getBlockState(pos);
+            FluidState fluidState = schematic.getFluidState(pos);
+
+            for (RenderType layer : RenderType.chunkBufferLayers()) {
+                ForgeHooksClient.setRenderLayer(layer);
+
+                boolean isRenderFluid = !fluidState.isEmpty() && RenderTypeLookup.canRenderInLayer(fluidState, layer);
+                boolean isRenderSolid = state.getRenderShape() != BlockRenderType.INVISIBLE && RenderTypeLookup.canRenderInLayer(state, layer);
+
+                BufferBuilder bufferBuilder = null;
+                if (isRenderFluid || isRenderSolid) {
+                    if (!buffers.containsKey(layer)) {
+                        buffers.put(layer, new BufferBuilder(DefaultVertexFormats.BLOCK.getIntegerSize()));
+                    }
+                    bufferBuilder = buffers.get(layer);
+                    if (startedBufferBuilders.add(layer)) {
+                        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
+                    }
+                }
+
+                if (isRenderFluid) {
+                    if (blockRendererDispatcher.renderLiquid(pos, schematic, bufferBuilder, fluidState)) {
+                        usedBlockRenderLayers.add(layer);
+                    }
+                }
+
+                if (isRenderSolid) {
+                    ms.pushPose();
+                    ms.translate(pos.getX() & 15, pos.getY() & 15, pos.getZ() & 15);
+                    TileEntity tileEntity = schematic.getBlockEntity(pos);
+                    if (blockRendererDispatcher.renderModel(state, pos, schematic, ms, bufferBuilder, true, random,
+                            tileEntity != null ? tileEntity.getModelData() : EmptyModelData.INSTANCE)) {
+                        usedBlockRenderLayers.add(layer);
+                    }
+
+                    // render floor
+                    if (localPos.getY() == 0) {
+                        BlockPos floorPos = pos.below();
+                        tileEntity = schematic.getBlockEntity(floorPos);
+                        if (blockRendererDispatcher.renderModel(state, floorPos, schematic, ms, bufferBuilder, true, random,
+                                tileEntity != null ? tileEntity.getModelData() : EmptyModelData.INSTANCE)) {
+                            usedBlockRenderLayers.add(layer);
+                        }
+                    }
+
+                    ms.popPose();
+                }
+            }
         }
     }
 }

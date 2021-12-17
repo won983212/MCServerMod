@@ -19,7 +19,6 @@
 
 package com.won983212.servermod.schematic.parser.legacycompat;
 
-import com.won983212.servermod.utility.RegistryHelper;
 import net.minecraft.block.*;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.INBT;
@@ -40,7 +39,7 @@ public class BannerBlockCompatibilityHandler implements NBTCompatibilityHandler 
             boolean isWall = block.getBlock() == Blocks.WHITE_WALL_BANNER;
             String bannerType = convertBannerType(((IntNBT) typeTag).getAsInt(), isWall);
             if (bannerType != null) {
-                Block type = RegistryHelper.getBlockFromId("minecraft:" + bannerType, null);
+                Block type = NBTCompatibilityHandler.getBlockFromId("minecraft:" + bannerType, null);
                 if (type != null) {
                     BlockState state = type.defaultBlockState();
                     if (isWall) {

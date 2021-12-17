@@ -19,11 +19,24 @@
 
 package com.won983212.servermod.schematic.parser.legacycompat;
 
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.registry.Registry;
 
 public interface NBTCompatibilityHandler {
     boolean isAffectedBlock(BlockState block);
 
     BlockState updateNBT(BlockState block, CompoundNBT values);
+
+
+    static Block getBlockFromId(String id, Block defaultValue) {
+        if (id.equals("minecraft:air")) {
+            return Blocks.AIR;
+        }
+        Block block = Registry.BLOCK.get(new ResourceLocation(id));
+        return block == Blocks.AIR ? defaultValue : block;
+    }
 }

@@ -1,12 +1,13 @@
 package com.won983212.servermod.schematic.packet;
 
-import com.won983212.servermod.CommonModDist;
 import com.won983212.servermod.network.IMessage;
 import com.won983212.servermod.schematic.SchematicPrinter;
+import com.won983212.servermod.task.TaskManager;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.network.NetworkEvent.Context;
 
@@ -34,6 +35,10 @@ public class CSchematicPlace implements IMessage {
                 return;
             }
 
+            if (!player.canUseGameMasterBlocks()) {
+                player.sendMessage(new StringTextComponent("§a관리자만 사용할 수 있는 기능입니다."), player.getUUID());
+            }
+
             boolean includeAir = false;
             if (stack.hasTag() && stack.getTag().getBoolean("IncludeAir")) {
                 includeAir = true;
@@ -44,21 +49,27 @@ public class CSchematicPlace implements IMessage {
             SchematicPrinter printer = new SchematicPrinter(includeAir);
             printer.loadSchematicAsync(stack, world, !player.canUseGameMasterBlocks(), (s, p) -> {
                 int percent = (int) Math.floor(p * 100);
-                if(percent >= percentIndex[0] * 20) {
+                if (percent >= percentIndex[0] * 20) {
                     percentIndex[0]++;
-                    player.sendMessage(new StringTextComponent("§6[Schematic] §r" + s + ": " + percent + "%"), player.getUUID());
+                    sendSchematicMessage(player, s + ": " + percent + "%");
+                    if (percent == 100) {
+                        sendSchematicMessage(player, "설치 완료했습니다.");
+                    }
+                }
+            })
+            .thenAccept((success) -> {
+                if (!success) {
+                    sendSchematicMessage(player, "설치 중 오류가 발생했습니다. 자세한 사항은 운영자에게 문의하세요.");
                 }
             });
 
-            String message;
-            if(CommonModDist.PRINTERS.isEmpty()) {
-                message = "§6[Schematic] §r블록 설치작업을 바로 시작합니다.";
-            } else {
-                message = "§6[Schematic] §r남은 " + CommonModDist.PRINTERS.size() + "개의 작업이 끝나면 바로 블록 설치작업을 시작합니다.";
-            }
-            player.sendMessage(new StringTextComponent(message), player.getUUID());
-            CommonModDist.PRINTERS.offer(printer);
+            sendSchematicMessage(player, "Schematic 설치를 시작합니다.");
+            TaskManager.addAsyncTask(printer);
         });
         context.get().setPacketHandled(true);
+    }
+
+    private static void sendSchematicMessage(ServerPlayerEntity player, String message) {
+        player.sendMessage(new StringTextComponent(TextFormatting.GOLD + "[Schematic] " + TextFormatting.RESET + message), player.getUUID());
     }
 }

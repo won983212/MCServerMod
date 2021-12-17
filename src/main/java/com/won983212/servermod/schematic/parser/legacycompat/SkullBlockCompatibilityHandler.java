@@ -19,7 +19,6 @@
 
 package com.won983212.servermod.schematic.parser.legacycompat;
 
-import com.won983212.servermod.utility.RegistryHelper;
 import net.minecraft.block.*;
 import net.minecraft.nbt.ByteNBT;
 import net.minecraft.nbt.CompoundNBT;
@@ -39,7 +38,7 @@ public class SkullBlockCompatibilityHandler implements NBTCompatibilityHandler {
         if (typeTag instanceof ByteNBT) {
             String skullType = convertSkullType(((ByteNBT) typeTag).getAsByte(), isWall);
             if (skullType != null) {
-                Block type = RegistryHelper.getBlockFromId("minecraft:" + skullType, null);
+                Block type = NBTCompatibilityHandler.getBlockFromId("minecraft:" + skullType, null);
                 if (type != null) {
                     BlockState state = type.defaultBlockState();
                     if (isWall) {

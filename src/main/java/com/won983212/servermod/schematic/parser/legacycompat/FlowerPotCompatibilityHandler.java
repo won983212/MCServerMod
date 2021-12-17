@@ -20,7 +20,6 @@
 package com.won983212.servermod.schematic.parser.legacycompat;
 
 import com.won983212.servermod.LegacyMapper;
-import com.won983212.servermod.utility.RegistryHelper;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -90,7 +89,7 @@ public class FlowerPotCompatibilityHandler implements NBTCompatibilityHandler {
             }
         }
         if (plantedName != null) {
-            Block potAndPlanted = RegistryHelper.getBlockFromId("minecraft:potted_" + plantedName, null);
+            Block potAndPlanted = NBTCompatibilityHandler.getBlockFromId("minecraft:potted_" + plantedName, null);
             if (potAndPlanted != null) {
                 return potAndPlanted.defaultBlockState();
             }

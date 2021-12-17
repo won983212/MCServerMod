@@ -4,7 +4,6 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.won983212.servermod.schematic.IProgressEvent;
-import com.won983212.servermod.schematic.parser.container.SchematicContainer;
 import net.minecraft.util.math.BlockPos;
 
 import java.io.File;

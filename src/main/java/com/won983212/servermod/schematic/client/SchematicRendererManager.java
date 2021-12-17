@@ -9,9 +9,8 @@ import com.won983212.servermod.item.SchematicItem;
 import com.won983212.servermod.schematic.IProgressEntry;
 import com.won983212.servermod.schematic.IProgressEntryProducer;
 import com.won983212.servermod.schematic.IProgressEvent;
-import com.won983212.servermod.schematic.SchematicPrinter;
 import com.won983212.servermod.schematic.client.render.SchematicRenderer;
-import com.won983212.servermod.schematic.parser.container.SchematicContainer;
+import com.won983212.servermod.schematic.parser.SchematicContainer;
 import com.won983212.servermod.schematic.world.SchematicWorld;
 import com.won983212.servermod.utility.animate.AnimationTickHolder;
 import net.minecraft.client.Minecraft;
@@ -90,7 +89,8 @@ public class SchematicRendererManager implements IProgressEntryProducer {
                     .exceptionally((e) -> {
                         Logger.error(e);
                         return null;
-                    });;
+                    });
+            ;
         } else {
             Logger.debug("in cache: " + schematicFilePath);
             this.renderers = renderers;
@@ -138,20 +138,15 @@ public class SchematicRendererManager implements IProgressEntryProducer {
         }
 
         Logger.debug("Placing " + rendererIndex + " schematic...");
-        BlockPos size = schematic.getSize();
-        long totalBlocks = (long) size.getX() * size.getY() * size.getZ();
-
         SchematicWorld world = new SchematicWorld(Minecraft.getInstance().level);
-        world.setBlockCountProgressEvent((s, p) -> event.onProgress(s, 0.7 * p / totalBlocks));
-        schematic.placeSchematicToWorld(world, position, pSettings);
-        world.setBlockCountProgressEvent(null);
+        schematic.placeSchematicToWorld(world, position, pSettings, (s, p) -> event.onProgress(s, 0.7 * p));
 
         Logger.debug("Draw buffer caching " + rendererIndex + " schematic...");
         renderers[rendererIndex].setSchematicWorld(world, (s, p) -> event.onProgress(s, 0.7 + 0.3 * p));
         Logger.debug("Draw buffer caching " + rendererIndex + " complete!");
     }
 
-    public static void clearCache(){
+    public static void clearCache() {
         rendererCache.invalidateAll();
     }
 

@@ -19,7 +19,6 @@
 
 package com.won983212.servermod.schematic.parser.legacycompat;
 
-import com.won983212.servermod.utility.RegistryHelper;
 import net.minecraft.block.BedBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -42,7 +41,7 @@ public class DoorBlockCompatibilityHandler implements NBTCompatibilityHandler {
         if (typeTag instanceof IntNBT) {
             String bedType = convertBedType(((IntNBT) typeTag).getAsInt());
             if (bedType != null) {
-                Block type = RegistryHelper.getBlockFromId("minecraft:" + bedType, null);
+                Block type = NBTCompatibilityHandler.getBlockFromId("minecraft:" + bedType, null);
                 if (type != null) {
                     BlockState state = type.defaultBlockState();
                     state = state.setValue(BedBlock.FACING, block.getValue(BedBlock.FACING));

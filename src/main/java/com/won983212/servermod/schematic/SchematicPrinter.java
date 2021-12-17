@@ -2,8 +2,9 @@ package com.won983212.servermod.schematic;
 
 import com.won983212.servermod.Logger;
 import com.won983212.servermod.item.SchematicItem;
-import com.won983212.servermod.schematic.parser.container.SchematicContainer;
+import com.won983212.servermod.schematic.parser.SchematicContainer;
 import com.won983212.servermod.schematic.world.SchematicWorld;
+import com.won983212.servermod.task.IAsyncTask;
 import com.won983212.servermod.utility.BlockHelper;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.Entity;
@@ -21,9 +22,8 @@ import net.minecraft.world.gen.feature.template.Template;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
-public class SchematicPrinter {
+public class SchematicPrinter implements IAsyncTask {
 
     public enum PrintStage {
         LOADING, ERROR, BLOCKS, DEFERRED_BLOCKS, ENTITIES
@@ -73,15 +73,16 @@ public class SchematicPrinter {
     private boolean load(SchematicContainer activeTemplate, boolean processNBT, ItemStack blueprint) {
         PlacementSettings settings = SchematicItem.getSettings(blueprint, processNBT);
         BlockPos size = activeTemplate.getSize();
-        final long totalSize = (long) size.getX() * size.getY() * size.getZ();
-        this.total = totalSize;
+        this.total = (long) size.getX() * size.getY() * size.getZ();
 
         schematicAnchor = NBTUtil.readBlockPos(blueprint.getTag().getCompound("Anchor"));
         blockReader = new SchematicWorld(schematicAnchor, originalWorld);
 
-        blockReader.setBlockCountProgressEvent((s, p) -> event.onProgress(s, 0.2 + 0.3 * p / totalSize));
-        activeTemplate.placeSchematicToWorld(blockReader, schematicAnchor, settings);
-        blockReader.setBlockCountProgressEvent(null);
+        activeTemplate.placeSchematicToWorld(blockReader, schematicAnchor, settings, (s, p) -> {
+            if (event != null) {
+                event.onProgress(s, 0.2 + 0.3 * p);
+            }
+        });
 
         BlockPos extraBounds = Template.calculateRelativePosition(settings, activeTemplate.getSize().offset(-1, -1, -1));
         blockReader.getBounds().expand(new MutableBoundingBox(extraBounds, extraBounds));
@@ -94,14 +95,14 @@ public class SchematicPrinter {
         return true;
     }
 
-    public boolean placeBatch() {
-        if (!isLoaded()) {
+    public boolean tick() {
+        if (isUnloaded()) {
             return printStage == PrintStage.LOADING;
         }
 
         int count = 0;
-        boolean end;
-        while ((end = advanceCurrentPos()) && count < BATCH_COUNT) {
+        boolean end = true;
+        while (count < BATCH_COUNT && (end = advanceCurrentPos())) {
             if (!shouldPlaceCurrent(originalWorld)) {
                 continue;
             }
@@ -109,7 +110,7 @@ public class SchematicPrinter {
             count++;
             BlockPos target = getCurrentTarget();
             if (printStage == PrintStage.ENTITIES) {
-                Entity entity = blockReader.getEntities().collect(Collectors.toList()).get(printingEntityIndex);
+                Entity entity = blockReader.getEntities().get(printingEntityIndex);
                 originalWorld.addFreshEntity(entity);
             } else {
                 BlockState blockState = blockReader.getBlockState(target);
@@ -122,16 +123,18 @@ public class SchematicPrinter {
                 BlockHelper.placeSchematicBlock(originalWorld, blockState, target, null, tileData);
             }
         }
-        event.onProgress("월드에 블록 설치중...", 0.5 + 0.5 * processed / total);
+        if (event != null) {
+            event.onProgress("월드에 블록 설치중...", 0.5 + 0.5 * processed / total);
+        }
         return end;
     }
 
-    public boolean isLoaded() {
-        return printStage != PrintStage.LOADING && printStage != PrintStage.ERROR;
+    public boolean isUnloaded() {
+        return printStage == PrintStage.LOADING || printStage == PrintStage.ERROR;
     }
 
     public BlockPos getCurrentTarget() {
-        if (!isLoaded()) {
+        if (isUnloaded()) {
             return null;
         }
         return schematicAnchor.offset(currentPos);
@@ -146,15 +149,11 @@ public class SchematicPrinter {
             return true;
         }
 
-        return shouldPlaceBlock(world, getCurrentTarget());
-    }
-
-    private boolean shouldPlaceBlock(World world, BlockPos pos) {
-        return !World.isOutsideBuildHeight(pos);
+        return !World.isOutsideBuildHeight(getCurrentTarget());
     }
 
     private boolean advanceCurrentPos() {
-        List<Entity> entities = blockReader.getEntities().collect(Collectors.toList());
+        List<Entity> entities = blockReader.getEntities();
 
         do {
             if (printStage == PrintStage.BLOCKS) {
@@ -190,17 +189,17 @@ public class SchematicPrinter {
         processed++;
         currentPos = currentPos.relative(Direction.EAST);
         MutableBoundingBox bounds = blockReader.getBounds();
-        BlockPos posInBounds = currentPos.offset(-bounds.x0, -bounds.y0, -bounds.z0);
 
-        if (posInBounds.getX() > bounds.getXSpan()) {
+        if (currentPos.getX() > bounds.getXSpan() + bounds.x0) {
             currentPos = new BlockPos(bounds.x0, currentPos.getY(), currentPos.getZ() + 1).west();
         }
-        if (posInBounds.getZ() > bounds.getZSpan()) {
+
+        if (currentPos.getZ() > bounds.getZSpan() + bounds.z0) {
             currentPos = new BlockPos(currentPos.getX(), currentPos.getY() + 1, bounds.z0).west();
         }
 
         // End of blocks reached
-        if (currentPos.getY() > bounds.getYSpan() || World.isOutsideBuildHeight(currentPos.getY())) {
+        if (currentPos.getY() > bounds.getYSpan() + bounds.y0 || World.isOutsideBuildHeight(currentPos.getY())) {
             printStage = PrintStage.DEFERRED_BLOCKS;
             return false;
         }

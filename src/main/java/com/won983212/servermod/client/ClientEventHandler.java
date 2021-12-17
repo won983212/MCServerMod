@@ -2,15 +2,15 @@ package com.won983212.servermod.client;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.won983212.servermod.CommonModDist;
 import com.won983212.servermod.LegacyMapper;
 import com.won983212.servermod.ModKeys;
 import com.won983212.servermod.ServerMod;
 import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
-import com.won983212.servermod.schematic.client.SchematicRendererManager;
 import com.won983212.servermod.schematic.client.render.ChunkVertexBuffer;
-import com.won983212.servermod.schematic.client.render.SchematicRenderer;
 import com.won983212.servermod.schematic.parser.SchematicFileParser;
 import com.won983212.servermod.skin.SkinCacheCleaner;
+import com.won983212.servermod.task.TaskManager;
 import com.won983212.servermod.utility.animate.AnimationTickHolder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
@@ -30,6 +30,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.common.Mod;
 
 import java.awt.*;
@@ -69,6 +70,7 @@ public class ClientEventHandler {
             AnimationTickHolder.reset();
             SchematicFileParser.clearCache();
             ClientDist.SCHEMATIC_HANDLER.clearCache();
+            TaskManager.cancelAllTask();
         }
     }
 
@@ -77,9 +79,11 @@ public class ClientEventHandler {
         if (Minecraft.getInstance().level == null || Minecraft.getInstance().player == null) {
             return;
         }
+
         if (event.phase == TickEvent.Phase.START) {
             return;
         }
+
         AnimationTickHolder.tick();
         ClientDist.SCHEMATIC_HANDLER.tick();
         ClientDist.SCHEMATIC_SENDER.tick();

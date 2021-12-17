@@ -3,7 +3,7 @@ package com.won983212.servermod.item;
 import com.won983212.servermod.schematic.SchematicProcessor;
 import com.won983212.servermod.schematic.IProgressEvent;
 import com.won983212.servermod.schematic.parser.SchematicFileParser;
-import com.won983212.servermod.schematic.parser.container.SchematicContainer;
+import com.won983212.servermod.schematic.parser.SchematicContainer;
 import com.won983212.servermod.server.command.SchematicCommand;
 import com.won983212.servermod.utility.Lang;
 import net.minecraft.client.util.ITooltipFlag;
@@ -19,7 +19,6 @@ import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraft.world.gen.feature.template.PlacementSettings;
-import net.minecraft.world.gen.feature.template.Template;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 

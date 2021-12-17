@@ -22,7 +22,6 @@ package com.won983212.servermod.schematic.parser;
 import com.google.common.collect.ImmutableList;
 import com.won983212.servermod.LegacyMapper;
 import com.won983212.servermod.Logger;
-import com.won983212.servermod.schematic.parser.container.SchematicContainer;
 import com.won983212.servermod.schematic.parser.legacycompat.*;
 import net.minecraft.block.BlockState;
 import net.minecraft.nbt.*;

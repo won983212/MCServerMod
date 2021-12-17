@@ -34,7 +34,6 @@ public class SchematicWorld extends WrappedWorld implements IServerWorld {
     protected List<TileEntity> renderedTileEntities;
     protected List<Entity> entities;
     protected MutableBoundingBox bounds;
-    private IProgressEvent event;
 
     public BlockPos anchor;
     public boolean renderMode;
@@ -66,8 +65,8 @@ public class SchematicWorld extends WrappedWorld implements IServerWorld {
         return entities.add(entityIn);
     }
 
-    public Stream<Entity> getEntities() {
-        return entities.stream();
+    public List<Entity> getEntities() {
+        return entities;
     }
 
     @Override
@@ -171,9 +170,7 @@ public class SchematicWorld extends WrappedWorld implements IServerWorld {
         pos = pos.immutable().subtract(anchor);
         bounds.expand(new MutableBoundingBox(pos, pos));
         blocks.put(pos, arg1);
-        if (event != null) {
-            event.onProgress("Block 위치 계산중..", blocks.size());
-        }
+
         if (tileEntities.containsKey(pos)) {
             TileEntity tileEntity = tileEntities.get(pos);
             if (!tileEntity.getType().isValid(arg1.getBlock())) {
@@ -202,12 +199,6 @@ public class SchematicWorld extends WrappedWorld implements IServerWorld {
     @Override
     public ITickList<Fluid> getLiquidTicks() {
         return EmptyTickList.empty();
-    }
-
-    // TODO schematiccontainer로 옮기자.
-    /** 0~1사이 값이 아니라 설치된 count of block을 return한다. */
-    public void setBlockCountProgressEvent(IProgressEvent event) {
-        this.event = event;
     }
 
     public MutableBoundingBox getBounds() {

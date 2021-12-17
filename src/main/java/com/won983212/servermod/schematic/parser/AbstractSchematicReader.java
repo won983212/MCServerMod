@@ -1,7 +1,6 @@
 package com.won983212.servermod.schematic.parser;
 
 import com.won983212.servermod.schematic.IProgressEvent;
-import com.won983212.servermod.schematic.parser.container.SchematicContainer;
 import net.minecraft.nbt.*;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.util.Constants;
@@ -20,7 +19,7 @@ public abstract class AbstractSchematicReader {
         CompoundNBT schematicNBT = readNBT(file);
         notifyProgress("NBT 데이터 읽는 중...", 0);
         SchematicContainer t = parse(schematicNBT);
-        notifyProgress("완료", 1);
+        notifyProgress("NBT 데이터 읽는 중...", 1);
         return t;
     }
 
@@ -28,7 +27,7 @@ public abstract class AbstractSchematicReader {
         CompoundNBT schematicNBT = readNBT(file);
         notifyProgress("NBT 데이터 읽는 중...", 0);
         BlockPos pos = parseSize(schematicNBT);
-        notifyProgress("완료", 1);
+        notifyProgress("NBT 데이터 읽는 중...", 1);
         return pos;
     }
 

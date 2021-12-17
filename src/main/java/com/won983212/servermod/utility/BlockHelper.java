@@ -3,13 +3,10 @@ package com.won983212.servermod.utility;
 import net.minecraft.block.*;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.particles.ParticleTypes;
 import net.minecraft.state.properties.BedPart;
 import net.minecraft.state.properties.BlockStateProperties;
-import net.minecraft.tags.FluidTags;
+import net.minecraft.state.properties.DoubleBlockHalf;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.SoundCategory;
-import net.minecraft.util.SoundEvents;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
@@ -48,7 +45,11 @@ public class BlockHelper {
             return;
         }
 
-        if(state.hasProperty(BlockStateProperties.WATERLOGGED)){
+        if (state.hasProperty(DoorBlock.HALF) && state.getValue(DoorBlock.HALF) == DoubleBlockHalf.UPPER) {
+            return;
+        }
+
+        if (state.hasProperty(BlockStateProperties.WATERLOGGED)) {
             state = state.setValue(BlockStateProperties.WATERLOGGED, Boolean.FALSE);
         }
 

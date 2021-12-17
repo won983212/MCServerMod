@@ -3,7 +3,6 @@ package com.won983212.servermod.schematic.parser;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.won983212.servermod.Logger;
-import com.won983212.servermod.schematic.parser.container.SchematicContainer;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.command.arguments.BlockStateArgument;
