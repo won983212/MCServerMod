@@ -1,14 +1,14 @@
 {
   "required": true,
-  "minVersion": "0.8",
+  "minVersion": "0.7",
   "package": "com.won983212.servermod.mixin",
   "compatibilityLevel": "JAVA_8",
   "refmap": "servermod.refmap.json",
   "mixins": [
+    "MixinBlockStateFlattening"
   ],
   "client": [
-    "MixinSkinManager",
-    "MixinBlockStateFlattening"
+    "MixinSkinManager"
   ],
   "injectors": {
     "defaultRequire": 1

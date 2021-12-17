@@ -86,14 +86,23 @@ public class SchematicTransformation {
     }
 
     public Vector3d toLocalSpace(Vector3d vec) {
+        return toLocalSpace(vec, false);
+    }
+
+    public Vector3d toLocalSpace(Vector3d vec, boolean ignoreMirror) {
         float pt = AnimationTickHolder.getPartialTicks();
         Vector3d rotationOffset = getRotationOffset(true);
+
+        boolean mirrorlr = getScaleLR().getTarget() < 0;
+        boolean mirrorfb = getScaleFB().getTarget() < 0;
 
         vec = vec.subtract(x.get(pt), y.get(pt), z.get(pt));
         vec = vec.subtract(xOrigin + rotationOffset.x, 0, zOrigin + rotationOffset.z);
         vec = VecHelper.rotate(vec, -rotation.get(pt), Axis.Y);
         vec = vec.add(rotationOffset.x, 0, rotationOffset.z);
-        vec = vec.multiply(getScaleFB().get(pt), 1, getScaleLR().get(pt));
+        if (!ignoreMirror || (mirrorlr && mirrorfb)) {
+            vec = vec.multiply(getScaleFB().get(pt), 1, getScaleLR().get(pt));
+        }
         vec = vec.add(xOrigin, 0, zOrigin);
 
         return vec;
@@ -222,5 +231,4 @@ public class SchematicTransformation {
     public InterpolatedChasingValue getScaleLR() {
         return scaleLeftRight;
     }
-
 }

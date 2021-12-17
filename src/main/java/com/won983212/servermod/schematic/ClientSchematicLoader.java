@@ -15,7 +15,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @OnlyIn(Dist.CLIENT)
 public class ClientSchematicLoader extends SchematicNetwork implements IProgressEntryProducer {
@@ -59,7 +58,8 @@ public class ClientSchematicLoader extends SchematicNetwork implements IProgress
 
             // Too big
             if (!Minecraft.getInstance().hasSingleplayerServer() &&
-                    validateSchematicSize(Minecraft.getInstance().player, size)) {
+                    isSchematicSizeTooBig(Minecraft.getInstance().player, size)) {
+                Logger.warn(schematic + " is too big. Cancel uploading: " + size);
                 return;
             }
 

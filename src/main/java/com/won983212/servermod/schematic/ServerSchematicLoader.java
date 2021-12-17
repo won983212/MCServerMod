@@ -95,7 +95,7 @@ public class ServerSchematicLoader extends SchematicNetwork {
 		}
 
 		// Too big
-		if (!validateSchematicSize(player, size))
+		if (isSchematicSizeTooBig(player, size))
 			return false;
 
 		// Skip existing Uploads

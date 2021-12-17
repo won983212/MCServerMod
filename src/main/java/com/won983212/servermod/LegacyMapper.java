@@ -63,6 +63,7 @@ public final class LegacyMapper {
             }
 
             NAME_TO_ID_MAP.putIfAbsent(name, idMeta);
+            // Logger.debug("Appended to Legacy map: " + (idMeta >> 4) + ":" + (idMeta & 15) + " = " + name);
 
             if (oldState.length > 0) {
                 name = parseTag(oldState[0]).getString("Name");

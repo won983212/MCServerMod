@@ -48,11 +48,11 @@ public class SchematicRendererManager implements IProgressEntryProducer {
             boolean fb = transformation.getScaleFB().get(pt) < 0;
             BlockPos pos = transformation.getAnchor();
             if (lr && !fb) {
-                renderers[2].render(ms, pos, buffer);
+                renderers[2].render(ms, pos, buffer, transformation);
             } else if (fb && !lr) {
-                renderers[1].render(ms, pos, buffer);
+                renderers[1].render(ms, pos, buffer, transformation);
             } else {
-                renderers[0].render(ms, pos, buffer);
+                renderers[0].render(ms, pos, buffer, transformation);
             }
         }
     }
@@ -60,6 +60,7 @@ public class SchematicRendererManager implements IProgressEntryProducer {
     public void setCurrentSchematic(ItemStack activeSchematicItem) {
         currentStack = activeSchematicItem;
         if (activeSchematicItem == null) {
+            this.renderers = null;
             return;
         }
 

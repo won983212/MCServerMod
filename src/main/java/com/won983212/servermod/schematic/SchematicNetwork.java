@@ -22,14 +22,14 @@ public class SchematicNetwork {
         }
     }
 
-    protected static boolean validateSchematicSize(PlayerEntity player, long size) {
+    protected static boolean isSchematicSizeTooBig(PlayerEntity player, long size) {
         if (size > MAX_TOTAL_SCHEMATIC_SIZE * 1000) {
             if (player != null) {
                 player.sendMessage(Lang.translate("schematics.uploadTooLarge").append(" (" + size / 1000 + " KB)."), player.getUUID());
                 player.sendMessage(Lang.translate("schematics.maxAllowedSize").append(" " + MAX_TOTAL_SCHEMATIC_SIZE + " KB"), player.getUUID());
             }
-            return false;
+            return true;
         }
-        return true;
+        return false;
     }
 }

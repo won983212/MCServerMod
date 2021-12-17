@@ -4,6 +4,7 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.won983212.servermod.Logger;
 import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
 import com.won983212.servermod.schematic.IProgressEvent;
+import com.won983212.servermod.schematic.client.SchematicTransformation;
 import com.won983212.servermod.schematic.world.SchematicWorld;
 import com.won983212.servermod.utility.MatrixTransformStack;
 import com.won983212.servermod.utility.animate.AnimationTickHolder;
@@ -16,6 +17,7 @@ import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MutableBoundingBox;
+import net.minecraft.util.math.vector.Vector3d;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -32,7 +34,7 @@ public class SchematicRenderer {
         redraw(event);
     }
 
-    public void render(MatrixStack ms, BlockPos worldAnchor, SuperRenderTypeBuffer buffer) {
+    public void render(MatrixStack ms, BlockPos worldAnchor, SuperRenderTypeBuffer buffer, SchematicTransformation transformation) {
         if (schematic == null) {
             return;
         }
@@ -41,11 +43,10 @@ public class SchematicRenderer {
             for (RenderType layer : RenderType.chunkBufferLayers()) {
                 if (layer == RenderType.solid()) {
                     buffer.getBuffer(RenderType.solid());
-                    renderTileEntities(ms, worldAnchor, buffer);
+                    renderTileEntities(ms, buffer, transformation);
                 }
                 for (ChunkVertexBuffer vertexBuffer : chunks) {
-                    if (isInViewDistance(worldAnchor.offset(vertexBuffer.getOrigin()).offset(8, 8, 8))) {
-                        worldAnchor.offset(vertexBuffer.getOrigin()).offset(8, 8, 8);
+                    if (isInViewDistance(vertexBuffer.getOrigin().offset(8, 8, 8), transformation)) {
                         vertexBuffer.render(ms, layer);
                     }
                 }
@@ -84,12 +85,12 @@ public class SchematicRenderer {
         }
     }
 
-    private void renderTileEntities(MatrixStack ms, BlockPos worldAnchor, IRenderTypeBuffer buffer) {
+    private void renderTileEntities(MatrixStack ms, IRenderTypeBuffer buffer, SchematicTransformation transformation) {
         Iterator<TileEntity> iterator = schematic.getRenderedTileEntities().iterator();
         while (iterator.hasNext()) {
             TileEntity tileEntity = iterator.next();
             BlockPos pos = tileEntity.getBlockPos();
-            if (!isInViewDistance(pos.offset(worldAnchor))) {
+            if (!isInViewDistance(pos, transformation)) {
                 continue;
             }
 
@@ -117,10 +118,12 @@ public class SchematicRenderer {
         }
     }
 
-    private static boolean isInViewDistance(BlockPos pos) {
+    private static boolean isInViewDistance(BlockPos localPos, SchematicTransformation transformation) {
         Minecraft mc = Minecraft.getInstance();
-        BlockPos playerPos = mc.player.blockPosition();
+        Vector3d playerPos = transformation.toLocalSpace(mc.player.position(), true);
+
         int renderDistance = mc.options.renderDistance * 16;
-        return playerPos.distSqr(pos) < renderDistance * renderDistance;
+        double distance = playerPos.distanceToSqr(localPos.getX(), localPos.getY(), localPos.getZ());
+        return distance < renderDistance * renderDistance;
     }
 }
