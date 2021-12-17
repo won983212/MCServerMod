@@ -46,15 +46,11 @@ public class SkinRedirector {
             Logger.info("Load player texture: " + profile.getName());
             final Map<MinecraftProfileTexture.Type, MinecraftProfileTexture> map = loadSkinFromCache(profile);
             final Minecraft mc = Minecraft.getInstance();
-            mc.execute(() -> {
-                RenderSystem.recordRenderCall(() -> {
-                    ImmutableList.of(MinecraftProfileTexture.Type.SKIN, MinecraftProfileTexture.Type.CAPE).forEach((p_229296_3_) -> {
-                        if (map.containsKey(p_229296_3_)) {
-                            mc.getSkinManager().registerTexture(map.get(p_229296_3_), p_229296_3_, skinAvailableCallback);
-                        }
-                    });
-                });
-            });
+            mc.execute(() -> RenderSystem.recordRenderCall(() -> ImmutableList.of(MinecraftProfileTexture.Type.SKIN, MinecraftProfileTexture.Type.CAPE).forEach((p_229296_3_) -> {
+                    if (map.containsKey(p_229296_3_)) {
+                        mc.getSkinManager().registerTexture(map.get(p_229296_3_), p_229296_3_, skinAvailableCallback);
+                    }
+                })));
         };
         Util.backgroundExecutor().execute(runnable);
     }

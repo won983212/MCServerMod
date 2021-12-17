@@ -15,7 +15,7 @@ public class SoundHandlerHelper {
 
     public static ISound playRepeat(SoundEvent sound, SoundCategory category, int x, int y, int z, float volume) {
         RepeatPlaySound activeSound = new RepeatPlaySound(sound, category, x, y, z, volume);
-        if (!isClientPlayerInRange(activeSound)) {
+        if (isOutClientPlayerInRange(activeSound)) {
             return null;
         }
         Minecraft.getInstance().getSoundManager().play(activeSound);
@@ -28,15 +28,15 @@ public class SoundHandlerHelper {
         }
     }
 
-    public static boolean isClientPlayerInRange(ISound sound) {
+    public static boolean isOutClientPlayerInRange(ISound sound) {
         if (sound.isRelative() || sound.getAttenuation() == ISound.AttenuationType.NONE) {
             //If the sound is global or has no attenuation, then return that the player is in range
-            return true;
+            return false;
         }
         PlayerEntity player = Minecraft.getInstance().player;
         if (player == null) {
             //Shouldn't happen but just in case
-            return false;
+            return true;
         }
         Sound s = sound.getSound();
         if (s == null) {
@@ -49,6 +49,6 @@ public class SoundHandlerHelper {
         //Scale the distance based on the sound's volume
         float scaledDistance = Math.max(sound.getVolume(), 1) * attenuationDistance;
         //Check if the player is within range of hearing the sound
-        return player.position().distanceToSqr(sound.getX(), sound.getY(), sound.getZ()) < scaledDistance * scaledDistance;
+        return !(player.position().distanceToSqr(sound.getX(), sound.getY(), sound.getZ()) < scaledDistance * scaledDistance);
     }
 }

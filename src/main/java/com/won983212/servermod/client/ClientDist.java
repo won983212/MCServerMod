@@ -1,6 +1,5 @@
 package com.won983212.servermod.client;
 
-import com.won983212.servermod.LegacyMapper;
 import com.won983212.servermod.CommonModDist;
 import com.won983212.servermod.ModKeys;
 import com.won983212.servermod.client.gui.ConfigScreen;
@@ -19,7 +18,6 @@ public class ClientDist extends CommonModDist {
     public static final SchematicHandler SCHEMATIC_HANDLER = new SchematicHandler();
     public static final ClientSchematicLoader SCHEMATIC_SENDER = new ClientSchematicLoader();
     public static final SchematicStatusScreen SCHEMATIC_UPLOAD_SCREEN = new SchematicStatusScreen();
-    public static Template t;
 
     static {
         SCHEMATIC_UPLOAD_SCREEN.registerProgressProducer(SCHEMATIC_SENDER);

@@ -47,11 +47,11 @@ public class PanelScreen extends Screen {
         }
     }
 
-    protected Point drawTexturedBackground(MatrixStack ms, ModTextures texture) {
+    protected void drawTexturedBackground(MatrixStack ms, ModTextures texture) {
         int x = (this.width - texture.width) / 2;
         int y = (this.height - texture.height) / 2;
         texture.draw(ms, this, x, y);
-        return new Point(x, y);
+        new Point(x, y);
     }
 
     protected void applyBackgroundOffset(ModTextures texture) {

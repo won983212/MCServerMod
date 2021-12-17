@@ -16,17 +16,15 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 public class PlacementSimulationWorld extends WrappedWorld {
-    public Map<BlockPos, BlockState> blocksAdded;
-    public Map<BlockPos, TileEntity> tesAdded;
+    public final Map<BlockPos, BlockState> blocksAdded;
+    public final Map<BlockPos, TileEntity> tesAdded;
 
-    public Set<SectionPos> spannedSections;
-    public WorldLightManager lighter;
-    public WrappedChunkProvider chunkProvider;
+    public final Set<SectionPos> spannedSections;
+    public final WorldLightManager lighter;
     private final BlockPos.Mutable scratch = new BlockPos.Mutable();
 
     public PlacementSimulationWorld(World wrapped, WrappedChunkProvider chunkProvider) {
         super(wrapped, chunkProvider);
-        this.chunkProvider = chunkProvider.setWorld(this);
         spannedSections = new HashSet<>();
         lighter = new WorldLightManager(chunkProvider, true, false); // blockLight, skyLight
         blocksAdded = new HashMap<>();

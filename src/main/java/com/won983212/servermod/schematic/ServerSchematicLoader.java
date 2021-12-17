@@ -214,9 +214,9 @@ public class ServerSchematicLoader extends SchematicNetwork {
 	}
 
 	public static class SchematicDownloadEntry {
-		public OutputStream stream;
+		public final OutputStream stream;
 		public long bytesUploaded;
-		public long totalBytes;
+		public final long totalBytes;
 		public int idleTime;
 
 		public SchematicDownloadEntry(OutputStream stream, long totalBytes) {

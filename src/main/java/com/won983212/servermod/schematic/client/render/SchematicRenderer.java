@@ -34,7 +34,7 @@ public class SchematicRenderer {
         redraw(event);
     }
 
-    public void render(MatrixStack ms, BlockPos worldAnchor, SuperRenderTypeBuffer buffer, SchematicTransformation transformation) {
+    public void render(MatrixStack ms, SuperRenderTypeBuffer buffer, SchematicTransformation transformation) {
         if (schematic == null) {
             return;
         }

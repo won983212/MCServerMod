@@ -16,13 +16,11 @@ import net.minecraft.util.math.vector.Vector3d;
 
 public class DeployTool extends PlacementToolBase {
 
-    @Override
     public void init() {
         super.init();
         selectionRange = -1;
     }
 
-    @Override
     public void updateSelection() {
         if (schematicHandler.isActive() && selectionRange == -1) {
             selectionRange = (int) (schematicHandler.getBounds().getCenter().length() / 2);

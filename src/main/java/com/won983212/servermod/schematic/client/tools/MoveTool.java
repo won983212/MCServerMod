@@ -7,15 +7,9 @@ import net.minecraft.util.math.vector.Vector3d;
 
 public class MoveTool extends PlacementToolBase {
 
-    @Override
     public void init() {
         super.init();
         renderSelectedFace = true;
-    }
-
-    @Override
-    public void updateSelection() {
-        super.updateSelection();
     }
 
     @Override

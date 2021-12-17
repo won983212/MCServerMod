@@ -3,6 +3,7 @@ package com.won983212.servermod.skin;
 /**
  * Gson Object
  **/
+@SuppressWarnings("unused")
 public class SkinTextureInfo {
     private String username;
     private String skin;

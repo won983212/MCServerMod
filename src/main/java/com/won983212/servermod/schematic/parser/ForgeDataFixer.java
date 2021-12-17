@@ -1844,20 +1844,20 @@ class ForgeDataFixer extends DataFixerBuilder {
                                     if (object == null) {
                                         object = new StringTextComponent("");
                                     }
-                                } catch (JsonParseException jsonparseexception) {
+                                } catch (JsonParseException ignored) {
                                 }
 
                                 if (object == null) {
                                     try {
                                         object = ITextComponent.Serializer.fromJson(s);
-                                    } catch (JsonParseException jsonparseexception1) {
+                                    } catch (JsonParseException ignored) {
                                     }
                                 }
 
                                 if (object == null) {
                                     try {
                                         object = ITextComponent.Serializer.fromJsonLenient(s);
-                                    } catch (JsonParseException jsonparseexception2) {
+                                    } catch (JsonParseException ignored) {
                                     }
                                 }
 
@@ -1919,7 +1919,7 @@ class ForgeDataFixer extends DataFixerBuilder {
                     if (cmp.contains("VillagerProfession", 99)) {
                         try {
                             i = this.convert(cmp.getInt("VillagerProfession"));
-                        } catch (RuntimeException runtimeexception) {
+                        } catch (RuntimeException ignored) {
                         }
                     }
 
@@ -2450,10 +2450,8 @@ class ForgeDataFixer extends DataFixerBuilder {
                 } else if (jsonelement.isJsonArray()) {
                     JsonArray jsonarray = jsonelement.getAsJsonArray();
                     IFormattableTextComponent iTextComponent = null;
-                    Iterator iterator = jsonarray.iterator();
 
-                    while (iterator.hasNext()) {
-                        JsonElement jsonelement1 = (JsonElement) iterator.next();
+                    for (JsonElement jsonelement1 : jsonarray) {
                         IFormattableTextComponent iTextComponent1 = this.a(jsonelement1, jsonelement1.getClass(), jsondeserializationcontext);
 
                         if (iTextComponent == null) {
@@ -2655,7 +2653,7 @@ class ForgeDataFixer extends DataFixerBuilder {
     }
 
     private static class DataInspectorVillagers implements DataInspector {
-        ResourceLocation entityVillager = getKey("EntityVillager");
+        final ResourceLocation entityVillager = getKey("EntityVillager");
 
         @Override
         public CompoundNBT inspect(CompoundNBT cmp, int sourceVer, int targetVer) {
@@ -2681,8 +2679,8 @@ class ForgeDataFixer extends DataFixerBuilder {
     }
 
     private static class DataInspectorMobSpawnerMinecart implements DataInspector {
-        ResourceLocation entityMinecartMobSpawner = getKey("EntityMinecartMobSpawner");
-        ResourceLocation tileEntityMobSpawner = getKey("TileEntityMobSpawner");
+        final ResourceLocation entityMinecartMobSpawner = getKey("EntityMinecartMobSpawner");
+        final ResourceLocation tileEntityMobSpawner = getKey("TileEntityMobSpawner");
 
         @Override
         public CompoundNBT inspect(CompoundNBT cmp, int sourceVer, int targetVer) {
@@ -2698,7 +2696,7 @@ class ForgeDataFixer extends DataFixerBuilder {
     }
 
     private static class DataInspectorMobSpawnerMobs implements DataInspector {
-        ResourceLocation tileEntityMobSpawner = getKey("TileEntityMobSpawner");
+        final ResourceLocation tileEntityMobSpawner = getKey("TileEntityMobSpawner");
 
         @Override
         public CompoundNBT inspect(CompoundNBT cmp, int sourceVer, int targetVer) {
@@ -2721,7 +2719,7 @@ class ForgeDataFixer extends DataFixerBuilder {
     }
 
     private static class DataInspectorCommandBlock implements DataInspector {
-        ResourceLocation tileEntityCommand = getKey("TileEntityCommand");
+        final ResourceLocation tileEntityCommand = getKey("TileEntityCommand");
 
         @Override
         public CompoundNBT inspect(CompoundNBT cmp, int sourceVer, int targetVer) {

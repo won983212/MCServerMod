@@ -33,18 +33,14 @@ import java.util.function.Predicate;
 @ParametersAreNonnullByDefault
 public class WrappedWorld extends World {
 
-    protected World world;
-    protected AbstractChunkProvider provider;
+    protected final World world;
+    protected final AbstractChunkProvider provider;
 
     public WrappedWorld(World world, AbstractChunkProvider provider) {
         super((ISpawnWorldInfo) world.getLevelData(), world.dimension(), world.dimensionType(), world::getProfiler,
                 world.isClientSide, world.isDebug(), 0);
         this.world = world;
         this.provider = provider;
-    }
-
-    public WrappedWorld(World world) {
-        this(world, null);
     }
 
     public World getLevel() {

@@ -20,15 +20,15 @@ public class ToolSelectionScreen extends Screen {
     public final String scrollToCycle = Lang.translate("gui.toolmenu.cycle").getString();
     public final String holdToFocus = "gui.toolmenu.focusKey";
 
-    protected List<Tools> tools;
-    protected Consumer<Tools> callback;
+    protected final List<Tools> tools;
+    protected final Consumer<Tools> callback;
     public boolean focused;
     private float yOffset;
     protected int selection;
     private boolean initialized;
 
-    protected int w;
-    protected int h;
+    protected final int w;
+    protected final int h;
 
     public ToolSelectionScreen(List<Tools> tools, Consumer<Tools> callback) {
         super(new StringTextComponent("Tool Selection"));

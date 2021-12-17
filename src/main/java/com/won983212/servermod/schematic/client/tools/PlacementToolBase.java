@@ -7,16 +7,6 @@ import net.minecraft.client.renderer.IRenderTypeBuffer;
 public abstract class PlacementToolBase extends SchematicToolBase {
 
     @Override
-    public void init() {
-        super.init();
-    }
-
-    @Override
-    public void updateSelection() {
-        super.updateSelection();
-    }
-
-    @Override
     public void renderTool(MatrixStack ms, SuperRenderTypeBuffer buffer) {
         super.renderTool(ms, buffer);
     }

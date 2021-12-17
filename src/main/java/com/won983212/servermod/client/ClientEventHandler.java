@@ -2,7 +2,6 @@ package com.won983212.servermod.client;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.won983212.servermod.CommonModDist;
 import com.won983212.servermod.LegacyMapper;
 import com.won983212.servermod.ModKeys;
 import com.won983212.servermod.ServerMod;
@@ -30,7 +29,6 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.common.Mod;
 
 import java.awt.*;

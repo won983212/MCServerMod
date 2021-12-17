@@ -28,13 +28,8 @@ public class MatrixTransformStack {
         return this;
     }
 
-    public MatrixTransformStack scale(float factor) {
-        internal.scale(factor, factor, factor);
-        return this;
-    }
-
-    public MatrixTransformStack rotateX(double angle) {
-        return multiply(Vector3f.XP, angle);
+    public void rotateX(double angle) {
+        multiply(Vector3f.XP, angle);
     }
 
     public MatrixTransformStack rotateY(double angle) {
@@ -45,8 +40,8 @@ public class MatrixTransformStack {
         return multiply(Vector3f.ZP, angle);
     }
 
-    public MatrixTransformStack translate(Vector3i vec) {
-        return translate(vec.getX(), vec.getY(), vec.getZ());
+    public void translate(Vector3i vec) {
+        translate(vec.getX(), vec.getY(), vec.getZ());
     }
 
     public MatrixTransformStack translate(Vector3d vec) {

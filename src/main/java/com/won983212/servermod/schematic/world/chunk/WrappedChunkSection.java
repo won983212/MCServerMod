@@ -5,7 +5,7 @@ import net.minecraft.world.chunk.ChunkSection;
 
 public class WrappedChunkSection extends ChunkSection {
 
-    public WrappedChunk owner;
+    public final WrappedChunk owner;
 
     public final int xStart;
     public final int yStart;

@@ -70,7 +70,7 @@ public final class NBTProcessors {
             return null;
         }
         TileEntityType<?> type = tileEntity.getType();
-        if (compound != null && processors.containsKey(type)) {
+        if (processors.containsKey(type)) {
             return processors.get(type).apply(compound);
         }
         if (tileEntity instanceof MobSpawnerTileEntity) {

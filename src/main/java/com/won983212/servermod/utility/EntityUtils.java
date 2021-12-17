@@ -27,7 +27,7 @@ public class EntityUtils {
                 entity.setUUID(UUID.randomUUID());
                 return entity;
             }
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
 
         return null;
@@ -35,10 +35,6 @@ public class EntityUtils {
 
     /**
      * Note: This does NOT spawn any of the entities in the world!
-     *
-     * @param nbt
-     * @param world
-     * @return
      */
     @Nullable
     public static Entity createEntityAndPassengersFromNBT(CompoundNBT nbt, World world) {

@@ -25,14 +25,6 @@ public class WrappedChunkProvider extends AbstractChunkProvider {
         return this;
     }
 
-    public Stream<BlockPos> getLightSources() {
-        return world.blocksAdded
-                .entrySet()
-                .stream()
-                .filter(it -> it.getValue().getLightValue(world, it.getKey()) != 0)
-                .map(Map.Entry::getKey);
-    }
-
     @Nullable
     @Override
     public IBlockReader getChunkForLighting(int x, int z) {

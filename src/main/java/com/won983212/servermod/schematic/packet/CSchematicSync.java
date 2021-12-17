@@ -17,12 +17,12 @@ import java.util.function.Supplier;
 
 public class CSchematicSync implements IMessage {
 
-    public int slot;
-    public boolean deployed;
-    public BlockPos anchor;
-    public Rotation rotation;
-    public Mirror mirror;
-    public boolean includeAir;
+    public final int slot;
+    public final boolean deployed;
+    public final BlockPos anchor;
+    public final Rotation rotation;
+    public final Mirror mirror;
+    public final boolean includeAir;
 
     public CSchematicSync(int slot, PlacementSettings settings,
                           BlockPos anchor, boolean deployed, boolean includeAir) {

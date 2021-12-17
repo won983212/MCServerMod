@@ -97,17 +97,6 @@ public final class VoxelShapeUtils {
     }
 
     /**
-     * Rotates a {@link VoxelShape} to a according to a specific rotation.
-     *
-     * @param shape    The {@link VoxelShape} to rotate
-     * @param rotation The rotation we are performing.
-     * @return The rotated {@link VoxelShape}
-     */
-    public static VoxelShape rotate(VoxelShape shape, Rotation rotation) {
-        return rotate(shape, box -> rotate(box, rotation));
-    }
-
-    /**
      * Rotates a {@link VoxelShape} to a specific side horizontally. This is a default most common rotation setup as to {@link #rotate(VoxelShape, Rotation)}
      *
      * @param shape The {@link VoxelShape} to rotate
@@ -142,31 +131,11 @@ public final class VoxelShapeUtils {
     /**
      * Used for mass combining shapes
      *
-     * @param shapes The list of {@link VoxelShape}s to include
-     * @return A simplified {@link VoxelShape} including everything that is part of any of the input shapes.
-     */
-    public static VoxelShape combine(VoxelShape... shapes) {
-        return batchCombine(VoxelShapes.empty(), IBooleanFunction.OR, true, shapes);
-    }
-
-    /**
-     * Used for mass combining shapes
-     *
      * @param shapes The collection of {@link VoxelShape}s to include
      * @return A simplified {@link VoxelShape} including everything that is part of any of the input shapes.
      */
     public static VoxelShape combine(Collection<VoxelShape> shapes) {
         return batchCombine(VoxelShapes.empty(), IBooleanFunction.OR, true, shapes);
-    }
-
-    /**
-     * Used for cutting shapes out of a full cube
-     *
-     * @param shapes The list of {@link VoxelShape}s to cut out
-     * @return A {@link VoxelShape} including everything that is not part of any of the input shapes.
-     */
-    public static VoxelShape exclude(VoxelShape... shapes) {
-        return batchCombine(VoxelShapes.block(), IBooleanFunction.ONLY_FIRST, true, shapes);
     }
 
     /**
@@ -188,25 +157,6 @@ public final class VoxelShapeUtils {
         return simplify ? combinedShape.optimize() : combinedShape;
     }
 
-    /**
-     * Used for mass combining shapes using a specific {@link IBooleanFunction} and a given start shape.
-     *
-     * @param initial  The {@link VoxelShape} to start with
-     * @param function The {@link IBooleanFunction} to perform
-     * @param simplify True if the returned shape should run {@link VoxelShape#optimize()}, False otherwise
-     * @param shapes   The list of {@link VoxelShape}s to include
-     * @return A {@link VoxelShape} based on the input parameters.
-     * @implNote We do not do any simplification until after combining all the shapes, and then only if the {@code simplify} is True. This is because there is a
-     * performance hit in calculating the simplified shape each time if we still have more changers we are making to it.
-     */
-    public static VoxelShape batchCombine(VoxelShape initial, IBooleanFunction function, boolean simplify, VoxelShape... shapes) {
-        VoxelShape combinedShape = initial;
-        for (VoxelShape shape : shapes) {
-            combinedShape = VoxelShapes.join(combinedShape, shape, function);
-        }
-        return simplify ? combinedShape.optimize() : combinedShape;
-    }
-
     public static void setShape(VoxelShape shape, VoxelShape[] dest, boolean verticalAxis) {
         setShape(shape, dest, verticalAxis, false);
     }
@@ -218,7 +168,4 @@ public final class VoxelShapeUtils {
         }
     }
 
-    public static void setShape(VoxelShape shape, VoxelShape[] dest) {
-        setShape(shape, dest, false, false);
-    }
 }

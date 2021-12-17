@@ -16,10 +16,6 @@ public class Color {
                 (b & 0xff);
     }
 
-    public Color(int rgba) {
-        value = rgba;
-    }
-
     public Color(int rgb, boolean hasAlpha) {
         if (hasAlpha) {
             value = rgb;

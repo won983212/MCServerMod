@@ -19,9 +19,9 @@ public class SuperRenderTypeBuffer implements IRenderTypeBuffer {
         return instance;
     }
 
-    SuperRenderTypeBufferPhase earlyBuffer;
-    SuperRenderTypeBufferPhase defaultBuffer;
-    SuperRenderTypeBufferPhase lateBuffer;
+    final SuperRenderTypeBufferPhase earlyBuffer;
+    final SuperRenderTypeBufferPhase defaultBuffer;
+    final SuperRenderTypeBufferPhase lateBuffer;
 
     public SuperRenderTypeBuffer() {
         earlyBuffer = new SuperRenderTypeBufferPhase();
@@ -53,7 +53,7 @@ public class SuperRenderTypeBuffer implements IRenderTypeBuffer {
         // Visible clones from net.minecraft.client.renderer.RenderTypeBuffers
         static final RegionRenderCacheBuilder blockBuilders = new RegionRenderCacheBuilder();
 
-        static final SortedMap<RenderType, BufferBuilder> createEntityBuilders() {
+        static SortedMap<RenderType, BufferBuilder> createEntityBuilders() {
             return Util.make(new Object2ObjectLinkedOpenHashMap<>(), (map) -> {
                 map.put(Atlases.solidBlockSheet(), blockBuilders.builder(RenderType.solid()));
                 assign(map, RenderTypes.getOutlineSolid());
@@ -69,9 +69,7 @@ public class SuperRenderTypeBuffer implements IRenderTypeBuffer {
                 assign(map, RenderType.glint());
                 assign(map, RenderType.entityGlint());
                 assign(map, RenderType.waterMask());
-                ModelBakery.DESTROY_TYPES.forEach((p_228488_1_) -> {
-                    assign(map, p_228488_1_);
-                });
+                ModelBakery.DESTROY_TYPES.forEach((p_228488_1_) -> assign(map, p_228488_1_));
             });
         }
 

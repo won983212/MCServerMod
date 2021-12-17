@@ -17,14 +17,6 @@ public class RepeatPlaySound extends TickableSound {
         this.z = z;
     }
 
-    public boolean shouldPlaySound() {
-        return true;
-    }
-
-    public boolean canBeSilent() {
-        return false;
-    }
-
     public void stopSound() {
         stop();
     }
@@ -34,7 +26,7 @@ public class RepeatPlaySound extends TickableSound {
             return;
         }
 
-        if (!SoundHandlerHelper.isClientPlayerInRange(this)) {
+        if (SoundHandlerHelper.isOutClientPlayerInRange(this)) {
             stop();
         }
 

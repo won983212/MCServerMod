@@ -8,6 +8,7 @@ import net.minecraftforge.common.util.Constants;
 import java.io.*;
 import java.util.zip.GZIPInputStream;
 
+@SuppressWarnings("unchecked")
 public abstract class AbstractSchematicReader {
     private IProgressEvent progressEvent;
 

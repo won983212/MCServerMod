@@ -14,7 +14,6 @@ import net.minecraft.util.math.vector.Vector3d;
 public class FlipTool extends PlacementToolBase {
     private final AABBOutline outline = new AABBOutline(new AxisAlignedBB(BlockPos.ZERO));
 
-    @Override
     public void init() {
         super.init();
         renderSelectedFace = false;
@@ -30,11 +29,6 @@ public class FlipTool extends PlacementToolBase {
     public boolean handleMouseWheel(double delta) {
         mirror();
         return true;
-    }
-
-    @Override
-    public void updateSelection() {
-        super.updateSelection();
     }
 
     private void mirror() {

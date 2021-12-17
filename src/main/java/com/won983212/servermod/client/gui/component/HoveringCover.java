@@ -7,7 +7,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class HoveringCover extends AbstractComponent {
     protected boolean isHovered;
     protected boolean isPressed;
-    protected int pressedColor = 0xaaffffff;
+    protected final int pressedColor = 0xaaffffff;
     protected int hoveredColor = 0x88ffffff;
     protected final IPressable onPress;
 

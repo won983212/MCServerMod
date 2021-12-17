@@ -31,17 +31,14 @@ public class RaycastHelper {
         float f5 = MathHelper.sin(-f * 0.017453292F);
         float f6 = f3 * f4;
         float f7 = f2 * f4;
-        double d3 = range;
-        Vector3d Vector3d1 = origin.add((double) f6 * d3, (double) f5 * d3, (double) f7 * d3);
-        return Vector3d1;
+        return origin.add((double) f6 * range, (double) f5 * range, (double) f7 * range);
     }
 
     public static Vector3d getTraceOrigin(PlayerEntity playerIn) {
         double d0 = playerIn.getX();
         double d1 = playerIn.getY() + (double) playerIn.getEyeHeight();
         double d2 = playerIn.getZ();
-        Vector3d Vector3d = new Vector3d(d0, d1, d2);
-        return Vector3d;
+        return new Vector3d(d0, d1, d2);
     }
 
     public static PredicateTraceResult rayTraceUntil(Vector3d start, Vector3d end, Predicate<BlockPos> predicate) {
@@ -179,10 +176,6 @@ public class RaycastHelper {
 
         public Direction getFacing() {
             return facing;
-        }
-
-        public BlockPos getPos() {
-            return pos;
         }
 
         public boolean missed() {

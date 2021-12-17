@@ -14,7 +14,7 @@ import net.minecraftforge.fml.network.NetworkEvent.Context;
 import java.util.function.Supplier;
 
 public class CSchematicPlace implements IMessage {
-    public ItemStack stack;
+    public final ItemStack stack;
 
     public CSchematicPlace(ItemStack stack) {
         this.stack = stack;

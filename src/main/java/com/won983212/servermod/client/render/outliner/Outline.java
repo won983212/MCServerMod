@@ -21,7 +21,7 @@ import java.util.Optional;
 
 public abstract class Outline {
 
-    protected OutlineParams params;
+    protected final OutlineParams params;
     protected Matrix3f transformNormals;
 
     public Outline() {
@@ -173,11 +173,10 @@ public abstract class Outline {
         protected Optional<ModTextures> faceTexture;
         protected Optional<ModTextures> hightlightedFaceTexture;
         protected Direction highlightedFace;
-        protected boolean fadeLineWidth;
+        protected final boolean fadeLineWidth;
         protected boolean disableCull;
         protected boolean disableNormals;
         protected float alpha;
-        protected int lightMapU, lightMapV;
         protected Color rgb;
         private float lineWidth;
 
@@ -189,8 +188,6 @@ public abstract class Outline {
             rgb = Color.WHITE;
 
             int i = 15 << 20 | 15 << 4;
-            lightMapU = i >> 16 & '\uffff';
-            lightMapV = i & '\uffff';
         }
 
         // builder
@@ -210,8 +207,8 @@ public abstract class Outline {
             return this;
         }
 
-        public OutlineParams clearTextures() {
-            return this.withFaceTextures(null, null);
+        public void clearTextures() {
+            this.withFaceTextures(null, null);
         }
 
         public OutlineParams withFaceTextures(ModTextures texture, ModTextures highlightTexture) {

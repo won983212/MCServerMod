@@ -73,14 +73,6 @@ public class ActiveStateTile extends TileEntity implements ITickableTileEntity {
         return false;
     }
 
-    // directional state manage
-    public void setDirection(Direction dir) {
-        if (directionCache != dir && level != null) {
-            directionCache = dir;
-            level.setBlockAndUpdate(getBlockPos(), getBlockState().setValue(BlockStateProperties.FACING, dir));
-        }
-    }
-
     public Direction getDirection() {
         if (directionCache != null) {
             return directionCache;

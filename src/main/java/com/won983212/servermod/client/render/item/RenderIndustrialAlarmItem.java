@@ -1,4 +1,4 @@
-package com.won983212.servermod.client.render.item.block;
+package com.won983212.servermod.client.render.item;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.won983212.servermod.client.model.ModelIndustrialAlarm;

@@ -39,9 +39,7 @@ public class SOpenSchematicMenu implements IMessage {
 
     @OnlyIn(Dist.CLIENT)
     public void handle(Supplier<NetworkEvent.Context> context) {
-        context.get().enqueueWork(() -> {
-            Minecraft.getInstance().setScreen(new SchematicSelectionScreen(schematicFileNames));
-        });
+        context.get().enqueueWork(() -> Minecraft.getInstance().setScreen(new SchematicSelectionScreen(schematicFileNames)));
         context.get().setPacketHandled(true);
     }
 }

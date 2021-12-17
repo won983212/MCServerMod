@@ -1,37 +1,29 @@
 package com.won983212.servermod.utility.animate;
 
 public class InterpolatedChasingValue extends InterpolatedValue {
-
-    private float speed = 0.5f;
+    private static final float EPS = 1 / 4096f;
+    private static final float SPEED = 0.5f;
     private float target = 0;
-    private final float eps = 1 / 4096f;
 
     public void tick() {
         float diff = getCurrentDiff();
-        if (Math.abs(diff) < eps) {
+        if (Math.abs(diff) < EPS) {
             return;
         }
-        set(value + (diff) * speed);
+        set(value + (diff) * SPEED);
     }
 
     protected float getCurrentDiff() {
         return getTarget() - value;
     }
 
-    public InterpolatedChasingValue withSpeed(float speed) {
-        this.speed = speed;
-        return this;
-    }
-
-    public InterpolatedChasingValue target(float target) {
+    public void target(float target) {
         this.target = target;
-        return this;
     }
 
-    public InterpolatedChasingValue start(float value) {
+    public void start(float value) {
         lastValue = this.value = value;
         target(value);
-        return this;
     }
 
     public float getTarget() {

@@ -1,7 +1,6 @@
 package com.won983212.servermod.schematic.world;
 
 import com.won983212.servermod.Logger;
-import com.won983212.servermod.schematic.IProgressEvent;
 import com.won983212.servermod.schematic.world.chunk.WrappedChunkProvider;
 import net.minecraft.block.AbstractFurnaceBlock;
 import net.minecraft.block.Block;
@@ -25,18 +24,16 @@ import net.minecraft.world.server.ServerWorld;
 
 import java.util.*;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 public class SchematicWorld extends WrappedWorld implements IServerWorld {
 
-    protected Map<BlockPos, BlockState> blocks;
-    protected Map<BlockPos, TileEntity> tileEntities;
-    protected List<TileEntity> renderedTileEntities;
-    protected List<Entity> entities;
-    protected MutableBoundingBox bounds;
+    protected final Map<BlockPos, BlockState> blocks;
+    protected final Map<BlockPos, TileEntity> tileEntities;
+    protected final List<TileEntity> renderedTileEntities;
+    protected final List<Entity> entities;
+    protected final MutableBoundingBox bounds;
 
-    public BlockPos anchor;
-    public boolean renderMode;
+    public final BlockPos anchor;
 
     public SchematicWorld(World original) {
         this(BlockPos.ZERO, original);
@@ -106,7 +103,7 @@ public class SchematicWorld extends WrappedWorld implements IServerWorld {
     public BlockState getBlockState(BlockPos globalPos) {
         BlockPos pos = globalPos.subtract(anchor);
 
-        if (pos.getY() - bounds.y0 == -1 && !renderMode) {
+        if (pos.getY() - bounds.y0 == -1) {
             return Blocks.GRASS_BLOCK.defaultBlockState();
         }
         if (getBounds().isInside(pos) && blocks.containsKey(pos)) {
