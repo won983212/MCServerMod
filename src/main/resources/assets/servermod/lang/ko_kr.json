@@ -64,7 +64,7 @@
   "servermod.schematic.tool.print.description.3": "",
   "servermod.schematic.tool.flip.description.0": "당신이 보는 면으로 청사진을 뒤집습니다.",
   "servermod.schematic.tool.flip.description.1": "청사진을 보고 [Ctrl]-스크롤로 뒤집습니다.",
-  "servermod.schematic.tool.flip.description.2": "",
+  "servermod.schematic.tool.flip.description.2": "청사진을 보고 클릭해도 뒤집을 수 있습니다.",
   "servermod.schematic.tool.flip.description.3": "",
   "servermod.schematic.tool.toggleair.description.0": "프린트할 때 공기도 포함해서 프린트할지 정합니다.",
   "servermod.schematic.tool.toggleair.description.1": "[우클릭]으로 공기를 포함할지 선택합니다.",

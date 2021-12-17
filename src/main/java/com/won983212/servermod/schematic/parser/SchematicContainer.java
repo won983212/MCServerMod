@@ -8,9 +8,11 @@ import com.won983212.servermod.utility.EntityUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.block.DoorBlock;
 import net.minecraft.entity.Entity;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.state.properties.DoubleBlockHalf;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Mirror;
 import net.minecraft.util.Rotation;
@@ -115,8 +117,12 @@ public class SchematicContainer {
                 for (BlockInfo ent : blocks()) {
                     BlockPos pos = Template.calculateRelativePosition(placement, ent.pos).offset(posStart);
                     BlockState state = world.getBlockState(pos);
-                    BlockState updatedState = Block.updateFromNeighbourShapes(state, world, pos);
 
+                    if (state.hasProperty(DoorBlock.HALF) && state.getValue(DoorBlock.HALF) == DoubleBlockHalf.LOWER) {
+                        continue;
+                    }
+
+                    BlockState updatedState = Block.updateFromNeighbourShapes(state, world, pos);
                     if (state != updatedState) {
                         world.setBlock(pos, updatedState, setBlockStateFlags & -2 | 16);
                     }

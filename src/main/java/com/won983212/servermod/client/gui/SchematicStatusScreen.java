@@ -22,7 +22,7 @@ public class SchematicStatusScreen extends Screen implements HoveringCover.IPres
     public SchematicStatusScreen() {
         super(new StringTextComponent("Schematic Upload Status"));
         this.progressProducers = new ArrayList<>();
-        this.isOpenMenu = false;
+        this.isOpenMenu = true;
         this.progressMenuButton = new HoveringCover(8, 8, 50, 16, this);
     }
 

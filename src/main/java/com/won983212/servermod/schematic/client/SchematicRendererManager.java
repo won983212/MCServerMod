@@ -90,7 +90,6 @@ public class SchematicRendererManager implements IProgressEntryProducer {
                         Logger.error(e);
                         return null;
                     });
-            ;
         } else {
             Logger.debug("in cache: " + schematicFilePath);
             this.renderers = renderers;

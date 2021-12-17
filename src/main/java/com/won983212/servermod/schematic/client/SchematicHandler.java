@@ -69,10 +69,10 @@ public class SchematicHandler {
         if (stack == null) {
             active = false;
             syncCooldown = 0;
+            rendererManager.setCurrentSchematic(null);
             if (activeSchematicItem != null && itemLost(player)) {
                 activeHotbarSlot = 0;
                 activeSchematicItem = null;
-                rendererManager.setCurrentSchematic(null);
             }
             return;
         }

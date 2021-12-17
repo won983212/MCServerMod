@@ -107,6 +107,7 @@ public class SchematicPrinter implements IAsyncTask {
                 continue;
             }
 
+            processed++;
             count++;
             BlockPos target = getCurrentTarget();
             if (printStage == PrintStage.ENTITIES) {
@@ -124,7 +125,7 @@ public class SchematicPrinter implements IAsyncTask {
             }
         }
         if (event != null) {
-            event.onProgress("월드에 블록 설치중...", 0.5 + 0.5 * processed / total);
+            event.onProgress("월드에 블록 설치중...", Math.min(0.5 + 0.5 * processed / total, 1.0));
         }
         return end;
     }
@@ -186,7 +187,6 @@ public class SchematicPrinter implements IAsyncTask {
     }
 
     private boolean tryAdvanceCurrentPos() {
-        processed++;
         currentPos = currentPos.relative(Direction.EAST);
         MutableBoundingBox bounds = blockReader.getBounds();
 

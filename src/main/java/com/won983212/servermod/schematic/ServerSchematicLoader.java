@@ -19,7 +19,7 @@ import java.util.*;
 import java.util.stream.Stream;
 
 public class ServerSchematicLoader extends SchematicNetwork {
-	private Map<String, SchematicDownloadEntry> activeUploads;
+	private final Map<String, SchematicDownloadEntry> activeUploads;
 
 	public ServerSchematicLoader() {
 		activeUploads = new HashMap<>();
