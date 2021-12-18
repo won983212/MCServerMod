@@ -53,7 +53,8 @@ public class SchematicHandler {
         transformation = new SchematicTransformation();
     }
 
-    public void clearCache(){
+    public void unload(){
+        displayedSchematic = null;
         SchematicRendererManager.clearCache();
         rendererManager.setCurrentSchematic(null);
     }

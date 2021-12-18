@@ -67,7 +67,7 @@ public class ClientEventHandler {
         if (event.getWorld().isClientSide()) {
             AnimationTickHolder.reset();
             SchematicFileParser.clearCache();
-            ClientDist.SCHEMATIC_HANDLER.clearCache();
+            ClientDist.SCHEMATIC_HANDLER.unload();
             TaskManager.cancelAllTask();
         }
     }

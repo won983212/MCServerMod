@@ -6,7 +6,6 @@ import com.won983212.servermod.schematic.world.SchematicWorld;
 import com.won983212.servermod.task.IAsyncTask;
 import com.won983212.servermod.utility.BlockHelper;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
@@ -18,7 +17,6 @@ import net.minecraft.util.math.MutableBoundingBox;
 import net.minecraft.world.World;
 import net.minecraft.world.gen.feature.template.PlacementSettings;
 import net.minecraft.world.gen.feature.template.Template;
-import net.minecraftforge.common.util.Constants;
 
 import java.util.LinkedList;
 import java.util.List;

@@ -1,8 +1,8 @@
 package com.won983212.servermod.server;
 
 import com.mojang.brigadier.CommandDispatcher;
-import com.won983212.servermod.server.command.SchematicCommand;
 import com.won983212.servermod.server.command.ReloadSkinCommand;
+import com.won983212.servermod.server.command.SchematicCommand;
 import net.minecraft.command.CommandSource;
 
 import java.util.function.Consumer;

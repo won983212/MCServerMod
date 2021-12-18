@@ -27,9 +27,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-// TODO ModernHouse.schem이 sign설치할 때 에러난다
-// TODO 아이템 들고 나갔다오면 로딩 안되네?
-// TODO 아이템을 가지고 있으면 계속 cache에 들고있도록 해야할듯!
 public class SchematicContainer {
     private final BlockStroage blocks = new BlockStroage();
     private final List<CompoundNBT> entities = new ArrayList<>();
