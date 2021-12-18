@@ -6,7 +6,7 @@ import com.won983212.servermod.client.ClientDist;
 import com.won983212.servermod.client.gui.component.HoveringCover;
 import com.won983212.servermod.client.gui.component.ScrollSelector;
 import com.won983212.servermod.network.NetworkDispatcher;
-import com.won983212.servermod.schematic.packet.CSchematicFileDelete;
+import com.won983212.servermod.schematic.network.CSchematicFileDelete;
 import com.won983212.servermod.server.command.SchematicCommand;
 import net.minecraft.util.StringUtils;
 import net.minecraft.util.text.StringTextComponent;

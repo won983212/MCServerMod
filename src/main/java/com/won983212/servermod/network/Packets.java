@@ -1,6 +1,6 @@
 package com.won983212.servermod.network;
 
-import com.won983212.servermod.schematic.packet.*;
+import com.won983212.servermod.schematic.network.*;
 import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.fml.network.NetworkDirection;
 import net.minecraftforge.fml.network.NetworkEvent;

@@ -10,7 +10,7 @@ import com.won983212.servermod.schematic.IProgressEntry;
 import com.won983212.servermod.schematic.IProgressEntryProducer;
 import com.won983212.servermod.schematic.IProgressEvent;
 import com.won983212.servermod.schematic.client.render.SchematicRenderer;
-import com.won983212.servermod.schematic.parser.SchematicContainer;
+import com.won983212.servermod.schematic.SchematicContainer;
 import com.won983212.servermod.schematic.world.SchematicWorld;
 import com.won983212.servermod.utility.animate.AnimationTickHolder;
 import net.minecraft.client.Minecraft;
@@ -42,7 +42,7 @@ public class SchematicRendererManager implements IProgressEntryProducer {
     }
 
     public void render(MatrixStack ms, SuperRenderTypeBuffer buffer, SchematicTransformation transformation) {
-        if (renderers != null && loadingEntries.isEmpty()) {
+        if (renderers != null) {
             float pt = AnimationTickHolder.getPartialTicks();
             boolean lr = transformation.getScaleLR().get(pt) < 0;
             boolean fb = transformation.getScaleFB().get(pt) < 0;

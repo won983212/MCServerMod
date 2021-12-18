@@ -1,7 +1,7 @@
 package com.won983212.servermod;
 
 import com.won983212.servermod.schematic.SchematicProcessor;
-import com.won983212.servermod.schematic.ServerSchematicLoader;
+import com.won983212.servermod.schematic.network.ServerSchematicLoader;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 
 public class CommonModDist {

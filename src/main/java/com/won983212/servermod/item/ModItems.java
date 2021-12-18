@@ -2,7 +2,7 @@ package com.won983212.servermod.item;
 
 import com.won983212.servermod.ServerMod;
 import com.won983212.servermod.block.ModBlocks;
-import com.won983212.servermod.client.render.item.block.RenderIndustrialAlarmItem;
+import com.won983212.servermod.client.render.item.RenderIndustrialAlarmItem;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;

@@ -1,6 +1,7 @@
 package com.won983212.servermod.schematic.parser;
 
 import com.won983212.servermod.schematic.IProgressEvent;
+import com.won983212.servermod.schematic.SchematicContainer;
 import net.minecraft.nbt.*;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.util.Constants;
@@ -46,9 +47,7 @@ public abstract class AbstractSchematicReader {
     }
 
     protected void notifyProgress(String status, double progress) {
-        if (progressEvent != null) {
-            progressEvent.onProgress(status, progress);
-        }
+        IProgressEvent.safeFire(progressEvent, status, progress);
     }
 
     protected static <T extends INBT> T checkTag(CompoundNBT nbt, String key, Class<T> expected) throws IOException {

@@ -1,4 +1,4 @@
-package com.won983212.servermod.schematic.packet;
+package com.won983212.servermod.schematic.network;
 
 import com.won983212.servermod.network.IMessage;
 import com.won983212.servermod.schematic.SchematicPrinter;

@@ -6,6 +6,7 @@ import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
 import com.won983212.servermod.schematic.IProgressEvent;
 import com.won983212.servermod.schematic.client.SchematicTransformation;
 import com.won983212.servermod.schematic.world.SchematicWorld;
+import com.won983212.servermod.task.IAsyncTask;
 import com.won983212.servermod.utility.MatrixTransformStack;
 import com.won983212.servermod.utility.animate.AnimationTickHolder;
 import net.minecraft.client.Minecraft;
@@ -77,9 +78,7 @@ public class SchematicRenderer {
                     synchronized (chunks) {
                         chunks.add(chunk);
                     }
-                    if (event != null) {
-                        event.onProgress("Chunk 불러오는 중...", (double) current / total);
-                    }
+                    IProgressEvent.safeFire(event, "Chunk 불러오는 중...", (double) current / total);
                 }
             }
         }
@@ -109,9 +108,9 @@ public class SchematicRenderer {
             } catch (Exception e) {
                 iterator.remove();
                 String message = "TileEntity " + tileEntity.getType().getRegistryName().toString()
-                        + " didn't want to render while moved.\n";
+                        + "(" + tileEntity.getBlockPos() + ") didn't want to render while moved.\n";
                 Logger.error(message);
-                e.printStackTrace();
+                Logger.error(e);
             }
 
             ms.popPose();

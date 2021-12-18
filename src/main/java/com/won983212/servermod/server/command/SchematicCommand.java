@@ -3,7 +3,7 @@ package com.won983212.servermod.server.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.won983212.servermod.network.NetworkDispatcher;
-import com.won983212.servermod.schematic.packet.SOpenSchematicMenu;
+import com.won983212.servermod.schematic.network.SOpenSchematicMenu;
 import com.won983212.servermod.schematic.parser.SchematicFileParser;
 import net.minecraft.command.CommandSource;
 import net.minecraft.entity.Entity;

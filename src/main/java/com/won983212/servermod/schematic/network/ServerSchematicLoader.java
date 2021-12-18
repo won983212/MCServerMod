@@ -1,10 +1,9 @@
-package com.won983212.servermod.schematic;
+package com.won983212.servermod.schematic.network;
 
 import com.won983212.servermod.Logger;
 import com.won983212.servermod.item.SchematicItem;
 import com.won983212.servermod.network.IMessage;
 import com.won983212.servermod.network.NetworkDispatcher;
-import com.won983212.servermod.schematic.packet.SSchematicReceivedProgress;
 import com.won983212.servermod.schematic.parser.SchematicFileParser;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;

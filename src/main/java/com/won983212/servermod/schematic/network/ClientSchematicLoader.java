@@ -1,8 +1,9 @@
-package com.won983212.servermod.schematic;
+package com.won983212.servermod.schematic.network;
 
 import com.won983212.servermod.Logger;
 import com.won983212.servermod.network.NetworkDispatcher;
-import com.won983212.servermod.schematic.packet.CSchematicUpload;
+import com.won983212.servermod.schematic.IProgressEntry;
+import com.won983212.servermod.schematic.IProgressEntryProducer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;

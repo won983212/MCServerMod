@@ -1,4 +1,4 @@
-package com.won983212.servermod.schematic;
+package com.won983212.servermod.schematic.network;
 
 import com.won983212.servermod.utility.Lang;
 import net.minecraft.entity.player.PlayerEntity;

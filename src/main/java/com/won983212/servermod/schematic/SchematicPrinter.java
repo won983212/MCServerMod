@@ -2,11 +2,11 @@ package com.won983212.servermod.schematic;
 
 import com.won983212.servermod.Logger;
 import com.won983212.servermod.item.SchematicItem;
-import com.won983212.servermod.schematic.parser.SchematicContainer;
 import com.won983212.servermod.schematic.world.SchematicWorld;
 import com.won983212.servermod.task.IAsyncTask;
 import com.won983212.servermod.utility.BlockHelper;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
@@ -18,6 +18,7 @@ import net.minecraft.util.math.MutableBoundingBox;
 import net.minecraft.world.World;
 import net.minecraft.world.gen.feature.template.PlacementSettings;
 import net.minecraft.world.gen.feature.template.Template;
+import net.minecraftforge.common.util.Constants;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -61,7 +62,7 @@ public class SchematicPrinter implements IAsyncTask {
         this.event = event;
         this.originalWorld = originalWorld;
 
-        return CompletableFuture.supplyAsync(() -> SchematicItem.loadSchematic(blueprint, (s, p) -> event.onProgress(s, p * 0.2)))
+        return CompletableFuture.supplyAsync(() -> SchematicItem.loadSchematic(blueprint, (s, p) -> IProgressEvent.safeFire(event, s, p * 0.2)))
                 .thenApply((t) -> load(t, processNBT, blueprint))
                 .exceptionally((e) -> {
                     Logger.error(e);
@@ -78,11 +79,8 @@ public class SchematicPrinter implements IAsyncTask {
         schematicAnchor = NBTUtil.readBlockPos(blueprint.getTag().getCompound("Anchor"));
         blockReader = new SchematicWorld(schematicAnchor, originalWorld);
 
-        activeTemplate.placeSchematicToWorld(blockReader, schematicAnchor, settings, (s, p) -> {
-            if (event != null) {
-                event.onProgress(s, 0.2 + 0.3 * p);
-            }
-        });
+        activeTemplate.placeSchematicToWorld(blockReader, schematicAnchor, settings,
+                (s, p) -> IProgressEvent.safeFire(event, s, 0.2 + 0.3 * p));
 
         BlockPos extraBounds = Template.calculateRelativePosition(settings, activeTemplate.getSize().offset(-1, -1, -1));
         blockReader.getBounds().expand(new MutableBoundingBox(extraBounds, extraBounds));
@@ -124,9 +122,8 @@ public class SchematicPrinter implements IAsyncTask {
                 BlockHelper.placeSchematicBlock(originalWorld, blockState, target, null, tileData);
             }
         }
-        if (event != null) {
-            event.onProgress("월드에 블록 설치중...", Math.min(0.5 + 0.5 * processed / total, 1.0));
-        }
+        
+        IProgressEvent.safeFire(event, "월드에 블록 설치중...", Math.min(0.5 + 0.5 * processed / total, 1.0));
         return end;
     }
 
