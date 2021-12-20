@@ -1,6 +1,5 @@
 package com.won983212.servermod.schematic.world.chunk;
 
-import com.won983212.servermod.schematic.world.PlacementSimulationWorld;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.chunk.AbstractChunkProvider;
@@ -12,15 +11,8 @@ import javax.annotation.Nullable;
 import java.util.HashMap;
 
 public class WrappedChunkProvider extends AbstractChunkProvider {
-    private PlacementSimulationWorld world;
 
     public HashMap<Long, WrappedChunk> chunks;
-
-    public WrappedChunkProvider setWorld(PlacementSimulationWorld world) {
-        this.world = world;
-        this.chunks = new HashMap<>();
-        return this;
-    }
 
     @Nullable
     @Override
@@ -30,7 +22,7 @@ public class WrappedChunkProvider extends AbstractChunkProvider {
 
     @Override
     public IBlockReader getLevel() {
-        return world;
+        return null;
     }
 
     @Nullable
@@ -46,7 +38,7 @@ public class WrappedChunkProvider extends AbstractChunkProvider {
             return new EmptierChunk();
         }
 
-        return chunks.computeIfAbsent(pos, $ -> new WrappedChunk(world, x, z));
+        return chunks.computeIfAbsent(pos, $ -> new WrappedChunk(x, z));
     }
 
     @Override
@@ -56,6 +48,6 @@ public class WrappedChunkProvider extends AbstractChunkProvider {
 
     @Override
     public WorldLightManager getLightEngine() {
-        return world.getLightEngine();
+        return null;
     }
 }

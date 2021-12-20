@@ -3,6 +3,7 @@ package com.won983212.servermod.client.gui;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.won983212.servermod.ModTextures;
 import com.won983212.servermod.client.gui.component.AbstractComponent;
+import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.IRenderable;
 import net.minecraft.client.gui.screen.Screen;
@@ -71,5 +72,15 @@ public class PanelScreen extends Screen {
     protected void alert(String message, long duration){
         lastAlertTime = System.currentTimeMillis() + duration;
         lastAlertMessage = message;
+    }
+
+    public static String ellipsisText(FontRenderer font, String str, int width) {
+        int sizeStr = font.width(str);
+        int sizeDots = font.width("...");
+        if (sizeStr > width) {
+            str = font.plainSubstrByWidth(str, width - sizeDots);
+            str += "...";
+        }
+        return str;
     }
 }

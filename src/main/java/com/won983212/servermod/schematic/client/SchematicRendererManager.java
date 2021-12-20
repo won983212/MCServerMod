@@ -21,6 +21,7 @@ import net.minecraft.world.gen.feature.template.PlacementSettings;
 
 import java.util.concurrent.*;
 
+// TODO 로딩을 tick에 따라 Async하게 바꾸자. executor는 취소할 수도 없으며, rendering도중 랙걸리니까!
 public class SchematicRendererManager implements IProgressEntryProducer {
 
     private static final Cache<ItemStack, SchematicRenderer[]> rendererCache;
@@ -65,6 +66,7 @@ public class SchematicRendererManager implements IProgressEntryProducer {
 
         final String schematicFilePath = activeSchematicItem.getTag().getString("File");
         if (loadingEntries.containsKey(schematicFilePath)) {
+            this.renderers = null;
             Logger.debug("Already loading file: " + schematicFilePath);
             return;
         }
@@ -145,7 +147,7 @@ public class SchematicRendererManager implements IProgressEntryProducer {
         Logger.debug("Draw buffer caching " + rendererIndex + " complete!");
     }
 
-    public static void clearCache() {
+    public void clearCache() {
         rendererCache.invalidateAll();
     }
 

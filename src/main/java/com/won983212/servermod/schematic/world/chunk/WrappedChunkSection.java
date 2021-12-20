@@ -21,8 +21,7 @@ public class WrappedChunkSection extends ChunkSection {
 
     @Override
     public BlockState getBlockState(int x, int y, int z) {
-        // ChunkSection#getBlockState expects local chunk coordinates, so we add to get back into world coords.
-        return owner.world.getBlockState(x + xStart, y + yStart, z + zStart);
+        return null;
     }
 
     @Override

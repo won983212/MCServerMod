@@ -25,7 +25,6 @@ import net.minecraft.world.server.ServerWorld;
 import java.util.*;
 import java.util.function.Predicate;
 
-// TODO 딱 필요한 world클래스들만 남겨두자!
 public class SchematicWorld extends WrappedWorld implements IServerWorld {
 
     protected final Map<BlockPos, BlockState> blocks;

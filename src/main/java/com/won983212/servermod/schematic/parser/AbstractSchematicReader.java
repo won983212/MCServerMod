@@ -9,6 +9,7 @@ import net.minecraftforge.common.util.Constants;
 import java.io.*;
 import java.util.zip.GZIPInputStream;
 
+//TODO litemetic 파일도 parser 만들자
 @SuppressWarnings("unchecked")
 public abstract class AbstractSchematicReader {
     private IProgressEvent progressEvent;

@@ -4,6 +4,7 @@ import com.won983212.servermod.Logger;
 import com.won983212.servermod.network.NetworkDispatcher;
 import com.won983212.servermod.schematic.IProgressEntry;
 import com.won983212.servermod.schematic.IProgressEntryProducer;
+import com.won983212.servermod.schematic.SchematicFile;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -20,6 +21,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
+// TODO 모래지형에 설치하면 랙 ㅈㄴ걸림;;
 @OnlyIn(Dist.CLIENT)
 public class ClientSchematicLoader extends SchematicNetwork implements IProgressEntryProducer {
     private final Map<String, SchematicUploadEntry> activeUploads = new HashMap<>();
@@ -43,13 +45,14 @@ public class ClientSchematicLoader extends SchematicNetwork implements IProgress
         }
     }
 
-    public void startNewUpload(String schematic) {
-        if (activeUploads.containsKey(schematic)) {
+    public void startNewUpload(SchematicFile schematic) {
+        String name = schematic.getName();
+        if (activeUploads.containsKey(name)) {
             Minecraft.getInstance().gui.getChat().addMessage(new TranslationTextComponent("servermod.message.uploadalready"));
             return;
         }
 
-        Path path = Paths.get("schematics", schematic);
+        Path path = Paths.get("schematics", name);
 
         if (!Files.exists(path)) {
             Logger.error("Missing Schematic file: " + path.toString());
@@ -63,12 +66,12 @@ public class ClientSchematicLoader extends SchematicNetwork implements IProgress
             // Too big
             if (!Minecraft.getInstance().hasSingleplayerServer() &&
                     isSchematicSizeTooBig(Minecraft.getInstance().player, size)) {
-                Logger.warn(schematic + " is too big. Cancel uploading: " + size);
+                Logger.warn(name + " is too big. Cancel uploading: " + size);
                 return;
             }
 
             in = Files.newInputStream(path, StandardOpenOption.READ);
-            activeUploads.put(schematic, new SchematicUploadEntry(schematic, in, size));
+            activeUploads.put(name, new SchematicUploadEntry(name, in, size));
             NetworkDispatcher.sendToServer(CSchematicUpload.begin(schematic, size));
         } catch (IOException e) {
             e.printStackTrace();

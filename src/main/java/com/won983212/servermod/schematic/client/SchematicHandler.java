@@ -55,7 +55,7 @@ public class SchematicHandler {
 
     public void unload(){
         displayedSchematic = null;
-        SchematicRendererManager.clearCache();
+        rendererManager.clearCache();
         rendererManager.setCurrentSchematic(null);
     }
 
@@ -70,7 +70,8 @@ public class SchematicHandler {
         if (stack == null) {
             active = false;
             syncCooldown = 0;
-            if (activeSchematicItem != null && itemLost(player)) {
+            if (activeSchematicItem != null) {
+                displayedSchematic = null;
                 rendererManager.setCurrentSchematic(null);
                 activeHotbarSlot = 0;
                 activeSchematicItem = null;

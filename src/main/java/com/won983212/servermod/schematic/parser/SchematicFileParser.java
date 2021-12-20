@@ -26,8 +26,8 @@ public class SchematicFileParser {
         extensionToReaderMap.put("schem", new SpongeSchematicReader());
     }
 
-    public static boolean isSupportedExtension(String fileName) {
-        return extensionToReaderMap.containsKey(fileName.substring(fileName.lastIndexOf('.') + 1));
+    public static boolean isUnsupportedExtension(String fileName) {
+        return !extensionToReaderMap.containsKey(fileName.substring(fileName.lastIndexOf('.') + 1));
     }
 
     public static SchematicContainer parseSchematicFile(File file, IProgressEvent event) throws IOException {

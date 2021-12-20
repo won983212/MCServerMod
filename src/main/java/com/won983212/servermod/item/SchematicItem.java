@@ -2,9 +2,9 @@ package com.won983212.servermod.item;
 
 import com.won983212.servermod.schematic.IProgressEvent;
 import com.won983212.servermod.schematic.SchematicContainer;
+import com.won983212.servermod.schematic.SchematicFile;
 import com.won983212.servermod.schematic.SchematicProcessor;
 import com.won983212.servermod.schematic.parser.SchematicFileParser;
-import com.won983212.servermod.server.command.SchematicCommand;
 import com.won983212.servermod.utility.Lang;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.item.Item;
@@ -21,6 +21,7 @@ import net.minecraft.world.World;
 import net.minecraft.world.gen.feature.template.PlacementSettings;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.util.Constants;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -55,8 +56,16 @@ public class SchematicItem extends Item {
     @OnlyIn(value = Dist.CLIENT)
     public void appendHoverText(ItemStack stack, World worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn) {
         if (stack.hasTag()) {
-            if (stack.getTag().contains("File")) {
-                tooltip.add(new StringTextComponent(TextFormatting.GOLD + stack.getTag().getString("File")));
+            CompoundNBT nbt = stack.getTag();
+            if (nbt.contains("File", Constants.NBT.TAG_STRING)) {
+                tooltip.add(new StringTextComponent(TextFormatting.GOLD + nbt.getString("File")));
+            }
+            if (nbt.contains("Owner", Constants.NBT.TAG_STRING)) {
+                tooltip.add(new StringTextComponent(TextFormatting.GRAY + "만든 사람: " + nbt.getString("Owner")));
+            }
+            if (nbt.contains("Bounds", Constants.NBT.TAG_COMPOUND)) {
+                BlockPos size = NBTUtil.readBlockPos(nbt.getCompound("Bounds"));
+                tooltip.add(new StringTextComponent(TextFormatting.GRAY + "크기: " + size.getX() + ", " + size.getY() + ", " + size.getZ()));
             }
         } else {
             tooltip.add(Lang.translate("schematic.invalid").withStyle(TextFormatting.RED));
@@ -109,9 +118,9 @@ public class SchematicItem extends Item {
     private static Path getSchematicPath(ItemStack blueprint) throws IOException {
         String owner = blueprint.getTag().getString("Owner");
         String schematic = blueprint.getTag().getString("File");
-        if (!SchematicFileParser.isSupportedExtension(schematic)) {
+        if (SchematicFileParser.isUnsupportedExtension(schematic)) {
            throw new IOException("Unsupported file!");
         }
-        return SchematicCommand.getFilePath(owner, schematic);
+        return SchematicFile.getFilePath(owner, schematic);
     }
 }

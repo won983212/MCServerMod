@@ -1,6 +1,5 @@
 package com.won983212.servermod.schematic.world.chunk;
 
-import com.won983212.servermod.schematic.world.PlacementSimulationWorld;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.shorts.ShortList;
 import net.minecraft.block.Block;
@@ -30,7 +29,6 @@ import java.util.stream.Stream;
 
 public class WrappedChunk implements IChunk {
 
-    final PlacementSimulationWorld world;
     boolean needsLight;
     final int x;
     final int z;
@@ -38,8 +36,7 @@ public class WrappedChunk implements IChunk {
 
     private final ChunkSection[] sections;
 
-    public WrappedChunk(PlacementSimulationWorld world, int x, int z) {
-        this.world = world;
+    public WrappedChunk(int x, int z) {
         this.needsLight = true;
         this.x = x;
         this.z = z;
@@ -54,15 +51,7 @@ public class WrappedChunk implements IChunk {
 
     @Override
     public Stream<BlockPos> getLights() {
-        return world.blocksAdded
-                .entrySet()
-                .stream()
-                .filter(it -> {
-                    BlockPos blockPos = it.getKey();
-                    boolean chunkContains = blockPos.getX() >> 4 == x && blockPos.getZ() >> 4 == z;
-                    return chunkContains && it.getValue().getLightValue(world, blockPos) != 0;
-                })
-                .map(Map.Entry::getKey);
+        return null;
     }
 
     @Override
@@ -207,7 +196,7 @@ public class WrappedChunk implements IChunk {
 
     @Override
     public BlockState getBlockState(BlockPos pos) {
-        return world.getBlockState(pos);
+        return null;
     }
 
     @Override

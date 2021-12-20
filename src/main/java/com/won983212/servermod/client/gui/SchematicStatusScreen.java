@@ -71,8 +71,8 @@ public class SchematicStatusScreen extends Screen implements HoveringCover.IPres
                 String subtitle = ent.getSubtitle();
                 int progressWidth = (int) (ent.getProgress() * (width - 2 * gap));
 
-                title = ellipsisText(font, title, width - 2 * gap);
-                subtitle = ellipsisText(font, subtitle, width - 2 * gap);
+                title = PanelScreen.ellipsisText(font, title, width - 2 * gap);
+                subtitle = PanelScreen.ellipsisText(font, subtitle, width - 2 * gap);
 
                 fill(ms, bounds.x, y, bounds.x + width, y + gap * 4 + 20, 0xaa000000);
                 font.drawShadow(ms, title, bounds.x + gap, y + gap, 0xffffffff);
@@ -85,16 +85,6 @@ public class SchematicStatusScreen extends Screen implements HoveringCover.IPres
                 y += 22;
             }
         }
-    }
-
-    private String ellipsisText(FontRenderer font, String str, int width) {
-        int sizeStr = font.width(str);
-        int sizeDots = font.width("...");
-        if (sizeStr > width) {
-            str = font.plainSubstrByWidth(str, width - sizeDots);
-            str += "...";
-        }
-        return str;
     }
 
     public void onMouseInput(int button, boolean pressed, int x, int y) {

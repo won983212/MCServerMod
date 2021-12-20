@@ -1,67 +1,65 @@
 package com.won983212.servermod.client.gui;
 
+import com.google.common.collect.Iterables;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.won983212.servermod.ModTextures;
 import com.won983212.servermod.client.ClientDist;
 import com.won983212.servermod.client.gui.component.HoveringCover;
 import com.won983212.servermod.client.gui.component.ScrollSelector;
 import com.won983212.servermod.network.NetworkDispatcher;
+import com.won983212.servermod.schematic.SchematicFile;
 import com.won983212.servermod.schematic.network.CSchematicFileDelete;
-import com.won983212.servermod.server.command.SchematicCommand;
-import net.minecraft.util.StringUtils;
 import net.minecraft.util.text.StringTextComponent;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class SchematicSelectionScreen extends PanelScreen {
-    private final List<String> uploadedFiles = new ArrayList<>();
-    private final ScrollSelector<String> fileSelector = new ScrollSelector<>(45, 21, 139, 18, uploadedFiles);
+    private final List<SchematicFileValue> schematicFiles = new ArrayList<>();
+    private ScrollSelector fileSelector;
     private HoveringCover uploadBtn;
     private HoveringCover deleteBtn;
 
-    public SchematicSelectionScreen(List<String> serverSideFiles) {
+    public SchematicSelectionScreen(List<SchematicFile> serverSideFiles) {
         super(new StringTextComponent("Schematic Selection Screen"));
 
-        Set<String> clientFileSet = new HashSet<>(SchematicCommand.getFileList(null));
-        for (String serverFile : serverSideFiles) {
+        Set<SchematicFile> clientFileSet = new HashSet<>(SchematicFile.getFileList(null));
+        for (SchematicFile serverFile : serverSideFiles) {
             if (!clientFileSet.contains(serverFile)) {
                 continue;
             }
-            uploadedFiles.add(serverFile);
+            schematicFiles.add(new SchematicFileValue(false, serverFile));
             clientFileSet.remove(serverFile);
         }
-        uploadedFiles.addAll(clientFileSet.stream()
-                .map((name) -> "§6" + name)
+        schematicFiles.addAll(clientFileSet.stream()
+                .map((t) -> new SchematicFileValue(true, t))
                 .collect(Collectors.toList()));
-        uploadedFiles.sort(String::compareTo);
+        Collections.sort(schematicFiles);
     }
 
     private void onAccept(HoveringCover btn) {
-        String fileName = uploadedFiles.get(fileSelector.getSelectedIndex());
+        SchematicFileValue file = schematicFiles.get(fileSelector.getSelectedIndex());
         if (btn == uploadBtn) {
-            fileName = StringUtils.stripColor(fileName);
-            ClientDist.SCHEMATIC_SENDER.startNewUpload(fileName);
+            ClientDist.SCHEMATIC_SENDER.startNewUpload(file.schematicFile);
             onClose();
         } else if (btn == deleteBtn) {
-            if (fileName.startsWith("§")) {
+            if (file.needsUpload) {
                 alert("서버에 업로드된 파일만 삭제할 수 있습니다!");
                 return;
             }
-            NetworkDispatcher.sendToServer(new CSchematicFileDelete(fileName));
+            NetworkDispatcher.sendToServer(new CSchematicFileDelete(file.getName()));
         }
     }
 
     @Override
     protected void init() {
         super.init();
+        this.children.clear();
         this.uploadBtn = new HoveringCover(178, 55, 18, 18, SchematicSelectionScreen.this::onAccept);
         this.children.add(uploadBtn);
         this.deleteBtn = new HoveringCover(152, 55, 18, 18, SchematicSelectionScreen.this::onAccept);
         this.children.add(deleteBtn);
+        this.fileSelector = new ScrollSelector(45, 21, 139, 18, schematicFiles);
         this.children.add(fileSelector);
         applyBackgroundOffset(ModTextures.SCHEMATIC_SELECT_BACKGROUND);
     }
@@ -77,9 +75,33 @@ public class SchematicSelectionScreen extends PanelScreen {
 
     public void onResponseFileDeletion(String fileName) {
         alert(fileName + "이 서버에서 삭제되었습니다.", 1000);
-        int index = uploadedFiles.indexOf(fileName);
+        int index = Iterables.indexOf(schematicFiles, (t) -> t.getName().equals(fileName));
         if (index >= 0) {
-            uploadedFiles.set(index, "§6" + fileName);
+            schematicFiles.get(index).needsUpload = true;
+        }
+    }
+
+    private static class SchematicFileValue implements Comparable<SchematicFileValue> {
+        public boolean needsUpload;
+        public final SchematicFile schematicFile;
+
+        public SchematicFileValue(boolean needsUpload, SchematicFile schematicFile) {
+            this.needsUpload = needsUpload;
+            this.schematicFile = schematicFile;
+        }
+
+        public String getName() {
+            return schematicFile.getName();
+        }
+
+        @Override
+        public int compareTo(SchematicFileValue o) {
+            return schematicFile.getName().compareTo(o.schematicFile.getName());
+        }
+
+        @Override
+        public String toString() {
+            return needsUpload ? ("§6" + getName()) : getName();
         }
     }
 }
