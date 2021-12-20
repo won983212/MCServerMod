@@ -2,7 +2,6 @@ package com.won983212.servermod.schematic;
 
 import com.won983212.servermod.Logger;
 import com.won983212.servermod.item.SchematicItem;
-import com.won983212.servermod.schematic.world.SchematicWorld;
 import com.won983212.servermod.task.IAsyncTask;
 import com.won983212.servermod.utility.BlockHelper;
 import net.minecraft.block.BlockState;
@@ -22,6 +21,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+// TODO 큰거 설치하면 랙 ㅈㄴ걸림;;
+// TODO print하면 기존 rendering작업 cancel하기
+// TODO 굳이 SchematicWorld에 place하는 작업을 할 필요가?
 public class SchematicPrinter implements IAsyncTask {
 
     public enum PrintStage {
@@ -31,13 +33,14 @@ public class SchematicPrinter implements IAsyncTask {
     public static final int BATCH_COUNT = 20 * 20 * 20;
 
     private final boolean isIncludeAir;
-    private SchematicWorld blockReader;
+    private SchematicContainer blockReader;
     private BlockPos schematicAnchor;
 
     private BlockPos currentPos;
     private int printingEntityIndex;
     private volatile PrintStage printStage;
     private final List<BlockPos> deferredBlocks;
+    private PlacementSettings settings;
 
     private World originalWorld;
     private IProgressEvent event;
@@ -69,25 +72,16 @@ public class SchematicPrinter implements IAsyncTask {
                 });
     }
 
+    // start 15:13
     private boolean load(SchematicContainer activeTemplate, boolean processNBT, ItemStack blueprint) {
-        PlacementSettings settings = SchematicItem.getSettings(blueprint, processNBT);
+        settings = SchematicItem.getSettings(blueprint, processNBT);
         BlockPos size = activeTemplate.getSize();
-        this.total = (long) size.getX() * size.getY() * size.getZ();
-
+        total = (long) size.getX() * size.getY() * size.getZ();
         schematicAnchor = NBTUtil.readBlockPos(blueprint.getTag().getCompound("Anchor"));
-        blockReader = new SchematicWorld(schematicAnchor, originalWorld);
-
-        activeTemplate.placeSchematicToWorld(blockReader, schematicAnchor, settings,
-                (s, p) -> IProgressEvent.safeFire(event, s, 0.2 + 0.3 * p));
-
-        BlockPos extraBounds = Template.calculateRelativePosition(settings, activeTemplate.getSize().offset(-1, -1, -1));
-        blockReader.getBounds().expand(new MutableBoundingBox(extraBounds, extraBounds));
-
         printingEntityIndex = -1;
         printStage = PrintStage.BLOCKS;
         deferredBlocks.clear();
-        MutableBoundingBox bounds = blockReader.getBounds();
-        currentPos = new BlockPos(bounds.x0 - 1, bounds.y0, bounds.z0);
+        currentPos = Template.calculateRelativePosition(settings, BlockPos.ZERO).offset(schematicAnchor);
         return true;
     }
 
@@ -107,8 +101,7 @@ public class SchematicPrinter implements IAsyncTask {
             count++;
             BlockPos target = getCurrentTarget();
             if (printStage == PrintStage.ENTITIES) {
-                Entity entity = blockReader.getEntities().get(printingEntityIndex);
-                originalWorld.addFreshEntity(entity);
+                blockReader.placeEntityAt(originalWorld, schematicAnchor, settings, printingEntityIndex);
             } else {
                 BlockState blockState = blockReader.getBlockState(target);
                 TileEntity tileEntity = blockReader.getBlockEntity(target);
@@ -120,7 +113,7 @@ public class SchematicPrinter implements IAsyncTask {
                 BlockHelper.placeSchematicBlock(originalWorld, blockState, target, null, tileData);
             }
         }
-        
+
         IProgressEvent.safeFire(event, "월드에 블록 설치중...", Math.min(0.5 + 0.5 * processed / total, 1.0));
         return end;
     }

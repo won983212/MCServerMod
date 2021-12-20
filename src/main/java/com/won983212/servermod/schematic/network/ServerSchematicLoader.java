@@ -18,7 +18,6 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Stream;
 
-// TODO Server와 client간에 파일 동기화시 이름이 아니라 MD5도 같이 check
 public class ServerSchematicLoader extends SchematicNetwork {
     public static final String USER_SCHEMATIC_DIR_NAME = "uploaded";
     private final Map<String, SchematicDownloadEntry> activeUploads;

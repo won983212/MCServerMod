@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
-// TODO 모래지형에 설치하면 랙 ㅈㄴ걸림;;
 @OnlyIn(Dist.CLIENT)
 public class ClientSchematicLoader extends SchematicNetwork implements IProgressEntryProducer {
     private final Map<String, SchematicUploadEntry> activeUploads = new HashMap<>();

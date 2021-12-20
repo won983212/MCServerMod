@@ -9,7 +9,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.DoorBlock;
 import net.minecraft.entity.Entity;
-import net.minecraft.inventory.IInventory;
+import net.minecraft.inventory.IClearable;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.state.properties.DoubleBlockHalf;
 import net.minecraft.tileentity.TileEntity;
@@ -73,9 +73,7 @@ public class SchematicContainer {
                 if (block.nbt != null) {
                     TileEntity te = context.world.getBlockEntity(pos);
                     if (te != null) {
-                        if (te instanceof IInventory) {
-                            ((IInventory) te).clearContent();
-                        }
+                        IClearable.tryClear(te);
                         context.world.setBlock(pos, Blocks.BARRIER.defaultBlockState(), Constants.BlockFlags.UPDATE_NEIGHBORS | Constants.BlockFlags.NO_RERENDER);
                     }
                 }
@@ -136,30 +134,34 @@ public class SchematicContainer {
     }
 
     private void placeEntities(PlacingContext context) {
-        Mirror mirror = context.placement.getMirror();
-        Rotation rotation = context.placement.getRotation();
-
         if (context.placement.isIgnoreEntities()) {
             return;
         }
+        for (int i = 0; i < entities.size(); i++) {
+            placeEntityAt(context.world, context.posStart, context.placement, i);
+        }
+    }
 
-        for (CompoundNBT tag : this.entities) {
-            Vector3d relativePos = EntityUtils.readEntityPositionFromTag(tag);
-            if (relativePos == null) {
-                Logger.warn("Can't find position from entity tag: " + tag);
-                continue;
-            }
+    public void placeEntityAt(World world, BlockPos posStart, PlacementSettings placement, int index) {
+        Mirror mirror = placement.getMirror();
+        Rotation rotation = placement.getRotation();
 
-            Vector3d transformedRelativePos = EntityUtils.getTransformedPosition(relativePos, mirror, rotation);
-            Vector3d realPos = transformedRelativePos.add(context.posStart.getX(), context.posStart.getY(), context.posStart.getZ());
-            Entity entity = EntityUtils.createEntityAndPassengersFromNBT(tag, context.world);
+        CompoundNBT tag = this.entities.get(index);
+        Vector3d relativePos = EntityUtils.readEntityPositionFromTag(tag);
+        if (relativePos == null) {
+            Logger.warn("Can't find position from entity tag: " + tag);
+            return;
+        }
 
-            if (entity != null) {
-                float rotationYaw = entity.mirror(mirror);
-                rotationYaw = rotationYaw + (entity.yRot - entity.rotate(rotation));
-                entity.moveTo(realPos.x, realPos.y, realPos.z, rotationYaw, entity.xRot);
-                EntityUtils.spawnEntityAndPassengersInWorld(entity, context.world);
-            }
+        Vector3d transformedRelativePos = EntityUtils.getTransformedPosition(relativePos, mirror, rotation);
+        Vector3d realPos = transformedRelativePos.add(posStart.getX(), posStart.getY(), posStart.getZ());
+        Entity entity = EntityUtils.createEntityAndPassengersFromNBT(tag, world);
+
+        if (entity != null) {
+            float rotationYaw = entity.mirror(mirror);
+            rotationYaw = rotationYaw + (entity.yRot - entity.rotate(rotation));
+            entity.moveTo(realPos.x, realPos.y, realPos.z, rotationYaw, entity.xRot);
+            EntityUtils.spawnEntityAndPassengersInWorld(entity, world);
         }
     }
 

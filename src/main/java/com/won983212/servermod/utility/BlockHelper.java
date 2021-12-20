@@ -1,6 +1,7 @@
 package com.won983212.servermod.utility;
 
 import net.minecraft.block.*;
+import net.minecraft.block.material.Material;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.state.properties.BedPart;
@@ -16,7 +17,7 @@ import net.minecraftforge.common.util.Constants;
 import javax.annotation.Nullable;
 
 public class BlockHelper {
-    private static void placeRailWithoutUpdate(World world, BlockState state, BlockPos target) {
+    private static boolean placeRailWithoutUpdate(World world, BlockState state, BlockPos target) {
         int i = target.getX() & 15;
         int j = target.getY();
         int k = target.getZ() & 15;
@@ -30,17 +31,14 @@ public class BlockHelper {
         chunk.markUnsaved();
         world.markAndNotifyBlock(target, chunk, old, state, 82, 512);
 
-        world.setBlock(target, state, 82);
+        boolean result = world.setBlock(target, state, 82);
         world.neighborChanged(target, world.getBlockState(target.below()).getBlock(), target.below());
+        return result;
     }
 
+    // TODO Piston bug?
     public static void placeSchematicBlock(World world, BlockState state, BlockPos target, ItemStack stack,
                                            @Nullable CompoundNBT data) {
-        // Piston
-        if (state.hasProperty(BlockStateProperties.EXTENDED)) {
-            state = state.setValue(BlockStateProperties.EXTENDED, Boolean.FALSE);
-        }
-
         if (state.hasProperty(BedBlock.PART) && state.getValue(BedBlock.PART) == BedPart.HEAD) {
             return;
         }
@@ -53,10 +51,11 @@ public class BlockHelper {
             state = state.setValue(BlockStateProperties.WATERLOGGED, Boolean.FALSE);
         }
 
+        boolean success;
         if (state.getBlock() instanceof AbstractRailBlock) {
-            placeRailWithoutUpdate(world, state, target);
+            success = placeRailWithoutUpdate(world, state, target);
         } else {
-            world.setBlock(target, state, Constants.BlockFlags.BLOCK_UPDATE | Constants.BlockFlags.UPDATE_NEIGHBORS);
+            success = world.setBlock(target, state, Constants.BlockFlags.BLOCK_UPDATE);
         }
 
         if (data != null) {
@@ -67,6 +66,10 @@ public class BlockHelper {
                 data.putInt("z", target.getZ());
                 tile.load(tile.getBlockState(), data);
             }
+        }
+
+        if (!success) {
+            return;
         }
 
         try {
