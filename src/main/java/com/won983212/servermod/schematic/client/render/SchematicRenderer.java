@@ -6,6 +6,7 @@ import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
 import com.won983212.servermod.schematic.IProgressEvent;
 import com.won983212.servermod.schematic.client.SchematicTransformation;
 import com.won983212.servermod.schematic.world.SchematicWorld;
+import com.won983212.servermod.task.IAsyncTask;
 import com.won983212.servermod.utility.MatrixTransformStack;
 import com.won983212.servermod.utility.animate.AnimationTickHolder;
 import net.minecraft.client.Minecraft;
@@ -28,10 +29,10 @@ public class SchematicRenderer {
     protected SchematicWorld schematic;
     private BlockPos anchor;
 
-    public void setSchematicWorld(SchematicWorld world, IProgressEvent event) {
+    public WorldRedrawingTask newDrawingSchematicWorldTask(SchematicWorld world, IProgressEvent event) {
         this.anchor = world.anchor;
         this.schematic = world;
-        redraw(event);
+        return new WorldRedrawingTask(event);
     }
 
     public void render(MatrixStack ms, SuperRenderTypeBuffer buffer, SchematicTransformation transformation) {
@@ -49,35 +50,6 @@ public class SchematicRenderer {
                     if (isInViewDistance(vertexBuffer.getOrigin().offset(8, 8, 8), transformation)) {
                         vertexBuffer.render(ms, layer);
                     }
-                }
-            }
-        }
-    }
-
-    protected void redraw(IProgressEvent event) {
-        MutableBoundingBox bounds = schematic.getBounds();
-        int countX = (int) Math.ceil(bounds.getXSpan() / 16.0);
-        int countY = (int) Math.ceil(bounds.getYSpan() / 16.0);
-        int countZ = (int) Math.ceil(bounds.getZSpan() / 16.0);
-
-        synchronized (chunks) {
-            chunks.clear();
-        }
-
-        long total = (long) countX * countY * countZ;
-        long current = 0;
-        for (int x = 0; x < countX; x++) {
-            for (int y = 0; y < countY; y++) {
-                for (int z = 0; z < countZ; z++) {
-                    current++;
-                    ChunkVertexBuffer chunk = new ChunkVertexBuffer(x, y, z);
-                    if (!chunk.buildChunkBuffer(schematic, anchor)) {
-                        continue;
-                    }
-                    synchronized (chunks) {
-                        chunks.add(chunk);
-                    }
-                    IProgressEvent.safeFire(event, "Chunk 불러오는 중...", (double) current / total);
                 }
             }
         }
@@ -123,5 +95,44 @@ public class SchematicRenderer {
         int renderDistance = mc.options.renderDistance * 16;
         double distance = playerPos.distanceToSqr(localPos.getX(), localPos.getY(), localPos.getZ());
         return distance < renderDistance * renderDistance;
+    }
+
+    public class WorldRedrawingTask implements IAsyncTask {
+        private final int countX, countY, countZ;
+        private final long total;
+        private final IProgressEvent event;
+        private int x, y, z;
+        private long current = 0;
+
+        public WorldRedrawingTask(IProgressEvent event) {
+            this.event = event;
+            chunks.clear();
+
+            MutableBoundingBox bounds = schematic.getBounds();
+            countX = (int) Math.ceil(bounds.getXSpan() / 16.0);
+            countY = (int) Math.ceil(bounds.getYSpan() / 16.0);
+            countZ = (int) Math.ceil(bounds.getZSpan() / 16.0);
+            total = (long) countX * countY * countZ;
+            x = y = z = 0;
+        }
+
+        @Override
+        public boolean tick() {
+            ChunkVertexBuffer chunk = new ChunkVertexBuffer(x, y, z);
+            if (!chunk.buildChunkBuffer(schematic, anchor)) {
+                return next();
+            }
+            chunks.add(chunk);
+            IProgressEvent.safeFire(event, "Chunk 불러오는 중...", (double) current / total);
+            return next();
+        }
+
+        private boolean next() {
+            current++;
+            x = (int) (current % countX);
+            y = (int) (current / (countX * countZ));
+            z = (int) ((current - y * countX * countZ) / countX);
+            return current < total;
+        }
     }
 }

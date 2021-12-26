@@ -2,12 +2,8 @@ package com.won983212.servermod;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.won983212.servermod.server.Commands;
-import com.won983212.servermod.task.TaskManager;
-import net.minecraft.client.Minecraft;
+import com.won983212.servermod.task.TaskScheduler;
 import net.minecraft.command.CommandSource;
-import net.minecraft.profiler.IProfiler;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -23,15 +19,8 @@ public class CommonEventHandler {
             return;
         }
 
-        IntegratedServer s = Minecraft.getInstance().getSingleplayerServer();
-        if(s != null) {
-            IProfiler p = s.getProfiler();
-            p.push("receiver");
-            CommonModDist.SCHEMATIC_RECEIVER.tick();
-            p.popPush("taskmanager");
-            TaskManager.tick();
-            p.pop();
-        }
+        CommonModDist.SCHEMATIC_RECEIVER.tick();
+        TaskScheduler.tick();
     }
 
     @SubscribeEvent

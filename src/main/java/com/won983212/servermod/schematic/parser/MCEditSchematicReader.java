@@ -22,7 +22,7 @@ package com.won983212.servermod.schematic.parser;
 import com.google.common.collect.ImmutableList;
 import com.won983212.servermod.LegacyMapper;
 import com.won983212.servermod.Logger;
-import com.won983212.servermod.schematic.SchematicContainer;
+import com.won983212.servermod.schematic.container.SchematicContainer;
 import com.won983212.servermod.schematic.parser.legacycompat.*;
 import net.minecraft.block.BlockState;
 import net.minecraft.nbt.*;
@@ -80,7 +80,6 @@ class MCEditSchematicReader extends AbstractSchematicReader {
     }
 
     protected SchematicContainer parse(CompoundNBT schematic) throws IOException {
-        SchematicContainer schem = new SchematicContainer();
         BlockState[] palette = new BlockState[1 << 16];
 
         // Check
@@ -99,7 +98,8 @@ class MCEditSchematicReader extends AbstractSchematicReader {
         int width = size.getX();
         int height = size.getY();
         int length = size.getZ();
-        schem.resizeBlockContainer(size);
+
+        SchematicContainer schem = new SchematicContainer(size);
 
         if (schematic.contains("SchematicMapping", Constants.NBT.TAG_COMPOUND)) {
             Logger.warn("This file is not supported file. It will be not loaded successfully.");
@@ -262,7 +262,7 @@ class MCEditSchematicReader extends AbstractSchematicReader {
                         blockNBT = tileEntitiesMap.get(pt).copy();
                     }
 
-                    schem.addBlock(pt, state, blockNBT);
+                    schem.setBlock(pt, state, blockNBT);
                     notifyProgress("Block 읽는 중...", 0.5 + 0.45 * (current++) / total);
                 }
             }

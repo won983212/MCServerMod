@@ -3,9 +3,8 @@ package com.won983212.servermod.schematic.parser;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.won983212.servermod.Logger;
-import com.won983212.servermod.schematic.SchematicContainer;
+import com.won983212.servermod.schematic.container.SchematicContainer;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
 import net.minecraft.command.arguments.BlockStateArgument;
 import net.minecraft.nbt.*;
 import net.minecraft.util.SharedConstants;
@@ -95,7 +94,7 @@ class SpongeSchematicReader extends AbstractSchematicReader {
                 state = BlockStateArgument.block().parse(new StringReader(palettePart)).getState();
             } catch (CommandSyntaxException ignored) {
                 Logger.warn("Invalid BlockState in palette: " + palettePart + ". Block will be replaced with air.");
-                state = Blocks.AIR.defaultBlockState();
+                state = SchematicContainer.AIR_BLOCK_STATE;
             }
             notifyProgress("Palette 읽는 중...", 0.1 * (current++) / palettes.size());
             palette.put(id, state);
@@ -129,8 +128,7 @@ class SpongeSchematicReader extends AbstractSchematicReader {
             }
         }
 
-        SchematicContainer schem = new SchematicContainer();
-        schem.resizeBlockContainer(new BlockPos(width, height, length));
+        SchematicContainer schem = new SchematicContainer(new BlockPos(width, height, length));
 
         int index = 0;
         int i = 0;
@@ -160,9 +158,9 @@ class SpongeSchematicReader extends AbstractSchematicReader {
             BlockState state = palette.get(value);
             BlockPos pt = new BlockPos(x, y, z);
             if (tileEntitiesMap.containsKey(pt)) {
-                schem.addBlock(pt, state, tileEntitiesMap.get(pt).copy());
+                schem.setBlock(pt, state, tileEntitiesMap.get(pt).copy());
             } else {
-                schem.addBlock(pt, state, null);
+                schem.setBlock(pt, state, null);
             }
             notifyProgress("Block 읽는 중...", 0.4 + 0.59 * (index++) / blocks.length);
         }

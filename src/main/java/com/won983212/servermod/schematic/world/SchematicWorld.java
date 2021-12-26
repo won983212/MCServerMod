@@ -1,6 +1,7 @@
 package com.won983212.servermod.schematic.world;
 
 import com.won983212.servermod.Logger;
+import com.won983212.servermod.schematic.container.SchematicContainer;
 import com.won983212.servermod.schematic.world.chunk.WrappedChunkProvider;
 import net.minecraft.block.AbstractFurnaceBlock;
 import net.minecraft.block.Block;
@@ -109,7 +110,7 @@ public class SchematicWorld extends WrappedWorld implements IServerWorld {
         if (getBounds().isInside(pos) && blocks.containsKey(pos)) {
             return processBlockStateForPrinting(blocks.get(pos));
         }
-        return Blocks.AIR.defaultBlockState();
+        return SchematicContainer.AIR_BLOCK_STATE;
     }
 
     @Override
@@ -154,12 +155,12 @@ public class SchematicWorld extends WrappedWorld implements IServerWorld {
 
     @Override
     public boolean destroyBlock(BlockPos arg0, boolean arg1) {
-        return setBlock(arg0, Blocks.AIR.defaultBlockState(), 3);
+        return setBlock(arg0, SchematicContainer.AIR_BLOCK_STATE, 3);
     }
 
     @Override
     public boolean removeBlock(BlockPos arg0, boolean arg1) {
-        return setBlock(arg0, Blocks.AIR.defaultBlockState(), 3);
+        return setBlock(arg0, SchematicContainer.AIR_BLOCK_STATE, 3);
     }
 
     @Override

@@ -1,8 +1,9 @@
 package com.won983212.servermod.schematic.network;
 
+import com.won983212.servermod.Logger;
 import com.won983212.servermod.network.IMessage;
 import com.won983212.servermod.schematic.SchematicPrinter;
-import com.won983212.servermod.task.TaskManager;
+import com.won983212.servermod.task.TaskScheduler;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.PacketBuffer;
@@ -46,8 +47,7 @@ public class CSchematicPlace implements IMessage {
 
             final int[] percentIndex = {0};
             World world = player.getLevel();
-            SchematicPrinter printer = new SchematicPrinter(includeAir);
-            printer.loadSchematicAsync(stack, world, !player.canUseGameMasterBlocks(), (s, p) -> {
+            SchematicPrinter printer = SchematicPrinter.newPlacingSchematicTask(stack, world, (s, p) -> {
                 int percent = (int) Math.floor(p * 100);
                 if (percent >= percentIndex[0] * 20) {
                     percentIndex[0]++;
@@ -56,15 +56,15 @@ public class CSchematicPlace implements IMessage {
                         sendSchematicMessage(player, "설치 완료했습니다.");
                     }
                 }
-            })
-            .thenAccept((success) -> {
-                if (!success) {
+            }, includeAir);
+
+            TaskScheduler.addAsyncTask(printer)
+                .exceptionally((e) -> {
+                    Logger.error(e);
                     sendSchematicMessage(player, "설치 중 오류가 발생했습니다. 자세한 사항은 운영자에게 문의하세요.");
-                }
-            });
+                });
 
             sendSchematicMessage(player, "Schematic 설치를 시작합니다.");
-            TaskManager.addAsyncTask(printer);
         });
         context.get().setPacketHandled(true);
     }

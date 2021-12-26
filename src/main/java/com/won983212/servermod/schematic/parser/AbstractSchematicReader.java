@@ -1,7 +1,8 @@
 package com.won983212.servermod.schematic.parser;
 
+import com.won983212.servermod.Logger;
 import com.won983212.servermod.schematic.IProgressEvent;
-import com.won983212.servermod.schematic.SchematicContainer;
+import com.won983212.servermod.schematic.container.SchematicContainer;
 import net.minecraft.nbt.*;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.util.Constants;

@@ -12,6 +12,7 @@ import com.won983212.servermod.network.NetworkDispatcher;
 import com.won983212.servermod.schematic.client.tools.Tools;
 import com.won983212.servermod.schematic.network.CSchematicPlace;
 import com.won983212.servermod.schematic.network.CSchematicSync;
+import com.won983212.servermod.task.TaskScheduler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.gui.screen.Screen;
@@ -53,7 +54,7 @@ public class SchematicHandler {
         transformation = new SchematicTransformation();
     }
 
-    public void unload(){
+    public void unload() {
         displayedSchematic = null;
         rendererManager.clearCache();
         rendererManager.setCurrentSchematic(null);
@@ -71,6 +72,9 @@ public class SchematicHandler {
             active = false;
             syncCooldown = 0;
             if (activeSchematicItem != null) {
+                if (itemLost(player)) {
+                    rendererManager.cancelLoadingTask(activeSchematicItem);
+                }
                 displayedSchematic = null;
                 rendererManager.setCurrentSchematic(null);
                 activeHotbarSlot = 0;
@@ -261,6 +265,7 @@ public class SchematicHandler {
         CompoundNBT nbt = activeSchematicItem.getTag();
         nbt.putBoolean("Deployed", false);
         activeSchematicItem.setTag(nbt);
+        rendererManager.cancelLoadingTask(activeSchematicItem);
         active = false;
         markDirty();
     }
@@ -270,7 +275,7 @@ public class SchematicHandler {
         markDirty();
     }
 
-    public SchematicRendererManager getRendererManager(){
+    public SchematicRendererManager getRendererManager() {
         return rendererManager;
     }
 

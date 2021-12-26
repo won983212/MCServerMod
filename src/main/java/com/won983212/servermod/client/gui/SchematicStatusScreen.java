@@ -69,7 +69,7 @@ public class SchematicStatusScreen extends Screen implements HoveringCover.IPres
             for (IProgressEntry ent : producer.getProgressEntries()) {
                 String title = ent.getTitle();
                 String subtitle = ent.getSubtitle();
-                int progressWidth = (int) (ent.getProgress() * (width - 2 * gap));
+                float progressWidth = (float) (ent.getProgress() * (width - 2 * gap));
 
                 title = PanelScreen.ellipsisText(font, title, width - 2 * gap);
                 subtitle = PanelScreen.ellipsisText(font, subtitle, width - 2 * gap);
@@ -80,7 +80,7 @@ public class SchematicStatusScreen extends Screen implements HoveringCover.IPres
                 y += gap + 12;
                 font.drawShadow(ms, subtitle, bounds.x + gap, y, 0xffaaaaaa);
                 fill(ms, bounds.x + gap, y + 12, bounds.x + width - gap, y + 15, 0xff333333);
-                fill(ms, bounds.x + gap, y + 12, bounds.x + gap + progressWidth, y + 15, 0xff396EB0);
+                PanelScreen.fillFloat(ms, bounds.x + gap, y + 12, bounds.x + gap + progressWidth, y + 15, 0xff396EB0);
 
                 y += 22;
             }

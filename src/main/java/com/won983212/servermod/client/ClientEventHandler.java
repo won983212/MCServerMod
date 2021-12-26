@@ -9,7 +9,7 @@ import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
 import com.won983212.servermod.schematic.client.render.ChunkVertexBuffer;
 import com.won983212.servermod.schematic.parser.SchematicFileParser;
 import com.won983212.servermod.skin.SkinCacheCleaner;
-import com.won983212.servermod.task.TaskManager;
+import com.won983212.servermod.task.TaskScheduler;
 import com.won983212.servermod.utility.animate.AnimationTickHolder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
@@ -68,7 +68,7 @@ public class ClientEventHandler {
             AnimationTickHolder.reset();
             SchematicFileParser.clearCache();
             ClientDist.SCHEMATIC_HANDLER.unload();
-            TaskManager.cancelAllTask();
+            TaskScheduler.cancelAllTask();
         }
     }
 

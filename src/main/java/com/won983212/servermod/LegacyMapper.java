@@ -20,6 +20,7 @@
 package com.won983212.servermod;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.won983212.servermod.schematic.container.SchematicContainer;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.block.BlockState;
@@ -53,7 +54,7 @@ public final class LegacyMapper {
 
             if (!IDMETA_TO_STATE_MAP.containsKey(idMeta)) {
                 BlockState state = NBTUtil.readBlockState(newStateTag);
-                if (!name.equals("minecraft:air") && state == Blocks.AIR.defaultBlockState()) {
+                if (!name.equals("minecraft:air") && state == SchematicContainer.AIR_BLOCK_STATE) {
                     Logger.warn("Failed to read blockstate: " + idMeta + " = " + newState);
                     return;
                 }
@@ -96,7 +97,7 @@ public final class LegacyMapper {
     }
 
     static {
-        BlockState air = Blocks.AIR.defaultBlockState();
+        BlockState air = SchematicContainer.AIR_BLOCK_STATE;
         STATE_TO_IDMETA_MAP.put(air, 0);
         IDMETA_TO_STATE_MAP.put(0, air);
 

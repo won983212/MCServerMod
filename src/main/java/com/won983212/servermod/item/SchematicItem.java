@@ -1,9 +1,8 @@
 package com.won983212.servermod.item;
 
 import com.won983212.servermod.schematic.IProgressEvent;
-import com.won983212.servermod.schematic.SchematicContainer;
+import com.won983212.servermod.schematic.container.SchematicContainer;
 import com.won983212.servermod.schematic.SchematicFile;
-import com.won983212.servermod.schematic.SchematicProcessor;
 import com.won983212.servermod.schematic.parser.SchematicFileParser;
 import com.won983212.servermod.utility.Lang;
 import net.minecraft.client.util.ITooltipFlag;
@@ -81,17 +80,10 @@ public class SchematicItem extends Item {
     }
 
     public static PlacementSettings getSettings(ItemStack blueprint) {
-        return getSettings(blueprint, true);
-    }
-
-    public static PlacementSettings getSettings(ItemStack blueprint, boolean processNBT) {
         CompoundNBT tag = blueprint.getTag();
         PlacementSettings settings = new PlacementSettings();
         settings.setRotation(Rotation.valueOf(tag.getString("Rotation")));
         settings.setMirror(Mirror.valueOf(tag.getString("Mirror")));
-        if (processNBT) {
-            settings.addProcessor(SchematicProcessor.INSTANCE);
-        }
         return settings;
     }
 
@@ -112,7 +104,7 @@ public class SchematicItem extends Item {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return new SchematicContainer();
+        return new SchematicContainer(BlockPos.ZERO);
     }
 
     private static Path getSchematicPath(ItemStack blueprint) throws IOException {
