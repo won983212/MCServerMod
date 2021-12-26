@@ -7,12 +7,13 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Stack;
 
+// TODO Elastic하게 async count를 조절하는 기능 추가
 public class TaskScheduler {
     private static final Stack<Integer> GROUP_ID_CONTEXT = new Stack<>();
-    private static final Queue<QueuedAsyncTask> TASK_WAITING_QUEUE = new LinkedList<>();
+    private static final Queue<QueuedAsyncTask<?>> TASK_WAITING_QUEUE = new LinkedList<>();
     private static int count = 0;
     private static int current = 0;
-    private static QueuedAsyncTask[] tasks = new QueuedAsyncTask[1 << 4];
+    private static QueuedAsyncTask<?>[] tasks = new QueuedAsyncTask<?>[1 << 4];
 
 
     public static void cancelAllTask() {
@@ -39,11 +40,11 @@ public class TaskScheduler {
         GROUP_ID_CONTEXT.pop();
     }
 
-    public static QueuedAsyncTask addAsyncTask(IAsyncTask task) {
+    public static <T> QueuedAsyncTask<T> addAsyncTask(IAsyncTask<T> task) {
         if (tasks.length <= count) {
             grow();
         }
-        QueuedAsyncTask gTask = new QueuedAsyncTask(task);
+        QueuedAsyncTask<T> gTask = new QueuedAsyncTask<T>(task);
         if (!GROUP_ID_CONTEXT.isEmpty()) {
             gTask.groupId(GROUP_ID_CONTEXT.peek());
         }
@@ -52,7 +53,7 @@ public class TaskScheduler {
     }
 
     private static void grow() {
-        QueuedAsyncTask[] newTasks = new QueuedAsyncTask[tasks.length << 1];
+        QueuedAsyncTask<?>[] newTasks = new QueuedAsyncTask<?>[tasks.length << 1];
         System.arraycopy(tasks, 0, newTasks, 0, tasks.length);
         tasks = newTasks;
     }
@@ -64,12 +65,12 @@ public class TaskScheduler {
         }
 
         int cur = next();
-        QueuedAsyncTask ent = tasks[cur];
+        QueuedAsyncTask<?> ent = tasks[cur];
         if (ent == null || ent.tick()) {
             return;
         }
 
-        QueuedAsyncTask nextTask = ent.complete();
+        QueuedAsyncTask<?> nextTask = ent.complete();
         if (nextTask != null) {
             tasks[cur] = nextTask;
         } else {

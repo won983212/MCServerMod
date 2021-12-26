@@ -6,6 +6,7 @@ import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
 import com.won983212.servermod.schematic.IProgressEvent;
 import com.won983212.servermod.schematic.client.SchematicTransformation;
 import com.won983212.servermod.schematic.world.SchematicWorld;
+import com.won983212.servermod.task.IAsyncNoResultTask;
 import com.won983212.servermod.task.IAsyncTask;
 import com.won983212.servermod.utility.MatrixTransformStack;
 import com.won983212.servermod.utility.animate.AnimationTickHolder;
@@ -97,7 +98,7 @@ public class SchematicRenderer {
         return distance < renderDistance * renderDistance;
     }
 
-    public class WorldRedrawingTask implements IAsyncTask {
+    public class WorldRedrawingTask implements IAsyncNoResultTask {
         private final int countX, countY, countZ;
         private final long total;
         private final IProgressEvent event;

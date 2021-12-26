@@ -1,18 +1,17 @@
 package com.won983212.servermod.task;
 
 import java.util.function.Consumer;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
-public class QueuedAsyncTask {
+public class QueuedAsyncTask<T> {
     private int groupId;
-    private IAsyncTask task;
+    private IAsyncTask<T> task;
     private Consumer<Exception> exceptionHandler;
-    private Supplier<IAsyncTask> completeTaskSupplier;
-    private QueuedAsyncTask completeTaskChainLink;
+    private CompleteResultTask<T, ?> completeTask;
     private boolean completed;
 
 
-    protected QueuedAsyncTask(IAsyncTask task) {
+    protected QueuedAsyncTask(IAsyncTask<T> task) {
         this.task = task;
         this.completed = false;
     }
@@ -23,37 +22,48 @@ public class QueuedAsyncTask {
         this.groupId = id;
     }
 
-    public QueuedAsyncTask exceptionally(Consumer<Exception> exceptionHandler) {
-        this.exceptionHandler = exceptionHandler;
-        return this;
-    }
-
-    public QueuedAsyncTask then(Runnable whenComplete) {
-        return then(() -> {
-            whenComplete.run();
-            return null;
-        });
-    }
-
-    public QueuedAsyncTask groupId(int id) {
+    public QueuedAsyncTask<T> groupId(int id) {
         this.groupId = id;
         return this;
     }
 
-    public QueuedAsyncTask then(Supplier<IAsyncTask> nextAsyncTaskSupplier) {
-        this.completeTaskSupplier = nextAsyncTaskSupplier;
-        this.completeTaskChainLink = new QueuedAsyncTask(groupId);
-        return completeTaskChainLink;
+    public QueuedAsyncTask<T> exceptionally(Consumer<Exception> exceptionHandler) {
+        this.exceptionHandler = exceptionHandler;
+        return this;
     }
 
-    public QueuedAsyncTask complete() {
+    public QueuedAsyncTask<Void> whenComplete(Runnable runnable) {
+        return then((c) -> {
+            runnable.run();
+            return null;
+        });
+    }
+
+    public QueuedAsyncTask<Void> thenAccept(Consumer<T> consumer) {
+        return then((c) -> {
+            consumer.accept(c);
+            return null;
+        });
+    }
+
+    public <R> QueuedAsyncTask<R> then(Function<T, IAsyncTask<R>> nextAsyncTaskSupplier) {
+        QueuedAsyncTask<R> task = new QueuedAsyncTask<>(groupId);
+        completeTask = new CompleteResultTask<>(nextAsyncTaskSupplier, task);
+        return task;
+    }
+
+    public QueuedAsyncTask<?> complete() {
         completed = true;
-        if (task != null && completeTaskSupplier != null) {
-            if (completeTaskChainLink.exceptionHandler == null) {
-                completeTaskChainLink.exceptionHandler = exceptionHandler;
+        if (task != null && completeTask != null) {
+            completeTask.overrideExceptionHandler(this);
+            try {
+                completeTask.apply(task.getResult());
+            } catch (Exception e) {
+                if (exceptionHandler != null) {
+                    exceptionHandler.accept(e);
+                }
             }
-            completeTaskChainLink.task = completeTaskSupplier.get();
-            return completeTaskChainLink;
+            return completeTask.completeTaskChainLink;
         }
         return null;
     }
@@ -85,24 +95,23 @@ public class QueuedAsyncTask {
         return groupId;
     }
 
+    private static class CompleteResultTask<T, R> {
+        private final Function<T, IAsyncTask<R>> completeTaskSupplier;
+        private final QueuedAsyncTask<R> completeTaskChainLink;
 
-    public static class ExceptionTask extends QueuedAsyncTask {
-        private final Exception exception;
-
-        public ExceptionTask(Exception exception) {
-            super(null);
-            this.exception = exception;
+        public CompleteResultTask(Function<T, IAsyncTask<R>> supplier, QueuedAsyncTask<R> chainLink) {
+            this.completeTaskSupplier = supplier;
+            this.completeTaskChainLink = chainLink;
         }
 
-        public QueuedAsyncTask exceptionally(Consumer<Exception> exceptionHandler) {
-            if (exceptionHandler != null) {
-                exceptionHandler.accept(exception);
+        public void overrideExceptionHandler(QueuedAsyncTask<?> from) {
+            if (completeTaskChainLink.exceptionHandler == null) {
+                completeTaskChainLink.exceptionHandler = from.exceptionHandler;
             }
-            return this;
         }
 
-        public boolean tick() {
-            return false;
+        public void apply(T result) {
+            completeTaskChainLink.task = completeTaskSupplier.apply(result);
         }
     }
 }

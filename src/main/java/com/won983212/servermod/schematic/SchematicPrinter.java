@@ -3,6 +3,7 @@ package com.won983212.servermod.schematic;
 import com.won983212.servermod.Logger;
 import com.won983212.servermod.item.SchematicItem;
 import com.won983212.servermod.schematic.container.SchematicContainer;
+import com.won983212.servermod.task.IAsyncNoResultTask;
 import com.won983212.servermod.task.IAsyncTask;
 import com.won983212.servermod.utility.EntityUtils;
 import net.minecraft.block.Block;
@@ -27,7 +28,7 @@ import net.minecraft.world.gen.feature.template.Template;
 import net.minecraftforge.common.util.Constants;
 
 // TODO 큰거 설치하면 랙 ㅈㄴ걸림;; (async화 이후 해결)
-public class SchematicPrinter implements IAsyncTask {
+public class SchematicPrinter implements IAsyncNoResultTask {
 
     public enum PrintStage {
         ERROR, BLOCKS, UPDATING, ENTITIES
@@ -96,6 +97,7 @@ public class SchematicPrinter implements IAsyncTask {
         return printer;
     }
 
+    @Override
     public boolean tick() {
         if (printStage == PrintStage.ERROR) {
             return false;

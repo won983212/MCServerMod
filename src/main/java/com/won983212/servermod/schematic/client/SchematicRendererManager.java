@@ -13,10 +13,7 @@ import com.won983212.servermod.schematic.SchematicPrinter;
 import com.won983212.servermod.schematic.client.render.SchematicRenderer;
 import com.won983212.servermod.schematic.container.SchematicContainer;
 import com.won983212.servermod.schematic.world.SchematicWorld;
-import com.won983212.servermod.task.IAsyncTask;
-import com.won983212.servermod.task.JobJoinTask;
-import com.won983212.servermod.task.QueuedAsyncTask;
-import com.won983212.servermod.task.TaskScheduler;
+import com.won983212.servermod.task.*;
 import com.won983212.servermod.utility.animate.AnimationTickHolder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.item.ItemStack;
@@ -78,43 +75,58 @@ public class SchematicRendererManager implements IProgressEntryProducer {
         LoadingEntry loadingEntry = new LoadingEntry(schematicFilePath);
         loadingEntries.put(schematicFilePath, loadingEntry);
 
-        SchematicRenderer[] renderers = rendererCache.getIfPresent(activeSchematicItem);
+        this.renderers = rendererCache.getIfPresent(activeSchematicItem);
         if (renderers == null) {
-            final SchematicRenderer[] newRenderers = new SchematicRenderer[3];
-            for (int i = 0; i < newRenderers.length; i++) {
-                newRenderers[i] = new SchematicRenderer();
-            }
+            // TODO 잠시 test용. async로 바꾸자!
+            TaskScheduler.addAsyncTask(new IAsyncTask<SchematicContainer>() {
+                SchematicContainer result;
+                @Override
+                public boolean tick() {
+                    result = SchematicItem.loadSchematic(activeSchematicItem, (s, p) -> loadingEntry.onProgress(s, 0.4 * p));
+                    return false;
+                }
 
-            TaskScheduler.pushGroupIdContext(schematicFilePath.hashCode());
-            SchematicContainer schematic = SchematicItem.loadSchematic(activeSchematicItem, (s, p) -> loadingEntry.onProgress(s, 0.6 * p));
-            prepareSchematicRendererAsync(schematic, newRenderers, (s, p) -> loadingEntry.onProgress(s, 0.6 + 0.4 * p))
+                @Override
+                public SchematicContainer getResult() {
+                    return result;
+                }
+            })
                     .exceptionally((e) -> {
                         Logger.error(e);
                         loadingEntries.remove(schematicFilePath);
                     })
-                    .then(() -> {
+                    .then((schematic) -> {
+                        TaskScheduler.pushGroupIdContext(schematicFilePath.hashCode());
+                        IAsyncTask<SchematicRenderer[]> task = startPreparingSchematicAsync(schematic, (s, p) -> loadingEntry.onProgress(s, 0.4 + 0.6 * p));
+                        TaskScheduler.popGroupIdContext();
+                        return task;
+                    })
+                    .thenAccept((newRenderers) -> {
                         loadingEntries.remove(schematicFilePath);
                         if (currentStack == activeSchematicItem) {
                             this.renderers = newRenderers;
                         }
                         rendererCache.put(activeSchematicItem, newRenderers);
                     });
-            TaskScheduler.popGroupIdContext();
         } else {
             Logger.debug("in cache: " + schematicFilePath);
-            this.renderers = renderers;
             loadingEntries.remove(schematicFilePath);
         }
     }
 
-    private QueuedAsyncTask prepareSchematicRendererAsync(SchematicContainer schematic, SchematicRenderer[] renderers, IProgressEvent event) {
+    private IAsyncTask<SchematicRenderer[]> startPreparingSchematicAsync(SchematicContainer schematic, IProgressEvent event) {
         BlockPos size = schematic.getSize();
         if (size.equals(BlockPos.ZERO)) {
-            return new QueuedAsyncTask.ExceptionTask(new IllegalArgumentException("Template size is zero!"));
+            throw new IllegalArgumentException("Template size is zero!");
+        }
+
+        final SchematicRenderer[] renderers = new SchematicRenderer[3];
+        for (int i = 0; i < renderers.length; i++) {
+            renderers[i] = new SchematicRenderer();
         }
 
         final int taskSize = 3;
-        final QueuedAsyncTask[] tasks = new QueuedAsyncTask[3];
+        final QueuedAsyncTask<?>[] tasks = new QueuedAsyncTask[3];
         final double[] progress = new double[taskSize];
         BlockPos[] pos = new BlockPos[]{BlockPos.ZERO, BlockPos.ZERO.east(size.getX() - 1), BlockPos.ZERO.south(size.getZ() - 1)};
 
@@ -128,10 +140,11 @@ public class SchematicRendererManager implements IProgressEntryProducer {
             );
         }
 
-        return TaskScheduler.addAsyncTask(new JobJoinTask(tasks));
+        return new JobJoinTask<SchematicRenderer[]>(tasks)
+                .setResult(renderers);
     }
 
-    private QueuedAsyncTask placeSchematicWorldAsync(SchematicContainer schematic, BlockPos position, SchematicRenderer[] renderers, int rendererIndex, IProgressEvent event) {
+    private QueuedAsyncTask<Void> placeSchematicWorldAsync(SchematicContainer schematic, BlockPos position, SchematicRenderer[] renderers, int rendererIndex, IProgressEvent event) {
         PlacementSettings pSettings = new PlacementSettings();
         if (rendererIndex == 1) {
             pSettings.setMirror(Mirror.FRONT_BACK);
@@ -143,10 +156,10 @@ public class SchematicRendererManager implements IProgressEntryProducer {
         SchematicWorld world = new SchematicWorld(Minecraft.getInstance().level);
         SchematicPrinter printer = SchematicPrinter.newPlacingSchematicTask(schematic, world, position, pSettings, (s, p) -> event.onProgress(s, 0.7 * p), false);
         return TaskScheduler.addAsyncTask(printer)
-                .then(() -> cachingDrawBufferAsync(world, renderers, rendererIndex, (s, p) -> event.onProgress(s, 0.7 + 0.3 * p)));
+                .then((c) -> cachingDrawBufferAsync(world, renderers, rendererIndex, (s, p) -> event.onProgress(s, 0.7 + 0.3 * p)));
     }
 
-    private IAsyncTask cachingDrawBufferAsync(SchematicWorld world, SchematicRenderer[] renderers, int rendererIndex, IProgressEvent event) {
+    private IAsyncNoResultTask cachingDrawBufferAsync(SchematicWorld world, SchematicRenderer[] renderers, int rendererIndex, IProgressEvent event) {
         Logger.debug("Draw buffer caching " + rendererIndex + " schematic...");
         return renderers[rendererIndex].newDrawingSchematicWorldTask(world, event);
     }
