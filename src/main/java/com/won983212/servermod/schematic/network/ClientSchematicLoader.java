@@ -126,7 +126,7 @@ public class ClientSchematicLoader extends SchematicNetwork implements IProgress
     }
 
     @Override
-    public Iterable<SchematicUploadEntry> getProgressEntries(){
+    public Iterable<SchematicUploadEntry> getProgressEntries() {
         return activeUploads.values();
     }
 

@@ -117,7 +117,7 @@ public class ToolSelectionScreen extends Screen {
 
             int startX = x + i * 50;
             int bandColor = tools.get(i).getTool().getHighlightColor();
-            if(bandColor != 0) {
+            if (bandColor != 0) {
                 fill(matrixStack, startX, y, startX + 50, y + 2, bandColor);
             }
 

@@ -21,7 +21,7 @@ public abstract class AbstractComponent extends AbstractGui implements IRenderab
         this.font = Minecraft.getInstance().font;
     }
 
-    public void setX(int x){
+    public void setX(int x) {
         this.x = x;
     }
 
@@ -44,7 +44,7 @@ public abstract class AbstractComponent extends AbstractGui implements IRenderab
         this.height = height;
     }
 
-    public Rectangle getBounds(){
+    public Rectangle getBounds() {
         return new Rectangle(x, y, width, height);
     }
 

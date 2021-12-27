@@ -37,9 +37,9 @@ public class PanelScreen extends Screen {
         renderAlert(ms);
     }
 
-    private void renderAlert(MatrixStack ms){
+    private void renderAlert(MatrixStack ms) {
         long currentTime = System.currentTimeMillis();
-        if (currentTime < lastAlertTime){
+        if (currentTime < lastAlertTime) {
             int alertWidth = font.width(lastAlertMessage) + 50;
             final int alertHeight = 30;
             final int x0 = (width - alertWidth) / 2;
@@ -71,11 +71,11 @@ public class PanelScreen extends Screen {
         }
     }
 
-    protected void alert(String message){
+    protected void alert(String message) {
         alert(message, 3000);
     }
 
-    protected void alert(String message, long duration){
+    protected void alert(String message, long duration) {
         lastAlertTime = System.currentTimeMillis() + duration;
         lastAlertMessage = message;
     }
@@ -105,10 +105,10 @@ public class PanelScreen extends Screen {
             y1 = j;
         }
 
-        float f3 = (float)(color >> 24 & 255) / 255.0F;
-        float f = (float)(color >> 16 & 255) / 255.0F;
-        float f1 = (float)(color >> 8 & 255) / 255.0F;
-        float f2 = (float)(color & 255) / 255.0F;
+        float f3 = (float) (color >> 24 & 255) / 255.0F;
+        float f = (float) (color >> 16 & 255) / 255.0F;
+        float f1 = (float) (color >> 8 & 255) / 255.0F;
+        float f2 = (float) (color & 255) / 255.0F;
         BufferBuilder bufferbuilder = Tessellator.getInstance().getBuilder();
         RenderSystem.enableBlend();
         RenderSystem.disableTexture();

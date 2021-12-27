@@ -11,7 +11,6 @@ import net.minecraft.util.SharedConstants;
 import net.minecraft.util.math.BlockPos;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;

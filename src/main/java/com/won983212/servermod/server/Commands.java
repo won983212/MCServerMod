@@ -17,7 +17,7 @@ public enum Commands {
         this.registerFunc = registerFunc;
     }
 
-    public void reigster(CommandDispatcher<CommandSource> dispatcher){
+    public void reigster(CommandDispatcher<CommandSource> dispatcher) {
         this.registerFunc.accept(dispatcher);
     }
 }

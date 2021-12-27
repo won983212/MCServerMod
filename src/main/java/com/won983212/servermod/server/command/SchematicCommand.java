@@ -11,9 +11,6 @@ import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.fml.network.PacketDistributor;
 
-import java.io.File;
-import java.util.List;
-
 public class SchematicCommand {
     public static void register(CommandDispatcher<CommandSource> dispater) {
         LiteralArgumentBuilder<CommandSource> schematicCommand

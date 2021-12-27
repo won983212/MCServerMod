@@ -13,7 +13,7 @@ import net.minecraft.world.World;
 public class ActiveStateTile extends TileEntity implements ITickableTileEntity {
     private boolean redstone = false;
     private boolean activeCache = false;
-    private Direction directionCache = null;
+    private final Direction directionCache = null;
 
     public ActiveStateTile(TileEntityType<?> tileEntityTypeIn) {
         super(tileEntityTypeIn);
