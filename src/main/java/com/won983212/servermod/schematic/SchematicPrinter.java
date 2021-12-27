@@ -3,8 +3,11 @@ package com.won983212.servermod.schematic;
 import com.won983212.servermod.Logger;
 import com.won983212.servermod.item.SchematicItem;
 import com.won983212.servermod.schematic.container.SchematicContainer;
+import com.won983212.servermod.schematic.parser.SchematicFileParser;
+import com.won983212.servermod.schematic.world.SchematicWorld;
 import com.won983212.servermod.task.IAsyncNoResultTask;
 import com.won983212.servermod.task.IAsyncTask;
+import com.won983212.servermod.task.TaskScheduler;
 import com.won983212.servermod.utility.EntityUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -23,6 +26,7 @@ import net.minecraft.util.Rotation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.gen.feature.template.PlacementSettings;
 import net.minecraft.world.gen.feature.template.Template;
 import net.minecraftforge.common.util.Constants;
@@ -31,12 +35,12 @@ import net.minecraftforge.common.util.Constants;
 public class SchematicPrinter implements IAsyncNoResultTask {
 
     public enum PrintStage {
-        ERROR, BLOCKS, UPDATING, ENTITIES
+        ERROR, LOAD_SCHEMATIC, BLOCKS, UPDATING, ENTITIES
     }
 
     public static final int BATCH_COUNT = 5000;
 
-    private final boolean isIncludeAir;
+    private boolean isIncludeAir;
     private SchematicContainer blockReader;
     private BlockPos schematicAnchor;
     private PlacementSettings settings;
@@ -48,52 +52,41 @@ public class SchematicPrinter implements IAsyncNoResultTask {
     private long processed;
     private long total = 0;
 
+    private ItemStack blueprint;
+    private IAsyncTask<SchematicContainer> schematicLoadingTask;
 
-    private SchematicPrinter(World world, IProgressEvent event, boolean isIncludeAir) {
+
+    private SchematicPrinter(World world, IProgressEvent event) {
         this.world = world;
         this.event = event;
-        this.isIncludeAir = isIncludeAir;
-        this.printStage = PrintStage.BLOCKS;
+        this.printStage = PrintStage.LOAD_SCHEMATIC;
         this.current = new BlockPos.Mutable(0, 0, 0);
         this.processed = 0;
     }
 
     public static SchematicPrinter newPlacingSchematicTask(SchematicContainer schematic, World world, BlockPos posStart,
-                                                           PlacementSettings placement, IProgressEvent event, boolean isIncludeAir) {
-        SchematicPrinter printer = new SchematicPrinter(world, event, isIncludeAir);
+                                                           PlacementSettings placement, IProgressEvent event) {
+        SchematicPrinter printer = new SchematicPrinter(world, event);
         printer.schematicAnchor = posStart;
         printer.settings = placement;
         printer.blockReader = schematic;
 
         BlockPos size = schematic.getSize();
         printer.total = (long) size.getX() * size.getY() * size.getZ();
+        printer.printStage = PrintStage.BLOCKS;
         return printer;
     }
 
-    public static SchematicPrinter newPlacingSchematicTask(ItemStack blueprint, World world, IProgressEvent event, boolean isIncludeAir) {
+    public static SchematicPrinter newPlacingSchematicTask(ItemStack blueprint, World world, IProgressEvent event) {
         if (!blueprint.hasTag() || !blueprint.getTag().getBoolean("Deployed")) {
-            Logger.error("Can't place it. Blueprint hasn't tag or not deployed");
-            return null;
+            throw new IllegalArgumentException("Can't place it. Blueprint hasn't tag or not deployed");
         }
 
-        SchematicPrinter printer = new SchematicPrinter(world, event, isIncludeAir);
+        SchematicPrinter printer = new SchematicPrinter(world, event);
         printer.schematicAnchor = NBTUtil.readBlockPos(blueprint.getTag().getCompound("Anchor"));
         printer.settings = SchematicItem.getSettings(blueprint);
-
-        // TODO loadSchematic도 async하게 바꿔야하는데..
-        // then으로 이어서 한번에 exception받을 수 있도록 수정
-        SchematicContainer schematic;
-        try {
-            schematic = SchematicItem.loadSchematic(blueprint, (s, p) -> IProgressEvent.safeFire(event, s, p * 0.2));
-        } catch (Exception e) {
-            printer.printStage = PrintStage.ERROR;
-            Logger.error(e);
-            return null;
-        }
-
-        BlockPos size = schematic.getSize();
-        printer.blockReader = schematic;
-        printer.total = (long) size.getX() * size.getY() * size.getZ();
+        printer.blueprint = blueprint;
+        printer.blockReader = null;
         return printer;
     }
 
@@ -101,6 +94,11 @@ public class SchematicPrinter implements IAsyncNoResultTask {
     public boolean tick() {
         if (printStage == PrintStage.ERROR) {
             return false;
+        } else if (printStage == PrintStage.LOAD_SCHEMATIC) {
+            if (schematicLoadingTask == null) {
+                loadSchematicAsync();
+            }
+            return true;
         } else if (printStage == PrintStage.BLOCKS || printStage == PrintStage.UPDATING) {
             boolean continued = true;
             for (int i = 0; i < BATCH_COUNT && (continued = processed < total); i++) {
@@ -125,6 +123,22 @@ public class SchematicPrinter implements IAsyncNoResultTask {
         }
 
         return true;
+    }
+
+    public SchematicPrinter includeAir(boolean include) {
+        this.isIncludeAir = include;
+        return this;
+    }
+
+    private void loadSchematicAsync() {
+        schematicLoadingTask = SchematicFileParser.parseSchematicFromItemAsync(blueprint, (s, p) -> IProgressEvent.safeFire(event, s, p * 0.2));
+        TaskScheduler.addAsyncTask(schematicLoadingTask)
+                .thenAccept((c) -> {
+                    BlockPos size = c.getSize();
+                    this.total = (long) size.getX() * size.getY() * size.getZ();
+                    this.blockReader = c;
+                    this.printStage = PrintStage.BLOCKS;
+                });
     }
 
     private void next() {
@@ -161,7 +175,7 @@ public class SchematicPrinter implements IAsyncNoResultTask {
             }
         }
 
-        if (world.setBlock(pos, state, Constants.BlockFlags.BLOCK_UPDATE)) {
+        if (world.setBlock(pos, state, Constants.BlockFlags.BLOCK_UPDATE | Constants.BlockFlags.UPDATE_NEIGHBORS)) {
             if (tag != null) {
                 TileEntity te = world.getBlockEntity(pos);
                 if (te != null) {
@@ -236,7 +250,10 @@ public class SchematicPrinter implements IAsyncNoResultTask {
 
     private BlockState fixBlockState(BlockPos pos, BlockState state) {
         if (state.hasProperty(DoorBlock.HALF) && state.getValue(DoorBlock.HALF) == DoubleBlockHalf.UPPER) {
-            return world.getBlockState(pos.below()).setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER);
+            BlockState lowerState = world.getBlockState(pos.below());
+            if (lowerState.getBlock() instanceof DoorBlock) {
+                return lowerState.setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER);
+            }
         }
         if (state.hasProperty(BlockStateProperties.WATERLOGGED)) {
             return state.setValue(BlockStateProperties.WATERLOGGED, Boolean.FALSE);

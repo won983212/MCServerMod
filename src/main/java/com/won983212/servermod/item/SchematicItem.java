@@ -1,8 +1,5 @@
 package com.won983212.servermod.item;
 
-import com.won983212.servermod.schematic.IProgressEvent;
-import com.won983212.servermod.schematic.container.SchematicContainer;
-import com.won983212.servermod.schematic.SchematicFile;
 import com.won983212.servermod.schematic.parser.SchematicFileParser;
 import com.won983212.servermod.utility.Lang;
 import net.minecraft.client.util.ITooltipFlag;
@@ -22,8 +19,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.util.Constants;
 
-import java.io.IOException;
-import java.nio.file.Path;
 import java.util.List;
 
 public class SchematicItem extends Item {
@@ -47,6 +42,7 @@ public class SchematicItem extends Item {
         tag.putString("Rotation", Rotation.NONE.name());
         tag.putString("Mirror", Mirror.NONE.name());
         tag.putBoolean("IncludeAir", true);
+        tag.putBoolean("UseUpdateBlock", true);
         stack.setTag(tag);
         writeSize(stack);
     }
@@ -60,7 +56,7 @@ public class SchematicItem extends Item {
                 tooltip.add(new StringTextComponent(TextFormatting.GOLD + nbt.getString("File")));
             }
             if (nbt.contains("Owner", Constants.NBT.TAG_STRING)) {
-                tooltip.add(new StringTextComponent(TextFormatting.GRAY + "만든 사람: " + nbt.getString("Owner")));
+                tooltip.add(new StringTextComponent(TextFormatting.GRAY + "주인: " + nbt.getString("Owner")));
             }
             if (nbt.contains("Bounds", Constants.NBT.TAG_COMPOUND)) {
                 BlockPos size = NBTUtil.readBlockPos(nbt.getCompound("Bounds"));
@@ -74,7 +70,7 @@ public class SchematicItem extends Item {
 
     public static void writeSize(ItemStack blueprint) {
         CompoundNBT tag = blueprint.getTag();
-        BlockPos bounds = loadSchematicSize(blueprint);
+        BlockPos bounds = SchematicFileParser.parseSchematicSizeFromItem(blueprint);
         tag.put("Bounds", NBTUtil.writeBlockPos(bounds));
         blueprint.setTag(tag);
     }
@@ -85,34 +81,5 @@ public class SchematicItem extends Item {
         settings.setRotation(Rotation.valueOf(tag.getString("Rotation")));
         settings.setMirror(Mirror.valueOf(tag.getString("Mirror")));
         return settings;
-    }
-
-    public static BlockPos loadSchematicSize(ItemStack blueprint) {
-        try {
-            Path path = getSchematicPath(blueprint);
-            return SchematicFileParser.parseSchematicBounds(path.toFile());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return BlockPos.ZERO;
-    }
-
-    public static SchematicContainer loadSchematic(ItemStack blueprint, IProgressEvent event) {
-        try {
-            Path path = getSchematicPath(blueprint);
-            return SchematicFileParser.parseSchematicFile(path.toFile(), event);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return new SchematicContainer(BlockPos.ZERO);
-    }
-
-    private static Path getSchematicPath(ItemStack blueprint) throws IOException {
-        String owner = blueprint.getTag().getString("Owner");
-        String schematic = blueprint.getTag().getString("File");
-        if (SchematicFileParser.isUnsupportedExtension(schematic)) {
-           throw new IOException("Unsupported file!");
-        }
-        return SchematicFile.getFilePath(owner, schematic);
     }
 }

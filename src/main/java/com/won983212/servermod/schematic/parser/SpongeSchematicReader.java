@@ -10,6 +10,7 @@ import net.minecraft.nbt.*;
 import net.minecraft.util.SharedConstants;
 import net.minecraft.util.math.BlockPos;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,8 +21,13 @@ class SpongeSchematicReader extends AbstractSchematicReader {
     private ForgeDataFixer fixer = null;
     private int dataVersion = -1;
 
+
+    public SpongeSchematicReader(File file) {
+        super(file);
+    }
+
     @Override
-    protected BlockPos parseSize(CompoundNBT schematic) throws IOException {
+    protected BlockPos parseSize() {
         int width = checkTag(schematic, "Width", ShortNBT.class).getAsInt();
         int height = checkTag(schematic, "Height", ShortNBT.class).getAsInt();
         int length = checkTag(schematic, "Length", ShortNBT.class).getAsInt();
@@ -29,13 +35,13 @@ class SpongeSchematicReader extends AbstractSchematicReader {
     }
 
     @Override
-    protected SchematicContainer parse(CompoundNBT schematic) throws IOException {
+    public boolean parsePartial() {
         int liveDataVersion = SharedConstants.getCurrentVersion().getWorldVersion();
         int schematicVersion = checkTag(schematic, "Version", IntNBT.class).getAsInt();
         if (schematicVersion == 1) {
             dataVersion = 1631; // data version of 1.13.2. this is a relatively safe assumption unless someone imports a schematic from 1.12, e.g. sponge 7.1-
             fixer = new ForgeDataFixer(dataVersion);
-            return readVersion1(schematic);
+            result = readVersion1();
         } else if (schematicVersion == 2) {
             dataVersion = checkTag(schematic, "DataVersion", IntNBT.class).getAsInt();
             if (dataVersion < 0) {
@@ -51,34 +57,35 @@ class SpongeSchematicReader extends AbstractSchematicReader {
                 Logger.debug("Schematic was made in an older Minecraft version ("
                         + dataVersion + " < " + liveDataVersion + "), will attempt DFU.");
             }
-
-            SchematicContainer schem = readVersion1(schematic);
-            return readVersion2(schem, schematic);
+            result = readVersion2(readVersion1());
+        } else {
+            throw new IllegalArgumentException("This schematic version is currently not supported");
         }
-        throw new IOException("This schematic version is currently not supported");
+        notifyProgress("읽는 중...", 1);
+        return false;
     }
 
-    private SchematicContainer readVersion1(CompoundNBT schematicTag) throws IOException {
+    private SchematicContainer readVersion1() {
         notifyProgress("Metadata 읽는 중...", 0);
 
-        BlockPos size = parseSize(schematicTag);
+        BlockPos size = parseSize();
         int width = size.getX();
         int height = size.getY();
         int length = size.getZ();
 
-        IntArrayNBT offsetTag = getTag(schematicTag, "Offset", IntArrayNBT.class);
+        IntArrayNBT offsetTag = getTag(schematic, "Offset", IntArrayNBT.class);
         int[] offsetParts;
         if (offsetTag != null) {
             offsetParts = offsetTag.getAsIntArray();
             if (offsetParts.length != 3) {
-                throw new IOException("Invalid offset specified in schematic.");
+                throw new IllegalArgumentException("Invalid offset specified in schematic.");
             }
         }
 
-        IntNBT paletteMaxTag = getTag(schematicTag, "PaletteMax", IntNBT.class);
-        CompoundNBT paletteObject = checkTag(schematicTag, "Palette", CompoundNBT.class);
+        IntNBT paletteMaxTag = getTag(schematic, "PaletteMax", IntNBT.class);
+        CompoundNBT paletteObject = checkTag(schematic, "Palette", CompoundNBT.class);
         if (paletteMaxTag != null && paletteObject.size() != paletteMaxTag.getAsInt()) {
-            throw new IOException("Block palette size does not match expected size.");
+            throw new IllegalArgumentException("Block palette size does not match expected size.");
         }
 
         long current = 0;
@@ -100,12 +107,12 @@ class SpongeSchematicReader extends AbstractSchematicReader {
             palette.put(id, state);
         }
 
-        byte[] blocks = checkTag(schematicTag, "BlockData", ByteArrayNBT.class).getAsByteArray();
+        byte[] blocks = checkTag(schematic, "BlockData", ByteArrayNBT.class).getAsByteArray();
 
         Map<BlockPos, CompoundNBT> tileEntitiesMap = new HashMap<>();
-        ListNBT tileEntities = getTag(schematicTag, "BlockEntities", ListNBT.class);
+        ListNBT tileEntities = getTag(schematic, "BlockEntities", ListNBT.class);
         if (tileEntities == null) {
-            tileEntities = getTag(schematicTag, "TileEntities", ListNBT.class);
+            tileEntities = getTag(schematic, "TileEntities", ListNBT.class);
         }
 
         current = 0;
@@ -142,7 +149,7 @@ class SpongeSchematicReader extends AbstractSchematicReader {
             while (true) {
                 value |= (blocks[i] & 127) << (varintLength++ * 7);
                 if (varintLength > 5) {
-                    throw new IOException("VarInt too big (probably corrupted data)");
+                    throw new IllegalArgumentException("VarInt too big (probably corrupted data)");
                 }
                 if ((blocks[i] & 128) != 128) {
                     i++;
@@ -168,15 +175,15 @@ class SpongeSchematicReader extends AbstractSchematicReader {
         return schem;
     }
 
-    private SchematicContainer readVersion2(SchematicContainer version1, CompoundNBT schematicTag) throws IOException {
-        if (schematicTag.contains("Entities")) {
+    private SchematicContainer readVersion2(SchematicContainer version1) {
+        if (schematic.contains("Entities")) {
             notifyProgress("Entity 읽는 중...", 0.99);
-            readEntities(version1, schematicTag);
+            readEntities(version1);
         }
         return version1;
     }
 
-    private void readEntities(SchematicContainer schem, CompoundNBT schematic) throws IOException {
+    private void readEntities(SchematicContainer schem) {
         ListNBT entList = checkTag(schematic, "Entities", ListNBT.class);
         if (entList.isEmpty()) {
             return;

@@ -1,46 +1,57 @@
 package com.won983212.servermod.schematic.parser;
 
-import com.won983212.servermod.Logger;
 import com.won983212.servermod.schematic.IProgressEvent;
 import com.won983212.servermod.schematic.container.SchematicContainer;
+import com.won983212.servermod.task.IAsyncTask;
 import net.minecraft.nbt.*;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.util.Constants;
 
 import java.io.*;
+import java.util.function.Consumer;
 import java.util.zip.GZIPInputStream;
 
 //TODO litemetic 파일도 parser 만들자
 @SuppressWarnings("unchecked")
-public abstract class AbstractSchematicReader {
+public abstract class AbstractSchematicReader implements IAsyncTask<SchematicContainer> {
     private IProgressEvent progressEvent;
+    private Consumer<SchematicContainer> completeEvent;
+    protected CompoundNBT schematic;
+    protected SchematicContainer result;
 
-    protected abstract SchematicContainer parse(CompoundNBT schematic) throws IOException;
 
-    protected abstract BlockPos parseSize(CompoundNBT schematic) throws IOException;
-
-    public SchematicContainer parse(File file) throws IOException {
-        CompoundNBT schematicNBT = readNBT(file);
-        notifyProgress("NBT 데이터 읽는 중...", 0);
-        SchematicContainer t = parse(schematicNBT);
-        notifyProgress("NBT 데이터 읽는 중...", 1);
-        return t;
+    public AbstractSchematicReader(File file) {
+        schematic = readNBT(file);
     }
 
-    public BlockPos parseSize(File file) throws IOException {
-        CompoundNBT schematicNBT = readNBT(file);
-        notifyProgress("NBT 데이터 읽는 중...", 0);
-        BlockPos pos = parseSize(schematicNBT);
-        notifyProgress("NBT 데이터 읽는 중...", 1);
-        return pos;
+    protected abstract BlockPos parseSize();
+
+    protected abstract boolean parsePartial();
+
+    @Override
+    public SchematicContainer getResult() {
+        return result;
     }
 
-    private static CompoundNBT readNBT(File file) throws IOException {
+    @Override
+    public boolean tick() {
+        boolean isContinue;
+        isContinue = parsePartial();
+        if (!isContinue) {
+            if (result != null && completeEvent != null) {
+                completeEvent.accept(result);
+            }
+            return false;
+        }
+        return true;
+    }
+
+    private static CompoundNBT readNBT(File file) {
         try (DataInputStream stream = new DataInputStream(new BufferedInputStream(
                 new GZIPInputStream(new FileInputStream(file))))) {
             return CompressedStreamTools.read(stream, new NBTSizeTracker(0x20000000L));
         } catch (IOException e) {
-            throw new IOException("Failed to read schematic", e);
+            throw new IllegalArgumentException("Failed to read schematic", e);
         }
     }
 
@@ -48,19 +59,23 @@ public abstract class AbstractSchematicReader {
         this.progressEvent = event;
     }
 
+    public void setCompletedEvent(Consumer<SchematicContainer> event) {
+        this.completeEvent = event;
+    }
+
     protected void notifyProgress(String status, double progress) {
         IProgressEvent.safeFire(progressEvent, status, progress);
     }
 
-    protected static <T extends INBT> T checkTag(CompoundNBT nbt, String key, Class<T> expected) throws IOException {
+    protected static <T extends INBT> T checkTag(CompoundNBT nbt, String key, Class<T> expected) {
         byte typeId = getNBTTypeFromClass(expected);
         if (!nbt.contains(key, typeId)) {
-            throw new IOException(key + " tag is not found or is not of tag type " + expected);
+            throw new IllegalArgumentException(key + " tag is not found or is not of tag type " + expected);
         }
         return (T) nbt.get(key);
     }
 
-    protected static <T extends INBT> T getTag(CompoundNBT nbt, String key, Class<T> expected) throws IOException {
+    protected static <T extends INBT> T getTag(CompoundNBT nbt, String key, Class<T> expected) {
         byte typeId = getNBTTypeFromClass(expected);
         if (!nbt.contains(key, typeId)) {
             return null;
@@ -68,7 +83,7 @@ public abstract class AbstractSchematicReader {
         return (T) nbt.get(key);
     }
 
-    private static byte getNBTTypeFromClass(Class<?> cls) throws IOException {
+    private static byte getNBTTypeFromClass(Class<?> cls) {
         if (cls == ByteNBT.class) {
             return Constants.NBT.TAG_BYTE;
         }
@@ -108,6 +123,6 @@ public abstract class AbstractSchematicReader {
         if (cls == NumberNBT.class) {
             return Constants.NBT.TAG_ANY_NUMERIC;
         }
-        throw new IOException("Invaild type: " + cls);
+        throw new IllegalArgumentException("Invaild type: " + cls);
     }
 }

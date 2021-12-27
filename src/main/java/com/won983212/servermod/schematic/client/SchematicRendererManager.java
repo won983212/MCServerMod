@@ -5,13 +5,13 @@ import com.google.common.cache.CacheBuilder;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.won983212.servermod.Logger;
 import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
-import com.won983212.servermod.item.SchematicItem;
 import com.won983212.servermod.schematic.IProgressEntry;
 import com.won983212.servermod.schematic.IProgressEntryProducer;
 import com.won983212.servermod.schematic.IProgressEvent;
 import com.won983212.servermod.schematic.SchematicPrinter;
 import com.won983212.servermod.schematic.client.render.SchematicRenderer;
 import com.won983212.servermod.schematic.container.SchematicContainer;
+import com.won983212.servermod.schematic.parser.SchematicFileParser;
 import com.won983212.servermod.schematic.world.SchematicWorld;
 import com.won983212.servermod.task.*;
 import com.won983212.servermod.utility.animate.AnimationTickHolder;
@@ -77,20 +77,10 @@ public class SchematicRendererManager implements IProgressEntryProducer {
 
         this.renderers = rendererCache.getIfPresent(activeSchematicItem);
         if (renderers == null) {
-            // TODO 잠시 test용. async로 바꾸자!
-            TaskScheduler.addAsyncTask(new IAsyncTask<SchematicContainer>() {
-                SchematicContainer result;
-                @Override
-                public boolean tick() {
-                    result = SchematicItem.loadSchematic(activeSchematicItem, (s, p) -> loadingEntry.onProgress(s, 0.4 * p));
-                    return false;
-                }
-
-                @Override
-                public SchematicContainer getResult() {
-                    return result;
-                }
-            })
+            final IAsyncTask<SchematicContainer> task0 =
+                    SchematicFileParser.parseSchematicFromItemAsync(activeSchematicItem, (s, p) -> loadingEntry.onProgress(s, 0.4 * p));
+            TaskScheduler.addAsyncTask(task0)
+                    .groupId(schematicFilePath.hashCode())
                     .exceptionally((e) -> {
                         Logger.error(e);
                         loadingEntries.remove(schematicFilePath);
@@ -154,7 +144,8 @@ public class SchematicRendererManager implements IProgressEntryProducer {
 
         Logger.debug("Placing " + rendererIndex + " schematic...");
         SchematicWorld world = new SchematicWorld(Minecraft.getInstance().level);
-        SchematicPrinter printer = SchematicPrinter.newPlacingSchematicTask(schematic, world, position, pSettings, (s, p) -> event.onProgress(s, 0.7 * p), false);
+        SchematicPrinter printer = SchematicPrinter.newPlacingSchematicTask(schematic, world, position, pSettings, (s, p) -> event.onProgress(s, 0.7 * p))
+                .includeAir(false);
         return TaskScheduler.addAsyncTask(printer)
                 .then((c) -> cachingDrawBufferAsync(world, renderers, rendererIndex, (s, p) -> event.onProgress(s, 0.7 + 0.3 * p)));
     }

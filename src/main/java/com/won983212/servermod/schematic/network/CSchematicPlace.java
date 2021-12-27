@@ -47,26 +47,31 @@ public class CSchematicPlace implements IMessage {
 
             final int[] percentIndex = {0};
             World world = player.getLevel();
-            SchematicPrinter printer = SchematicPrinter.newPlacingSchematicTask(stack, world, (s, p) -> {
-                int percent = (int) Math.floor(p * 100);
-                if (percent >= percentIndex[0] * 20) {
-                    percentIndex[0]++;
-                    sendSchematicMessage(player, s + ": " + percent + "%");
-                    if (percent == 100) {
-                        sendSchematicMessage(player, "설치 완료했습니다.");
+            try {
+                SchematicPrinter printer = SchematicPrinter.newPlacingSchematicTask(stack, world, (s, p) -> {
+                    int percent = (int) Math.floor(p * 100);
+                    if (percent >= percentIndex[0] * 20) {
+                        percentIndex[0]++;
+                        sendSchematicMessage(player, s + ": " + percent + "%");
+                        if (percent == 100) {
+                            sendSchematicMessage(player, "설치 완료했습니다.");
+                        }
                     }
-                }
-            }, includeAir);
+                }).includeAir(includeAir);
 
-            TaskScheduler.addAsyncTask(printer)
-                .exceptionally((e) -> {
-                    Logger.error(e);
-                    sendSchematicMessage(player, "설치 중 오류가 발생했습니다. 자세한 사항은 운영자에게 문의하세요.");
-                });
-
-            sendSchematicMessage(player, "Schematic 설치를 시작합니다.");
+                TaskScheduler.addAsyncTask(printer)
+                        .exceptionally((e) -> handleException(player, e));
+                sendSchematicMessage(player, "Schematic 설치를 시작합니다.");
+            } catch (IllegalArgumentException e) {
+                handleException(player, e);
+            }
         });
         context.get().setPacketHandled(true);
+    }
+
+    private static void handleException(ServerPlayerEntity player, Exception e) {
+        Logger.error(e);
+        sendSchematicMessage(player, "설치 중 오류가 발생했습니다. 자세한 사항은 운영자에게 문의하세요.");
     }
 
     private static void sendSchematicMessage(ServerPlayerEntity player, String message) {
