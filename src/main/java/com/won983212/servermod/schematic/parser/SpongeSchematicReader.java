@@ -11,18 +11,43 @@ import net.minecraft.util.SharedConstants;
 import net.minecraft.util.math.BlockPos;
 
 import java.io.File;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 class SpongeSchematicReader extends AbstractSchematicReader {
+
+    private enum ParseStage {
+        METADATA, TILES, BLOCKS, ENTITIES
+    }
 
     private ForgeDataFixer fixer = null;
     private int dataVersion = -1;
 
+    private int width;
+    private int length;
+    private Map<Integer, BlockState> palette;
+    private Map<BlockPos, CompoundNBT> tileEntitiesMap;
+
+    private ListNBT tileEntities;
+    private int blockByteOffset;
+
+    private final EnumMap<ParseStage, Supplier<Boolean>> parsePasses;
+    private ParseStage parseStage;
+    private ParseStage lastStage;
+    private int current = 0;
+
 
     public SpongeSchematicReader(File file) {
         super(file);
+        this.parseStage = ParseStage.METADATA;
+        this.parsePasses = new EnumMap<>(ParseStage.class);
+        this.parsePasses.put(ParseStage.METADATA, this::readMetadata);
+        this.parsePasses.put(ParseStage.TILES, this::readTileEntities);
+        this.parsePasses.put(ParseStage.BLOCKS, this::readBlocks);
+        this.parsePasses.put(ParseStage.ENTITIES, this::readEntities);
     }
 
     @Override
@@ -35,60 +60,26 @@ class SpongeSchematicReader extends AbstractSchematicReader {
 
     @Override
     public boolean parsePartial() {
-        int liveDataVersion = SharedConstants.getCurrentVersion().getWorldVersion();
-        int schematicVersion = checkTag(schematic, "Version", IntNBT.class).getAsInt();
-        if (schematicVersion == 1) {
-            dataVersion = 1631; // data version of 1.13.2. this is a relatively safe assumption unless someone imports a schematic from 1.12, e.g. sponge 7.1-
-            fixer = new ForgeDataFixer(dataVersion);
-            result = readVersion1();
-        } else if (schematicVersion == 2) {
-            dataVersion = checkTag(schematic, "DataVersion", IntNBT.class).getAsInt();
-            if (dataVersion < 0) {
-                Logger.warn("Schematic has an unknown data version (" + dataVersion + "). Data may be incompatible.");
-                // Do not DFU unknown data
-                dataVersion = liveDataVersion;
+        Supplier<Boolean> pass = parsePasses.get(parseStage);
+        if (!pass.get()) {
+            if (parseStage == lastStage) {
+                notifyProgress("읽는 중...", 1);
+                return false;
             }
-            if (dataVersion > liveDataVersion) {
-                Logger.warn("Schematic was made in a newer Minecraft version ("
-                        + dataVersion + " > " + liveDataVersion + "). Data may be incompatible.");
-            } else if (dataVersion < liveDataVersion) {
-                fixer = new ForgeDataFixer(dataVersion);
-                Logger.debug("Schematic was made in an older Minecraft version ("
-                        + dataVersion + " < " + liveDataVersion + "), will attempt DFU.");
-            }
-            result = readVersion2(readVersion1());
-        } else {
-            throw new IllegalArgumentException("This schematic version is currently not supported");
+            parseStage = ParseStage.values()[parseStage.ordinal() + 1];
+            current = 0;
         }
-        notifyProgress("읽는 중...", 1);
-        return false;
+        return true;
     }
 
-    private SchematicContainer readVersion1() {
-        notifyProgress("Metadata 읽는 중...", 0);
-
-        BlockPos size = parseSize();
-        int width = size.getX();
-        int height = size.getY();
-        int length = size.getZ();
-
-        IntArrayNBT offsetTag = getTag(schematic, "Offset", IntArrayNBT.class);
-        int[] offsetParts;
-        if (offsetTag != null) {
-            offsetParts = offsetTag.getAsIntArray();
-            if (offsetParts.length != 3) {
-                throw new IllegalArgumentException("Invalid offset specified in schematic.");
-            }
-        }
-
+    private void readPalette() {
         IntNBT paletteMaxTag = getTag(schematic, "PaletteMax", IntNBT.class);
         CompoundNBT paletteObject = checkTag(schematic, "Palette", CompoundNBT.class);
         if (paletteMaxTag != null && paletteObject.size() != paletteMaxTag.getAsInt()) {
             throw new IllegalArgumentException("Block palette size does not match expected size.");
         }
 
-        long current = 0;
-        Map<Integer, BlockState> palette = new HashMap<>();
+        palette = new HashMap<>();
         Set<String> palettes = paletteObject.getAllKeys();
         for (String palettePart : palettes) {
             int id = checkTag(paletteObject, palettePart, IntNBT.class).getAsInt();
@@ -105,87 +96,127 @@ class SpongeSchematicReader extends AbstractSchematicReader {
             notifyProgress("Palette 읽는 중...", 0.1 * (current++) / palettes.size());
             palette.put(id, state);
         }
+    }
+
+    private boolean readMetadata() {
+        int liveDataVersion = SharedConstants.getCurrentVersion().getWorldVersion();
+        int schematicVersion = checkTag(schematic, "Version", IntNBT.class).getAsInt();
+        if (schematicVersion == 1) {
+            dataVersion = 1631; // data version of 1.13.2. this is a relatively safe assumption unless someone imports a schematic from 1.12, e.g. sponge 7.1-
+            fixer = new ForgeDataFixer(dataVersion);
+            lastStage = ParseStage.BLOCKS;
+        } else if (schematicVersion == 2) {
+            dataVersion = checkTag(schematic, "DataVersion", IntNBT.class).getAsInt();
+            if (dataVersion < 0) {
+                Logger.warn("Schematic has an unknown data version (" + dataVersion + "). Data may be incompatible.");
+                dataVersion = liveDataVersion;
+            }
+            if (dataVersion > liveDataVersion) {
+                Logger.warn("Schematic was made in a newer Minecraft version ("
+                        + dataVersion + " > " + liveDataVersion + "). Data may be incompatible.");
+            } else if (dataVersion < liveDataVersion) {
+                fixer = new ForgeDataFixer(dataVersion);
+                Logger.debug("Schematic was made in an older Minecraft version ("
+                        + dataVersion + " < " + liveDataVersion + "), will attempt DFU.");
+            }
+            lastStage = ParseStage.ENTITIES;
+        } else {
+            throw new IllegalArgumentException("This schematic version is currently not supported");
+        }
+
+        notifyProgress("사이즈 읽는 중...", 0);
+        BlockPos size = parseSize();
+        this.width = size.getX();
+        this.length = size.getZ();
+        this.result = new SchematicContainer(size);
+
+        readPalette();
+        return false;
+    }
+
+    private boolean readTileEntities() {
+        if (current == 0) {
+            tileEntitiesMap = new HashMap<>();
+            tileEntities = getTag(schematic, "BlockEntities", ListNBT.class);
+            if (tileEntities == null) {
+                tileEntities = getTag(schematic, "TileEntities", ListNBT.class);
+            }
+            if (tileEntities == null) {
+                return false;
+            }
+        }
+
+        int tileSize = tileEntities.size();
+        for (int i = 0; i < BATCH_COUNT && current < tileSize; ++i, ++current) {
+            CompoundNBT tag = (CompoundNBT) tileEntities.get(current);
+            int[] pos = checkTag(tag, "Pos", IntArrayNBT.class).getAsIntArray();
+            final BlockPos pt = new BlockPos(pos[0], pos[1], pos[2]);
+            tag.put("x", IntNBT.valueOf(pt.getX()));
+            tag.put("y", IntNBT.valueOf(pt.getY()));
+            tag.put("z", IntNBT.valueOf(pt.getZ()));
+            tag.put("id", tag.get("Id"));
+            tag.remove("Id");
+            tag.remove("Pos");
+            if (fixer != null) {
+                tag = fixer.fixUp(ForgeDataFixer.FixTypes.BLOCK_ENTITY, tag.copy(), dataVersion);
+            }
+            tileEntitiesMap.put(pt, tag);
+        }
+
+        notifyProgress("TileEntity 읽는 중...", 0.1 + 0.3 * current / tileSize);
+        return current < tileSize;
+    }
+
+    private boolean readBlocks() {
+        if (current == 0) {
+            blockByteOffset = 0;
+        }
+
+        int value;
+        int varIntLength;
 
         byte[] blocks = checkTag(schematic, "BlockData", ByteArrayNBT.class).getAsByteArray();
-
-        Map<BlockPos, CompoundNBT> tileEntitiesMap = new HashMap<>();
-        ListNBT tileEntities = getTag(schematic, "BlockEntities", ListNBT.class);
-        if (tileEntities == null) {
-            tileEntities = getTag(schematic, "TileEntities", ListNBT.class);
-        }
-
-        current = 0;
-        if (tileEntities != null) {
-            for (INBT tileEntity : tileEntities) {
-                CompoundNBT tag = (CompoundNBT) tileEntity;
-                int[] pos = checkTag(tag, "Pos", IntArrayNBT.class).getAsIntArray();
-                final BlockPos pt = new BlockPos(pos[0], pos[1], pos[2]);
-                tag.put("x", IntNBT.valueOf(pt.getX()));
-                tag.put("y", IntNBT.valueOf(pt.getY()));
-                tag.put("z", IntNBT.valueOf(pt.getZ()));
-                tag.put("id", tag.get("Id"));
-                tag.remove("Id");
-                tag.remove("Pos");
-                if (fixer != null) {
-                    tag = fixer.fixUp(ForgeDataFixer.FixTypes.BLOCK_ENTITY, tag.copy(), dataVersion);
-                }
-                tileEntitiesMap.put(pt, tag);
-                notifyProgress("TileEntity 읽는 중...", 0.1 + 0.3 * (current++) / tileEntities.size());
-            }
-        }
-
-        SchematicContainer schem = new SchematicContainer(new BlockPos(width, height, length));
-
-        int index = 0;
-        int i = 0;
-        int value;
-        int varintLength;
-
-        while (i < blocks.length) {
+        for (int i = 0; i < BATCH_COUNT && blockByteOffset < blocks.length; ++i, ++current) {
             value = 0;
-            varintLength = 0;
+            varIntLength = 0;
 
             while (true) {
-                value |= (blocks[i] & 127) << (varintLength++ * 7);
-                if (varintLength > 5) {
+                value |= (blocks[blockByteOffset] & 127) << (varIntLength++ * 7);
+                if (varIntLength > 5) {
                     throw new IllegalArgumentException("VarInt too big (probably corrupted data)");
                 }
-                if ((blocks[i] & 128) != 128) {
-                    i++;
+                if ((blocks[blockByteOffset] & 128) != 128) {
+                    blockByteOffset++;
                     break;
                 }
-                i++;
+                blockByteOffset++;
             }
 
-            // index = (y * length * width) + (z * width) + x
-            int y = index / (width * length);
-            int z = (index % (width * length)) / width;
-            int x = (index % (width * length)) % width;
+            int y = current / (width * length);
+            int z = (current % (width * length)) / width;
+            int x = (current % (width * length)) % width;
             BlockState state = palette.get(value);
             BlockPos pt = new BlockPos(x, y, z);
             if (tileEntitiesMap.containsKey(pt)) {
-                schem.setBlock(pt, state, tileEntitiesMap.get(pt).copy());
+                result.setBlock(pt, state, tileEntitiesMap.get(pt).copy());
             } else {
-                schem.setBlock(pt, state, null);
+                result.setBlock(pt, state, null);
             }
-            notifyProgress("Block 읽는 중...", 0.4 + 0.59 * (index++) / blocks.length);
         }
 
-        return schem;
+        notifyProgress("Block 읽는 중...", 0.4 + 0.59 * current / blocks.length);
+        return blockByteOffset < blocks.length;
     }
 
-    private SchematicContainer readVersion2(SchematicContainer version1) {
-        if (schematic.contains("Entities")) {
-            notifyProgress("Entity 읽는 중...", 0.99);
-            readEntities(version1);
+    private boolean readEntities() {
+        if (!schematic.contains("Entities")) {
+            return false;
         }
-        return version1;
-    }
 
-    private void readEntities(SchematicContainer schem) {
         ListNBT entList = checkTag(schematic, "Entities", ListNBT.class);
+        notifyProgress("Entity 읽는 중...", 0.99);
         if (entList.isEmpty()) {
-            return;
+            return false;
         }
         for (INBT et : entList) {
             if (!(et instanceof CompoundNBT)) {
@@ -201,7 +232,8 @@ class SpongeSchematicReader extends AbstractSchematicReader {
                 entityTag = fixer.fixUp(ForgeDataFixer.FixTypes.ENTITY, entityTag, dataVersion);
             }
 
-            schem.addEntity(entityTag);
+            result.addEntity(entityTag);
         }
+        return false;
     }
 }

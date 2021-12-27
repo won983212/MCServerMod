@@ -32,11 +32,16 @@ import net.minecraftforge.common.util.Constants;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Supplier;
 
 /**
  * Reads schematic files that are compatible with MCEdit and other editors.
  */
 class MCEditSchematicReader extends AbstractSchematicReader {
+
+    private enum ParseStage {
+        METADATA, BLOCKS, TILES, STORE_BLOCKS, STORE_ENTITIES
+    }
 
     private static final ImmutableList<NBTCompatibilityHandler> COMPATIBILITY_HANDLERS
             = ImmutableList.of(
@@ -54,16 +59,32 @@ class MCEditSchematicReader extends AbstractSchematicReader {
             new Pre13HangingCompatibilityHandler()
     );
 
-    private BlockState[] palette = new BlockState[1 << 16];
+    private byte[] blockId;
+    private byte[] addId;
+    private List<INBT> tileEntities;
+    private Set<Integer> unknownBlocks;
+
+    private BlockState[] palette;
     private short[] blocks;
     private byte[] blockData;
     private int width, height, length;
     private Map<BlockPos, CompoundNBT> tileEntitiesMap;
     private Map<BlockPos, BlockState> blockStates;
 
+    private final EnumMap<ParseStage, Supplier<Boolean>> parsePasses;
+    private ParseStage parseStage;
+    private int current = 0;
 
-    public MCEditSchematicReader(File file) throws IOException {
+
+    public MCEditSchematicReader(File file) {
         super(file);
+        this.parseStage = ParseStage.METADATA;
+        this.parsePasses = new EnumMap<>(ParseStage.class);
+        this.parsePasses.put(ParseStage.METADATA, this::parseMetadata);
+        this.parsePasses.put(ParseStage.BLOCKS, this::parseBlocks);
+        this.parsePasses.put(ParseStage.TILES, this::parseTileEntities);
+        this.parsePasses.put(ParseStage.STORE_BLOCKS, this::addBlocks);
+        this.parsePasses.put(ParseStage.STORE_ENTITIES, this::addEntities);
     }
 
     protected BlockPos parseSize() {
@@ -91,7 +112,8 @@ class MCEditSchematicReader extends AbstractSchematicReader {
         }
     }
 
-    private BlockState[] parsePalette() {
+    private void parsePalette() {
+        palette = new BlockState[1 << 16];
         if (schematic.contains("SchematicMapping", Constants.NBT.TAG_COMPOUND)) {
             Logger.warn("This file is not supported file. It will be not loaded successfully.");
         } else if (schematic.contains("SchematicaMapping", Constants.NBT.TAG_COMPOUND)) {
@@ -132,46 +154,49 @@ class MCEditSchematicReader extends AbstractSchematicReader {
                 }
             }
         }
-        return palette;
     }
 
-    private void parseBlocks() {
-        byte[] blockId = checkTag(schematic, "Blocks", ByteArrayNBT.class).getAsByteArray();
-        this.blockData = checkTag(schematic, "Data", ByteArrayNBT.class).getAsByteArray();
-        this.blocks = new short[blockId.length]; // Have to later combine IDs
+    private boolean parseBlocks() {
+        if (current == 0) {
+            this.blockId = checkTag(schematic, "Blocks", ByteArrayNBT.class).getAsByteArray();
+            this.blockData = checkTag(schematic, "Data", ByteArrayNBT.class).getAsByteArray();
+            this.blocks = new short[blockId.length]; // Have to later combine IDs
 
-        // We support 4096 block IDs using the same method as vanilla Minecraft, where
-        // the highest 4 bits are stored in a separate byte array.
-        byte[] addId = new byte[0];
-        if (schematic.contains("AddBlocks")) {
-            addId = checkTag(schematic, "AddBlocks", ByteArrayNBT.class).getAsByteArray();
+            // We support 4096 block IDs using the same method as vanilla Minecraft, where
+            // the highest 4 bits are stored in a separate byte array.
+            this.addId = new byte[0];
+            if (schematic.contains("AddBlocks")) {
+                addId = checkTag(schematic, "AddBlocks", ByteArrayNBT.class).getAsByteArray();
+            }
         }
 
         // Combine the AddBlocks data with the first 8-bit block ID
-        for (int index = 0; index < blockId.length; index++) {
-            if ((index >> 1) >= addId.length) { // No corresponding AddBlocks index
-                blocks[index] = (short) (blockId[index] & 0xFF);
+        for (int i = 0; i < BATCH_COUNT && current < blockId.length; ++i, ++current) {
+            if ((current >> 1) >= addId.length) { // No corresponding AddBlocks index
+                blocks[current] = (short) (blockId[current] & 0xFF);
             } else {
-                if ((index & 1) == 0) {
-                    blocks[index] = (short) (((addId[index >> 1] & 0x0F) << 8) + (blockId[index] & 0xFF));
+                if ((current & 1) == 0) {
+                    blocks[current] = (short) (((addId[current >> 1] & 0x0F) << 8) + (blockId[current] & 0xFF));
                 } else {
-                    blocks[index] = (short) (((addId[index >> 1] & 0xF0) << 4) + (blockId[index] & 0xFF));
+                    blocks[current] = (short) (((addId[current >> 1] & 0xF0) << 4) + (blockId[current] & 0xFF));
                 }
             }
-            notifyProgress("Block 읽는 중...", 0.1 + 0.2 * index / blockId.length);
         }
+
+        notifyProgress("Block 읽는 중...", 0.1 + 0.2 * current / blockId.length);
+        return current < blockId.length;
     }
 
-    private void parseTileEntities() {
-        // Need to pull out tile entities
-        final ListNBT tileEntityTag = getTag(schematic, "TileEntities", ListNBT.class);
-        List<INBT> tileEntities = tileEntityTag == null ? new ArrayList<>() : tileEntityTag;
-        this.tileEntitiesMap = new HashMap<>();
-        this.blockStates = new HashMap<>();
+    private boolean parseTileEntities() {
+        if (current == 0) {
+            final ListNBT tileEntityTag = getTag(schematic, "TileEntities", ListNBT.class);
+            this.tileEntities = tileEntityTag == null ? new ArrayList<>() : tileEntityTag;
+            this.tileEntitiesMap = new HashMap<>();
+            this.blockStates = new HashMap<>();
+        }
 
-        long current = 0;
-        for (INBT tag : tileEntities) {
-            notifyProgress("TileEntity 데이터 읽는 중...", 0.3 + 0.2 * (current++) / tileEntities.size());
+        for (int i = 0; i < BATCH_COUNT && current < tileEntities.size(); ++i, ++current) {
+            INBT tag = tileEntities.get(i);
             if (!(tag instanceof CompoundNBT)) {
                 continue;
             }
@@ -221,48 +246,54 @@ class MCEditSchematicReader extends AbstractSchematicReader {
             }
             blockStates.put(vec, newBlock);
         }
-    }
 
-    private void addBlocks() {
-        Set<Integer> unknownBlocks = new HashSet<>();
-        long total = (long) width * height * length;
-        long current = 0;
-
-        for (int y = 0; y < height; ++y) {
-            for (int x = 0; x < width; ++x) {
-                for (int z = 0; z < length; ++z) {
-                    int index = y * width * length + z * width + x;
-                    BlockPos pt = new BlockPos(x, y, z);
-                    BlockState state = blockStates.get(pt);
-                    short block = blocks[index];
-                    byte data = blockData[index];
-
-                    if (state == null) {
-                        state = palette[(block << 4) | data];
-                        blockStates.put(pt, state);
-                    }
-
-                    if (state == null) {
-                        if (unknownBlocks.add(block << 8 | data)) {
-                            Logger.warn("Unknown block when loading schematic: "
-                                    + block + ":" + data + ". This is most likely a bad schematic.");
-                        }
-                        continue;
-                    }
-
-                    CompoundNBT blockNBT = null;
-                    if (tileEntitiesMap.containsKey(pt)) {
-                        blockNBT = tileEntitiesMap.get(pt).copy();
-                    }
-
-                    result.setBlock(pt, state, blockNBT);
-                    notifyProgress("Block 읽는 중...", 0.5 + 0.45 * (current++) / total);
-                }
-            }
+        if (tileEntities.size() > 0) {
+            notifyProgress("TileEntity 데이터 읽는 중...", 0.3 + 0.2 * current / tileEntities.size());
         }
+        return current < tileEntities.size();
     }
 
-    private void addEntities() {
+    private boolean addBlocks() {
+        if (current == 0) {
+            this.unknownBlocks = new HashSet<>();
+        }
+
+        int total = width * height * length;
+        for (int i = 0; i < BATCH_COUNT && current < total; ++i, ++current) {
+            int y = current / (width * length);
+            int z = (current % (width * length)) / width;
+            int x = (current % (width * length)) % width;
+
+            BlockPos pt = new BlockPos(x, y, z);
+            BlockState state = blockStates.get(pt);
+            int blockIdMeta = (blocks[current] << 4) | blockData[current];
+
+            if (state == null) {
+                state = palette[blockIdMeta];
+                blockStates.put(pt, state);
+            }
+
+            if (state == null) {
+                if (unknownBlocks.add(blockIdMeta)) {
+                    Logger.warn("Unknown block when loading schematic: "
+                            + blocks[current] + ":" + blockData[current] + ". This is most likely a bad schematic.");
+                }
+                continue;
+            }
+
+            CompoundNBT blockNBT = null;
+            if (tileEntitiesMap.containsKey(pt)) {
+                blockNBT = tileEntitiesMap.get(pt).copy();
+            }
+
+            result.setBlock(pt, state, blockNBT);
+        }
+
+        notifyProgress("Block 읽는 중...", 0.5 + 0.45 * current / total);
+        return current < total;
+    }
+
+    private boolean addEntities() {
         ListNBT entityList = getTag(schematic, "Entities", ListNBT.class);
         if (entityList != null) {
             long current = 0;
@@ -283,10 +314,10 @@ class MCEditSchematicReader extends AbstractSchematicReader {
                 notifyProgress("Entity 읽는 중...", 0.95 + 0.04 * (current++) / entityList.size());
             }
         }
+        return false;
     }
 
-    @Override
-    public boolean parsePartial() {
+    private boolean parseMetadata() {
         notifyProgress("NBT 데이터 읽는 중...", 0);
 
         // Check
@@ -300,20 +331,27 @@ class MCEditSchematicReader extends AbstractSchematicReader {
             throw new IllegalArgumentException("Schematic file is not an Alpha schematic");
         }
 
-        // Template size
         BlockPos size = parseSize();
         this.width = size.getX();
         this.height = size.getY();
         this.length = size.getZ();
-
-        result = new SchematicContainer(size);
-        palette = parsePalette();
-
-        parseBlocks();
-        parseTileEntities();
-        addBlocks();
-        addEntities();
+        this.result = new SchematicContainer(size);
+        parsePalette();
         return false;
+    }
+
+    @Override
+    public boolean parsePartial() {
+        Supplier<Boolean> pass = parsePasses.get(parseStage);
+        if (!pass.get()) {
+            if (parseStage == ParseStage.STORE_ENTITIES) {
+                notifyProgress("Entity 읽는 중...", 1);
+                return false;
+            }
+            parseStage = ParseStage.values()[parseStage.ordinal() + 1];
+            current = 0;
+        }
+        return true;
     }
 
     protected String convertEntityId(String id) {

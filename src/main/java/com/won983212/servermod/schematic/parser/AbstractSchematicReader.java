@@ -1,5 +1,6 @@
 package com.won983212.servermod.schematic.parser;
 
+import com.won983212.servermod.Logger;
 import com.won983212.servermod.schematic.IProgressEvent;
 import com.won983212.servermod.schematic.container.SchematicContainer;
 import com.won983212.servermod.task.IAsyncTask;
@@ -14,6 +15,7 @@ import java.util.zip.GZIPInputStream;
 //TODO litemetic 파일도 parser 만들자
 @SuppressWarnings("unchecked")
 public abstract class AbstractSchematicReader implements IAsyncTask<SchematicContainer> {
+    public static final int BATCH_COUNT = 1000;
     private IProgressEvent progressEvent;
     private Consumer<SchematicContainer> completeEvent;
     protected CompoundNBT schematic;
@@ -65,6 +67,7 @@ public abstract class AbstractSchematicReader implements IAsyncTask<SchematicCon
 
     protected void notifyProgress(String status, double progress) {
         IProgressEvent.safeFire(progressEvent, status, progress);
+        Logger.debug(status + ": " + progress);
     }
 
     protected static <T extends INBT> T checkTag(CompoundNBT nbt, String key, Class<T> expected) {

@@ -32,7 +32,7 @@ import net.minecraftforge.common.util.Constants;
 // TODO 큰거 설치하면 랙 ㅈㄴ걸림;; (async화 이후 해결)
 public class SchematicPrinter implements IAsyncNoResultTask {
 
-    public enum PrintStage {
+    private enum PrintStage {
         ERROR, LOAD_SCHEMATIC, BLOCKS, UPDATING, ENTITIES
     }
 
