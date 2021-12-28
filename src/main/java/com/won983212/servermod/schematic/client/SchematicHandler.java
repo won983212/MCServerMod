@@ -25,6 +25,7 @@ import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.gen.feature.template.PlacementSettings;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class SchematicHandler {
@@ -66,6 +67,7 @@ public class SchematicHandler {
             transformation.tick();
         }
 
+        ItemStack prevStack = activeSchematicItem;
         ItemStack stack = findBlueprintInHand(player);
         if (stack == null) {
             active = false;
@@ -82,9 +84,10 @@ public class SchematicHandler {
             return;
         }
 
+        boolean differentItemStack = prevStack != null && !ItemStack.tagMatches(stack, prevStack);
         boolean needsUpdate = !stack.getTag().getString("File").equals(displayedSchematic);
-        if (!active || needsUpdate) {
-            init(player, stack, needsUpdate);
+        if (!active || needsUpdate || differentItemStack) {
+            init(stack, needsUpdate);
         }
 
         if (syncCooldown > 0) {
@@ -98,7 +101,7 @@ public class SchematicHandler {
         currentTool.getTool().updateSelection();
     }
 
-    private void init(ClientPlayerEntity player, ItemStack stack, boolean needsRendererUpdate) {
+    private void init(ItemStack stack, boolean needsRendererUpdate) {
         loadSettings(stack);
         displayedSchematic = stack.getTag().getString("File");
         active = true;
@@ -107,7 +110,7 @@ public class SchematicHandler {
                 rendererManager.setCurrentSchematic(activeSchematicItem);
             }
             Tools toolBefore = currentTool;
-            selectionScreen = new ToolSelectionScreen(Tools.getTools(player.isCreative()), this::equip);
+            selectionScreen = new ToolSelectionScreen(Arrays.asList(Tools.values()), this::equip);
             if (toolBefore != null) {
                 selectionScreen.setSelectedElement(toolBefore);
                 equip(toolBefore);
@@ -252,8 +255,7 @@ public class SchematicHandler {
 
     public void deploy() {
         if (!deployed) {
-            List<Tools> tools = Tools.getTools(Minecraft.getInstance().player.isCreative());
-            selectionScreen = new ToolSelectionScreen(tools, this::equip);
+            selectionScreen = new ToolSelectionScreen(Arrays.asList(Tools.values()), this::equip);
             rendererManager.setCurrentSchematic(activeSchematicItem);
         }
         deployed = true;

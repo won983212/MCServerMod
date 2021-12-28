@@ -17,6 +17,7 @@ import com.won983212.servermod.task.*;
 import com.won983212.servermod.utility.animate.AnimationTickHolder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.Mirror;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.gen.feature.template.PlacementSettings;
@@ -26,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 public class SchematicRendererManager implements IProgressEntryProducer {
 
-    private static final Cache<ItemStack, SchematicRenderer[]> rendererCache;
+    private static final Cache<String, SchematicRenderer[]> rendererCache;
     private final ConcurrentHashMap<String, LoadingEntry> loadingEntries;
     private ItemStack currentStack;
     private SchematicRenderer[] renderers;
@@ -59,15 +60,21 @@ public class SchematicRendererManager implements IProgressEntryProducer {
     }
 
     public void setCurrentSchematic(ItemStack activeSchematicItem) {
-        currentStack = activeSchematicItem;
         if (activeSchematicItem == null) {
             this.renderers = null;
             return;
         }
 
-        final String schematicFilePath = activeSchematicItem.getTag().getString("File");
+        CompoundNBT tag = activeSchematicItem.getTag();
+        if (tag == null) {
+            return;
+        }
+
+        final String schematicFilePath = tag.getString("File");
+        currentStack = activeSchematicItem;
+
         if (loadingEntries.containsKey(schematicFilePath)) {
-            this.renderers = null;
+            renderers = null;
             Logger.debug("Already loading file: " + schematicFilePath);
             return;
         }
@@ -75,7 +82,7 @@ public class SchematicRendererManager implements IProgressEntryProducer {
         LoadingEntry loadingEntry = new LoadingEntry(schematicFilePath);
         loadingEntries.put(schematicFilePath, loadingEntry);
 
-        this.renderers = rendererCache.getIfPresent(activeSchematicItem);
+        renderers = rendererCache.getIfPresent(schematicFilePath);
         if (renderers == null) {
             final IAsyncTask<SchematicContainer> task0 =
                     SchematicFileParser.parseSchematicFromItemAsync(activeSchematicItem, (s, p) -> loadingEntry.onProgress(s, 0.4 * p));
@@ -93,10 +100,11 @@ public class SchematicRendererManager implements IProgressEntryProducer {
                     })
                     .thenAccept((newRenderers) -> {
                         loadingEntries.remove(schematicFilePath);
-                        if (currentStack == activeSchematicItem) {
-                            this.renderers = newRenderers;
+                        String currentSchematicFilePath = activeSchematicItem.getTag().getString("File");
+                        if (currentSchematicFilePath.equals(schematicFilePath)) {
+                            renderers = newRenderers;
                         }
-                        rendererCache.put(activeSchematicItem, newRenderers);
+                        rendererCache.put(schematicFilePath, newRenderers);
                     });
         } else {
             Logger.debug("in cache: " + schematicFilePath);
@@ -143,7 +151,7 @@ public class SchematicRendererManager implements IProgressEntryProducer {
         }
 
         Logger.debug("Placing " + rendererIndex + " schematic...");
-        SchematicWorld world = new SchematicWorld(Minecraft.getInstance().level);
+        SchematicWorld world = new SchematicWorld(Minecraft.getInstance().level, schematic.getSize());
         SchematicPrinter printer = SchematicPrinter.newPlacingSchematicTask(schematic, world, position, pSettings, (s, p) -> event.onProgress(s, 0.7 * p))
                 .includeAir(false);
         return TaskScheduler.addAsyncTask(printer)

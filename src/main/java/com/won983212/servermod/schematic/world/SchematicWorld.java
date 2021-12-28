@@ -1,6 +1,7 @@
 package com.won983212.servermod.schematic.world;
 
 import com.won983212.servermod.Logger;
+import com.won983212.servermod.schematic.container.SchematicBlockStorage;
 import com.won983212.servermod.schematic.container.SchematicContainer;
 import com.won983212.servermod.schematic.world.chunk.WrappedChunkProvider;
 import net.minecraft.block.AbstractFurnaceBlock;
@@ -26,29 +27,26 @@ import net.minecraft.world.server.ServerWorld;
 import java.util.*;
 import java.util.function.Predicate;
 
-// TODO 성능 개선
 public class SchematicWorld extends WrappedWorld implements IServerWorld {
 
-    protected final Map<BlockPos, BlockState> blocks;
+    protected final SchematicBlockStorage storage;
     protected final Map<BlockPos, TileEntity> tileEntities;
-    protected final List<TileEntity> renderedTileEntities;
     protected final List<Entity> entities;
     protected final MutableBoundingBox bounds;
 
     public final BlockPos anchor;
 
-    public SchematicWorld(World original) {
-        this(BlockPos.ZERO, original);
+    public SchematicWorld(World original, BlockPos size) {
+        this(BlockPos.ZERO, size, original);
     }
 
-    public SchematicWorld(BlockPos anchor, World original) {
+    public SchematicWorld(BlockPos anchor, BlockPos size, World original) {
         super(original, new WrappedChunkProvider());
-        this.blocks = new HashMap<>();
+        this.storage = new SchematicBlockStorage(size);
         this.tileEntities = new HashMap<>();
         this.bounds = new MutableBoundingBox();
         this.anchor = anchor;
         this.entities = new ArrayList<>();
-        this.renderedTileEntities = new ArrayList<>();
     }
 
     @Override
@@ -72,7 +70,7 @@ public class SchematicWorld extends WrappedWorld implements IServerWorld {
         if (tileEntities.containsKey(pos)) {
             return tileEntities.get(pos);
         }
-        if (!blocks.containsKey(pos.subtract(anchor))) {
+        if (!storage.isInBounds(pos.subtract(anchor))) {
             return null;
         }
 
@@ -83,7 +81,6 @@ public class SchematicWorld extends WrappedWorld implements IServerWorld {
                 if (tileEntity != null) {
                     onTEadded(tileEntity, pos);
                     tileEntities.put(pos, tileEntity);
-                    renderedTileEntities.add(tileEntity);
                 }
                 return tileEntity;
             } catch (Exception e) {
@@ -104,8 +101,8 @@ public class SchematicWorld extends WrappedWorld implements IServerWorld {
         if (pos.getY() - bounds.y0 == -1) {
             return Blocks.GRASS_BLOCK.defaultBlockState();
         }
-        if (getBounds().isInside(pos) && blocks.containsKey(pos)) {
-            return processBlockStateForPrinting(blocks.get(pos));
+        if (getBounds().isInside(pos) && storage.isInBounds(pos)) {
+            return processBlockStateForPrinting(storage.getBlock(pos));
         }
         return SchematicContainer.AIR_BLOCK_STATE;
     }
@@ -164,13 +161,12 @@ public class SchematicWorld extends WrappedWorld implements IServerWorld {
     public boolean setBlock(BlockPos pos, BlockState arg1, int arg2) {
         pos = pos.immutable().subtract(anchor);
         bounds.expand(new MutableBoundingBox(pos, pos));
-        blocks.put(pos, arg1);
+        storage.setBlock(pos, arg1);
 
         if (tileEntities.containsKey(pos)) {
             TileEntity tileEntity = tileEntities.get(pos);
             if (!tileEntity.getType().isValid(arg1.getBlock())) {
                 tileEntities.remove(pos);
-                renderedTileEntities.remove(tileEntity);
             }
         }
 
@@ -201,7 +197,7 @@ public class SchematicWorld extends WrappedWorld implements IServerWorld {
     }
 
     public Iterable<TileEntity> getRenderedTileEntities() {
-        return renderedTileEntities;
+        return tileEntities.values();
     }
 
     protected BlockState processBlockStateForPrinting(BlockState state) {

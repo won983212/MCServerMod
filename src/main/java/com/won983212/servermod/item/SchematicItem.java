@@ -62,6 +62,12 @@ public class SchematicItem extends Item {
                 BlockPos size = NBTUtil.readBlockPos(nbt.getCompound("Bounds"));
                 tooltip.add(new StringTextComponent(TextFormatting.GRAY + "크기: " + size.getX() + ", " + size.getY() + ", " + size.getZ()));
             }
+            if (nbt.contains("Anchor", Constants.NBT.TAG_COMPOUND)) {
+                BlockPos pos = NBTUtil.readBlockPos(nbt.getCompound("Anchor"));
+                if (!pos.equals(BlockPos.ZERO)) {
+                    tooltip.add(new StringTextComponent(TextFormatting.GRAY + "위치: " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ()));
+                }
+            }
         } else {
             tooltip.add(Lang.translate("schematic.invalid").withStyle(TextFormatting.RED));
         }
