@@ -1,5 +1,7 @@
 package com.won983212.servermod.task;
 
+import com.won983212.servermod.Logger;
+
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -9,17 +11,29 @@ public class QueuedAsyncTask<T> {
     private Consumer<Exception> exceptionHandler;
     private CompleteResultTask<T, ?> completeTask;
     private boolean completed;
+    private int batchCount;
+    private IElasticAsyncTask<T> elasticTask;
 
 
     protected QueuedAsyncTask(IAsyncTask<T> task) {
-        this.task = task;
+        this.setTask(task);
         this.completed = false;
     }
 
     protected QueuedAsyncTask(int id) {
-        this.task = null;
-        this.completed = false;
+        this(null);
         this.groupId = id;
+    }
+
+    public QueuedAsyncTask<T> setTask(IAsyncTask<T> task) {
+        this.task = task;
+        if (task instanceof IElasticAsyncTask) {
+            this.elasticTask = (IElasticAsyncTask<T>) task;
+            this.batchCount = elasticTask.initialBatchCount();
+        } else {
+            this.elasticTask = null;
+        }
+        return this;
     }
 
     public QueuedAsyncTask<T> groupId(int id) {
@@ -73,7 +87,19 @@ public class QueuedAsyncTask<T> {
             return false;
         }
         try {
-            return task.tick();
+            if (elasticTask != null) {
+                long lastElapsedTime = System.currentTimeMillis();
+                boolean success = elasticTask.elasticTick(batchCount);
+                lastElapsedTime = System.currentTimeMillis() - lastElapsedTime;
+                if (lastElapsedTime < elasticTask.criteriaTime()) {
+                    batchCount <<= 1;
+                } else if (batchCount > 1) {
+                    batchCount >>= 1;
+                }
+                return success;
+            } else {
+                return task.tick();
+            }
         } catch (Exception e) {
             if (exceptionHandler != null) {
                 exceptionHandler.accept(e);
@@ -111,7 +137,7 @@ public class QueuedAsyncTask<T> {
         }
 
         public void apply(T result) {
-            completeTaskChainLink.task = completeTaskSupplier.apply(result);
+            completeTaskChainLink.setTask(completeTaskSupplier.apply(result));
         }
     }
 }

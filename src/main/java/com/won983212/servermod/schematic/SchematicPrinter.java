@@ -1,11 +1,12 @@
 package com.won983212.servermod.schematic;
 
 import com.won983212.servermod.Logger;
+import com.won983212.servermod.Settings;
 import com.won983212.servermod.item.SchematicItem;
 import com.won983212.servermod.schematic.container.SchematicContainer;
 import com.won983212.servermod.schematic.parser.SchematicFileParser;
-import com.won983212.servermod.task.IAsyncNoResultTask;
 import com.won983212.servermod.task.IAsyncTask;
+import com.won983212.servermod.task.IElasticAsyncTask;
 import com.won983212.servermod.task.TaskScheduler;
 import com.won983212.servermod.utility.EntityUtils;
 import net.minecraft.block.Block;
@@ -30,13 +31,11 @@ import net.minecraft.world.gen.feature.template.Template;
 import net.minecraftforge.common.util.Constants;
 
 // TODO 큰거 설치하면 랙 ㅈㄴ걸림;; (async화 이후 해결)
-public class SchematicPrinter implements IAsyncNoResultTask {
+public class SchematicPrinter implements IElasticAsyncTask<Void> {
 
     private enum PrintStage {
         ERROR, LOAD_SCHEMATIC, BLOCKS, UPDATING, ENTITIES
     }
-
-    public static final int BATCH_COUNT = 5000;
 
     private boolean isIncludeAir;
     private SchematicContainer blockReader;
@@ -89,7 +88,7 @@ public class SchematicPrinter implements IAsyncNoResultTask {
     }
 
     @Override
-    public boolean tick() {
+    public boolean elasticTick(int count) {
         if (printStage == PrintStage.ERROR) {
             return false;
         } else if (printStage == PrintStage.LOAD_SCHEMATIC) {
@@ -99,7 +98,7 @@ public class SchematicPrinter implements IAsyncNoResultTask {
             return true;
         } else if (printStage == PrintStage.BLOCKS || printStage == PrintStage.UPDATING) {
             boolean continued = true;
-            for (int i = 0; i < BATCH_COUNT && (continued = processed < total); i++) {
+            for (int i = 0; i < count && (continued = processed < total); i++) {
                 if (printStage == PrintStage.BLOCKS) {
                     placeBlock();
                     IProgressEvent.safeFire(event, "블록 설치중...", Math.min(0.6 * processed / total, 1.0));
@@ -257,5 +256,15 @@ public class SchematicPrinter implements IAsyncNoResultTask {
             return state.setValue(BlockStateProperties.WATERLOGGED, Boolean.FALSE);
         }
         return state;
+    }
+
+    @Override
+    public long criteriaTime() {
+        return Settings.CRITERIA_TIME_SCHEMATIC_PRINTER;
+    }
+
+    @Override
+    public Void getResult() {
+        return null;
     }
 }

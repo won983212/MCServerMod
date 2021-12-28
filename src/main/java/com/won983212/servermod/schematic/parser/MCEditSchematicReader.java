@@ -24,19 +24,17 @@ import com.won983212.servermod.LegacyMapper;
 import com.won983212.servermod.Logger;
 import com.won983212.servermod.schematic.container.SchematicContainer;
 import com.won983212.servermod.schematic.parser.legacycompat.*;
+import com.won983212.servermod.task.StagedTaskProcessor;
 import net.minecraft.block.BlockState;
 import net.minecraft.nbt.*;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.util.Constants;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.*;
-import java.util.function.Supplier;
 
-/**
- * Reads schematic files that are compatible with MCEdit and other editors.
- */
+// TODO Reading 버그가 좀 있네? (hotel.schematic) ElasticAsync해결하고 고쳐보자
+// fixer를 교체해보는 것도 좋을 것 같네.
 class MCEditSchematicReader extends AbstractSchematicReader {
 
     private enum ParseStage {
@@ -71,20 +69,21 @@ class MCEditSchematicReader extends AbstractSchematicReader {
     private Map<BlockPos, CompoundNBT> tileEntitiesMap;
     private Map<BlockPos, BlockState> blockStates;
 
-    private final EnumMap<ParseStage, Supplier<Boolean>> parsePasses;
-    private ParseStage parseStage;
+    private final StagedTaskProcessor<ParseStage> stageProcessor;
     private int current = 0;
 
 
     public MCEditSchematicReader(File file) {
         super(file);
-        this.parseStage = ParseStage.METADATA;
-        this.parsePasses = new EnumMap<>(ParseStage.class);
-        this.parsePasses.put(ParseStage.METADATA, this::parseMetadata);
-        this.parsePasses.put(ParseStage.BLOCKS, this::parseBlocks);
-        this.parsePasses.put(ParseStage.TILES, this::parseTileEntities);
-        this.parsePasses.put(ParseStage.STORE_BLOCKS, this::addBlocks);
-        this.parsePasses.put(ParseStage.STORE_ENTITIES, this::addEntities);
+        this.stageProcessor = new StagedTaskProcessor<>(ParseStage.class)
+                .stage(ParseStage.METADATA)
+                .nextStageEvent(() -> current = 0)
+                .completeEvent(() -> notifyProgress("읽는 중...", 1));
+        this.stageProcessor.addStageHandler(ParseStage.METADATA, this::parseMetadata);
+        this.stageProcessor.addStageHandler(ParseStage.BLOCKS, this::parseBlocks);
+        this.stageProcessor.addStageHandler(ParseStage.TILES, this::parseTileEntities);
+        this.stageProcessor.addStageHandler(ParseStage.STORE_BLOCKS, this::addBlocks);
+        this.stageProcessor.addStageHandler(ParseStage.STORE_ENTITIES, this::addEntities);
     }
 
     protected BlockPos parseSize() {
@@ -156,6 +155,30 @@ class MCEditSchematicReader extends AbstractSchematicReader {
         }
     }
 
+    private boolean parseMetadata() {
+        notifyProgress("NBT 데이터 읽는 중...", 0);
+
+        // Check
+        if (!schematic.contains("Blocks")) {
+            throw new IllegalArgumentException("Schematic file is missing a 'Blocks' tag");
+        }
+
+        // Check type of Schematic
+        String materials = schematic.getString("Materials");
+        if (!materials.equals("Alpha")) {
+            throw new IllegalArgumentException("Schematic file is not an Alpha schematic");
+        }
+
+        BlockPos size = parseSize();
+        this.width = size.getX();
+        this.height = size.getY();
+        this.length = size.getZ();
+        this.result = new SchematicContainer(size);
+
+        parsePalette();
+        return false;
+    }
+
     private boolean parseBlocks() {
         if (current == 0) {
             this.blockId = checkTag(schematic, "Blocks", ByteArrayNBT.class).getAsByteArray();
@@ -171,7 +194,7 @@ class MCEditSchematicReader extends AbstractSchematicReader {
         }
 
         // Combine the AddBlocks data with the first 8-bit block ID
-        for (int i = 0; i < BATCH_COUNT && current < blockId.length; ++i, ++current) {
+        for (int i = 0; i < batchCount && current < blockId.length; ++i, ++current) {
             if ((current >> 1) >= addId.length) { // No corresponding AddBlocks index
                 blocks[current] = (short) (blockId[current] & 0xFF);
             } else {
@@ -195,7 +218,7 @@ class MCEditSchematicReader extends AbstractSchematicReader {
             this.blockStates = new HashMap<>();
         }
 
-        for (int i = 0; i < BATCH_COUNT && current < tileEntities.size(); ++i, ++current) {
+        for (int i = 0; i < batchCount && current < tileEntities.size(); ++i, ++current) {
             INBT tag = tileEntities.get(i);
             if (!(tag instanceof CompoundNBT)) {
                 continue;
@@ -259,7 +282,7 @@ class MCEditSchematicReader extends AbstractSchematicReader {
         }
 
         int total = width * height * length;
-        for (int i = 0; i < BATCH_COUNT && current < total; ++i, ++current) {
+        for (int i = 0; i < batchCount && current < total; ++i, ++current) {
             int y = current / (width * length);
             int z = (current % (width * length)) / width;
             int x = (current % (width * length)) % width;
@@ -317,41 +340,9 @@ class MCEditSchematicReader extends AbstractSchematicReader {
         return false;
     }
 
-    private boolean parseMetadata() {
-        notifyProgress("NBT 데이터 읽는 중...", 0);
-
-        // Check
-        if (!schematic.contains("Blocks")) {
-            throw new IllegalArgumentException("Schematic file is missing a 'Blocks' tag");
-        }
-
-        // Check type of Schematic
-        String materials = schematic.getString("Materials");
-        if (!materials.equals("Alpha")) {
-            throw new IllegalArgumentException("Schematic file is not an Alpha schematic");
-        }
-
-        BlockPos size = parseSize();
-        this.width = size.getX();
-        this.height = size.getY();
-        this.length = size.getZ();
-        this.result = new SchematicContainer(size);
-        parsePalette();
-        return false;
-    }
-
     @Override
     public boolean parsePartial() {
-        Supplier<Boolean> pass = parsePasses.get(parseStage);
-        if (!pass.get()) {
-            if (parseStage == ParseStage.STORE_ENTITIES) {
-                notifyProgress("Entity 읽는 중...", 1);
-                return false;
-            }
-            parseStage = ParseStage.values()[parseStage.ordinal() + 1];
-            current = 0;
-        }
-        return true;
+        return stageProcessor.tick();
     }
 
     protected String convertEntityId(String id) {

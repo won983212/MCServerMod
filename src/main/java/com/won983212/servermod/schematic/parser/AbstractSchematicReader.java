@@ -1,9 +1,10 @@
 package com.won983212.servermod.schematic.parser;
 
 import com.won983212.servermod.Logger;
+import com.won983212.servermod.Settings;
 import com.won983212.servermod.schematic.IProgressEvent;
 import com.won983212.servermod.schematic.container.SchematicContainer;
-import com.won983212.servermod.task.IAsyncTask;
+import com.won983212.servermod.task.IElasticAsyncTask;
 import net.minecraft.nbt.*;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.util.Constants;
@@ -14,8 +15,8 @@ import java.util.zip.GZIPInputStream;
 
 //TODO litemetic 파일도 parser 만들자
 @SuppressWarnings("unchecked")
-public abstract class AbstractSchematicReader implements IAsyncTask<SchematicContainer> {
-    public static final int BATCH_COUNT = 1000;
+public abstract class AbstractSchematicReader implements IElasticAsyncTask<SchematicContainer> {
+    protected int batchCount = 1;
     private IProgressEvent progressEvent;
     private Consumer<SchematicContainer> completeEvent;
     protected CompoundNBT schematic;
@@ -36,9 +37,9 @@ public abstract class AbstractSchematicReader implements IAsyncTask<SchematicCon
     }
 
     @Override
-    public boolean tick() {
-        boolean isContinue;
-        isContinue = parsePartial();
+    public boolean elasticTick(int count) {
+        batchCount = count;
+        boolean isContinue = parsePartial();
         if (!isContinue) {
             if (result != null && completeEvent != null) {
                 completeEvent.accept(result);
@@ -46,6 +47,11 @@ public abstract class AbstractSchematicReader implements IAsyncTask<SchematicCon
             return false;
         }
         return true;
+    }
+
+    @Override
+    public long criteriaTime() {
+        return Settings.CRITERIA_TIME_SCHEMATIC_PARSER;
     }
 
     private static CompoundNBT readNBT(File file) {

@@ -150,7 +150,7 @@ public class SchematicRendererManager implements IProgressEntryProducer {
                 .then((c) -> cachingDrawBufferAsync(world, renderers, rendererIndex, (s, p) -> event.onProgress(s, 0.7 + 0.3 * p)));
     }
 
-    private IAsyncNoResultTask cachingDrawBufferAsync(SchematicWorld world, SchematicRenderer[] renderers, int rendererIndex, IProgressEvent event) {
+    private IElasticAsyncTask<Void> cachingDrawBufferAsync(SchematicWorld world, SchematicRenderer[] renderers, int rendererIndex, IProgressEvent event) {
         Logger.debug("Draw buffer caching " + rendererIndex + " schematic...");
         return renderers[rendererIndex].newDrawingSchematicWorldTask(world, event);
     }

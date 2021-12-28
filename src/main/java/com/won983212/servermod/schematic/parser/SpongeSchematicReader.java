@@ -4,6 +4,7 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.won983212.servermod.Logger;
 import com.won983212.servermod.schematic.container.SchematicContainer;
+import com.won983212.servermod.task.StagedTaskProcessor;
 import net.minecraft.block.BlockState;
 import net.minecraft.command.arguments.BlockStateArgument;
 import net.minecraft.nbt.*;
@@ -11,11 +12,9 @@ import net.minecraft.util.SharedConstants;
 import net.minecraft.util.math.BlockPos;
 
 import java.io.File;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
 
 class SpongeSchematicReader extends AbstractSchematicReader {
 
@@ -34,20 +33,20 @@ class SpongeSchematicReader extends AbstractSchematicReader {
     private ListNBT tileEntities;
     private int blockByteOffset;
 
-    private final EnumMap<ParseStage, Supplier<Boolean>> parsePasses;
-    private ParseStage parseStage;
-    private ParseStage lastStage;
+    private final StagedTaskProcessor<ParseStage> stageProcessor;
     private int current = 0;
 
 
     public SpongeSchematicReader(File file) {
         super(file);
-        this.parseStage = ParseStage.METADATA;
-        this.parsePasses = new EnumMap<>(ParseStage.class);
-        this.parsePasses.put(ParseStage.METADATA, this::readMetadata);
-        this.parsePasses.put(ParseStage.TILES, this::readTileEntities);
-        this.parsePasses.put(ParseStage.BLOCKS, this::readBlocks);
-        this.parsePasses.put(ParseStage.ENTITIES, this::readEntities);
+        this.stageProcessor = new StagedTaskProcessor<>(ParseStage.class)
+                .stage(ParseStage.METADATA)
+                .nextStageEvent(() -> current = 0)
+                .completeEvent(() -> notifyProgress("읽는 중...", 1));
+        this.stageProcessor.addStageHandler(ParseStage.METADATA, this::readMetadata);
+        this.stageProcessor.addStageHandler(ParseStage.TILES, this::readTileEntities);
+        this.stageProcessor.addStageHandler(ParseStage.BLOCKS, this::readBlocks);
+        this.stageProcessor.addStageHandler(ParseStage.ENTITIES, this::readEntities);
     }
 
     @Override
@@ -60,16 +59,7 @@ class SpongeSchematicReader extends AbstractSchematicReader {
 
     @Override
     public boolean parsePartial() {
-        Supplier<Boolean> pass = parsePasses.get(parseStage);
-        if (!pass.get()) {
-            if (parseStage == lastStage) {
-                notifyProgress("읽는 중...", 1);
-                return false;
-            }
-            parseStage = ParseStage.values()[parseStage.ordinal() + 1];
-            current = 0;
-        }
-        return true;
+        return stageProcessor.tick();
     }
 
     private void readPalette() {
@@ -104,7 +94,7 @@ class SpongeSchematicReader extends AbstractSchematicReader {
         if (schematicVersion == 1) {
             dataVersion = 1631; // data version of 1.13.2. this is a relatively safe assumption unless someone imports a schematic from 1.12, e.g. sponge 7.1-
             fixer = new ForgeDataFixer(dataVersion);
-            lastStage = ParseStage.BLOCKS;
+            stageProcessor.finalStage(ParseStage.BLOCKS);
         } else if (schematicVersion == 2) {
             dataVersion = checkTag(schematic, "DataVersion", IntNBT.class).getAsInt();
             if (dataVersion < 0) {
@@ -119,7 +109,7 @@ class SpongeSchematicReader extends AbstractSchematicReader {
                 Logger.debug("Schematic was made in an older Minecraft version ("
                         + dataVersion + " < " + liveDataVersion + "), will attempt DFU.");
             }
-            lastStage = ParseStage.ENTITIES;
+            stageProcessor.finalStage(ParseStage.ENTITIES);
         } else {
             throw new IllegalArgumentException("This schematic version is currently not supported");
         }
@@ -147,7 +137,7 @@ class SpongeSchematicReader extends AbstractSchematicReader {
         }
 
         int tileSize = tileEntities.size();
-        for (int i = 0; i < BATCH_COUNT && current < tileSize; ++i, ++current) {
+        for (int i = 0; i < batchCount && current < tileSize; ++i, ++current) {
             CompoundNBT tag = (CompoundNBT) tileEntities.get(current);
             int[] pos = checkTag(tag, "Pos", IntArrayNBT.class).getAsIntArray();
             final BlockPos pt = new BlockPos(pos[0], pos[1], pos[2]);
@@ -176,7 +166,7 @@ class SpongeSchematicReader extends AbstractSchematicReader {
         int varIntLength;
 
         byte[] blocks = checkTag(schematic, "BlockData", ByteArrayNBT.class).getAsByteArray();
-        for (int i = 0; i < BATCH_COUNT && blockByteOffset < blocks.length; ++i, ++current) {
+        for (int i = 0; i < batchCount && blockByteOffset < blocks.length; ++i, ++current) {
             value = 0;
             varIntLength = 0;
 

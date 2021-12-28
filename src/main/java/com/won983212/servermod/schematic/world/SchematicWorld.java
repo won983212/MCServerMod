@@ -26,6 +26,7 @@ import net.minecraft.world.server.ServerWorld;
 import java.util.*;
 import java.util.function.Predicate;
 
+// TODO 성능 개선
 public class SchematicWorld extends WrappedWorld implements IServerWorld {
 
     protected final Map<BlockPos, BlockState> blocks;

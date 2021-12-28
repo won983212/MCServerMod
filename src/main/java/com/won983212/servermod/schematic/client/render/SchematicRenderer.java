@@ -2,11 +2,13 @@ package com.won983212.servermod.schematic.client.render;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.won983212.servermod.Logger;
+import com.won983212.servermod.Settings;
 import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
 import com.won983212.servermod.schematic.IProgressEvent;
 import com.won983212.servermod.schematic.client.SchematicTransformation;
 import com.won983212.servermod.schematic.world.SchematicWorld;
 import com.won983212.servermod.task.IAsyncNoResultTask;
+import com.won983212.servermod.task.IElasticAsyncTask;
 import com.won983212.servermod.utility.MatrixTransformStack;
 import com.won983212.servermod.utility.animate.AnimationTickHolder;
 import net.minecraft.client.Minecraft;
@@ -97,7 +99,7 @@ public class SchematicRenderer {
         return distance < renderDistance * renderDistance;
     }
 
-    public class WorldRedrawingTask implements IAsyncNoResultTask {
+    public class WorldRedrawingTask implements IElasticAsyncTask<Void> {
         private final int countX, countY, countZ;
         private final long total;
         private final IProgressEvent event;
@@ -117,22 +119,38 @@ public class SchematicRenderer {
         }
 
         @Override
-        public boolean tick() {
-            ChunkVertexBuffer chunk = new ChunkVertexBuffer(x, y, z);
-            if (!chunk.buildChunkBuffer(schematic, anchor)) {
-                return next();
-            }
-            chunks.add(chunk);
-            IProgressEvent.safeFire(event, "Chunk 불러오는 중...", (double) current / total);
-            return next();
+        public long criteriaTime() {
+            return Settings.CRITERIA_TIME_SCHEMATIC_RENDERER;
         }
 
-        private boolean next() {
+        @Override
+        public boolean elasticTick(int count) {
+            for (int i = 0; i < count && current < total; ++i, next()) {
+                ChunkVertexBuffer chunk = new ChunkVertexBuffer(x, y, z);
+                if (!chunk.buildChunkBuffer(schematic, anchor)) {
+                    continue;
+                }
+                chunks.add(chunk);
+                IProgressEvent.safeFire(event, "Chunk 불러오는 중...", (double) current / total);
+            }
+            return current < total;
+        }
+
+        private void next() {
             current++;
             x = (int) (current % countX);
             y = (int) (current / (countX * countZ));
             z = (int) ((current - y * countX * countZ) / countX);
-            return current < total;
+        }
+
+        @Override
+        public int initialBatchCount() {
+            return 10;
+        }
+
+        @Override
+        public Void getResult() {
+            return null;
         }
     }
 }

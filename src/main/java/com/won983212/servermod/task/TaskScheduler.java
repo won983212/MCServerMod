@@ -7,7 +7,6 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Stack;
 
-// TODO Elastic하게 async count를 조절하는 기능 추가
 public class TaskScheduler {
     private static final Stack<Integer> GROUP_ID_CONTEXT = new Stack<>();
     private static final Queue<QueuedAsyncTask<?>> TASK_WAITING_QUEUE = new LinkedList<>();
