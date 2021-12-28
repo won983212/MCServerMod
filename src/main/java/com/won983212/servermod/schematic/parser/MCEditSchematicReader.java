@@ -34,7 +34,6 @@ import net.minecraftforge.common.util.Constants;
 import java.io.File;
 import java.util.*;
 
-// TODO fixer를 교체해보는 것도 좋을 것 같네.
 class MCEditSchematicReader extends AbstractSchematicReader {
 
     private enum ParseStage {
@@ -49,7 +48,8 @@ class MCEditSchematicReader extends AbstractSchematicReader {
             new SkullBlockCompatibilityHandler(),
             new BannerBlockCompatibilityHandler(),
             new BedBlockCompatibilityHandler(),
-            new DoorBlockCompatibilityHandler()
+            new DoorBlockCompatibilityHandler(),
+            new CommandBlockCompatibilityHandler()
     );
 
     private static final ImmutableList<EntityNBTCompatibilityHandler> ENTITY_COMPATIBILITY_HANDLERS

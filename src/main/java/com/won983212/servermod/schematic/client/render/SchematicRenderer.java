@@ -119,7 +119,7 @@ public class SchematicRenderer {
         }
 
         @Override
-        public long criteriaTime() {
+        public long getCriteriaTime() {
             return Settings.CRITERIA_TIME_SCHEMATIC_RENDERER;
         }
 
@@ -144,7 +144,7 @@ public class SchematicRenderer {
         }
 
         @Override
-        public int initialBatchCount() {
+        public int getInitialBatchCount() {
             return 10;
         }
 

@@ -4,7 +4,7 @@ public interface IElasticAsyncTask<T> extends IAsyncTask<T> {
     /**
      * for milliseconds
      */
-    long criteriaTime();
+    long getCriteriaTime();
 
     boolean elasticTick(int count);
 
@@ -12,7 +12,11 @@ public interface IElasticAsyncTask<T> extends IAsyncTask<T> {
         return elasticTick(1);
     }
 
-    default int initialBatchCount() {
+    default int getInitialBatchCount() {
         return 10000;
+    }
+
+    default int getMaxBatchCount(){
+        return Integer.MAX_VALUE;
     }
 }

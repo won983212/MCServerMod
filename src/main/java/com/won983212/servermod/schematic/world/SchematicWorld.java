@@ -64,10 +64,6 @@ public class SchematicWorld extends WrappedWorld implements IServerWorld {
         return entities.add(entityIn);
     }
 
-    public List<Entity> getEntities() {
-        return entities;
-    }
-
     @Override
     public TileEntity getBlockEntity(BlockPos pos) {
         if (isOutsideBuildHeight(pos)) {

@@ -1,7 +1,5 @@
 package com.won983212.servermod.task;
 
-import com.won983212.servermod.Logger;
-
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -29,7 +27,7 @@ public class QueuedAsyncTask<T> {
         this.task = task;
         if (task instanceof IElasticAsyncTask) {
             this.elasticTask = (IElasticAsyncTask<T>) task;
-            this.batchCount = elasticTask.initialBatchCount();
+            this.batchCount = elasticTask.getInitialBatchCount();
         } else {
             this.elasticTask = null;
         }
@@ -91,9 +89,10 @@ public class QueuedAsyncTask<T> {
                 long lastElapsedTime = System.currentTimeMillis();
                 boolean success = elasticTask.elasticTick(batchCount);
                 lastElapsedTime = System.currentTimeMillis() - lastElapsedTime;
-                if (lastElapsedTime < elasticTask.criteriaTime()) {
-                    if ((batchCount << 1) > 0) {
-                        batchCount <<= 1;
+                if (lastElapsedTime < elasticTask.getCriteriaTime()) {
+                    int increased = batchCount << 1;
+                    if (increased > 0) {
+                        batchCount = Math.min(increased, elasticTask.getMaxBatchCount());
                     }
                 } else if (batchCount > 1) {
                     batchCount >>= 1;

@@ -50,7 +50,7 @@ public abstract class AbstractSchematicReader implements IElasticAsyncTask<Schem
     }
 
     @Override
-    public long criteriaTime() {
+    public long getCriteriaTime() {
         return Settings.CRITERIA_TIME_SCHEMATIC_PARSER;
     }
 

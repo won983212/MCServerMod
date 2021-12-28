@@ -57,7 +57,7 @@ public class CSchematicPlace implements IMessage {
                             sendSchematicMessage(player, "설치 완료했습니다.");
                         }
                     }
-                }).includeAir(includeAir);
+                }).includeAir(includeAir).maxBatchPlacing(10000);
 
                 TaskScheduler.addAsyncTask(printer)
                         .exceptionally((e) -> handleException(player, e));
