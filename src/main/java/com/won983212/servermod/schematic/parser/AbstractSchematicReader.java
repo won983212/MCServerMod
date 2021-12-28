@@ -73,7 +73,6 @@ public abstract class AbstractSchematicReader implements IElasticAsyncTask<Schem
 
     protected void notifyProgress(String status, double progress) {
         IProgressEvent.safeFire(progressEvent, status, progress);
-        Logger.debug(status + ": " + progress);
     }
 
     protected static <T extends INBT> T checkTag(CompoundNBT nbt, String key, Class<T> expected) {

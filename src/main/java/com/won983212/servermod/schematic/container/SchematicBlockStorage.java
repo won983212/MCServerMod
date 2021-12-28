@@ -3,6 +3,8 @@ package com.won983212.servermod.schematic.container;
 import net.minecraft.block.BlockState;
 import net.minecraft.util.math.BlockPos;
 
+import java.util.Arrays;
+
 public class SchematicBlockStorage {
     private final short[] data;
     private final BlockPalette palette;
@@ -15,6 +17,9 @@ public class SchematicBlockStorage {
         this.data = new short[len];
         this.palette = new BlockPalette();
         this.stride = sizeX * size.getZ();
+
+        short air = (short) palette.idFor(SchematicContainer.AIR_BLOCK_STATE);
+        Arrays.fill(data, air);
     }
 
     public void setBlock(BlockPos pos, BlockState state) {

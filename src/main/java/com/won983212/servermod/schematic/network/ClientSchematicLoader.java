@@ -1,6 +1,7 @@
 package com.won983212.servermod.schematic.network;
 
 import com.won983212.servermod.Logger;
+import com.won983212.servermod.Settings;
 import com.won983212.servermod.network.NetworkDispatcher;
 import com.won983212.servermod.schematic.IProgressEntry;
 import com.won983212.servermod.schematic.IProgressEntryProducer;
@@ -37,7 +38,7 @@ public class ClientSchematicLoader extends SchematicNetwork implements IProgress
         if (packetCycle-- > 0) {
             return;
         }
-        packetCycle = PACKET_DELAY;
+        packetCycle = Settings.PACKET_DELAY;
 
         for (String schematic : new HashSet<>(activeUploads.keySet())) {
             continueUpload(schematic);
@@ -79,7 +80,7 @@ public class ClientSchematicLoader extends SchematicNetwork implements IProgress
 
     private void continueUpload(String schematic) {
         if (activeUploads.containsKey(schematic)) {
-            final int maxPacketSize = SCHEMATIC_PACKET_SIZE;
+            final int maxPacketSize = Settings.SCHEMATIC_PACKET_SIZE;
             byte[] data = new byte[maxPacketSize];
             try {
                 SchematicUploadEntry ent = activeUploads.get(schematic);

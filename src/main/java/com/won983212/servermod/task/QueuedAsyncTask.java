@@ -92,7 +92,9 @@ public class QueuedAsyncTask<T> {
                 boolean success = elasticTask.elasticTick(batchCount);
                 lastElapsedTime = System.currentTimeMillis() - lastElapsedTime;
                 if (lastElapsedTime < elasticTask.criteriaTime()) {
-                    batchCount <<= 1;
+                    if ((batchCount << 1) > 0) {
+                        batchCount <<= 1;
+                    }
                 } else if (batchCount > 1) {
                     batchCount >>= 1;
                 }

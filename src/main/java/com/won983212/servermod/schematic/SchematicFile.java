@@ -1,7 +1,7 @@
 package com.won983212.servermod.schematic;
 
 import com.won983212.servermod.Logger;
-import com.won983212.servermod.schematic.network.ServerSchematicLoader;
+import com.won983212.servermod.Settings;
 import com.won983212.servermod.schematic.parser.SchematicFileParser;
 import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.fml.common.thread.SidedThreadGroups;
@@ -119,7 +119,7 @@ public class SchematicFile {
 
     public static Path getDirectoryPath(String owner) {
         if (Thread.currentThread().getThreadGroup() == SidedThreadGroups.SERVER) {
-            return Paths.get("schematics", ServerSchematicLoader.USER_SCHEMATIC_DIR_NAME, owner).toAbsolutePath();
+            return Paths.get("schematics", Settings.USER_SCHEMATIC_DIR_NAME, owner).toAbsolutePath();
         } else {
             return Paths.get("schematics").toAbsolutePath();
         }

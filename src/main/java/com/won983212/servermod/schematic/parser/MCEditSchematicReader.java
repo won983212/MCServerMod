@@ -26,6 +26,7 @@ import com.won983212.servermod.schematic.container.SchematicContainer;
 import com.won983212.servermod.schematic.parser.legacycompat.*;
 import com.won983212.servermod.task.StagedTaskProcessor;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.nbt.*;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.util.Constants;
@@ -33,8 +34,7 @@ import net.minecraftforge.common.util.Constants;
 import java.io.File;
 import java.util.*;
 
-// TODO Reading 버그가 좀 있네? (hotel.schematic) ElasticAsync해결하고 고쳐보자
-// fixer를 교체해보는 것도 좋을 것 같네.
+// TODO fixer를 교체해보는 것도 좋을 것 같네.
 class MCEditSchematicReader extends AbstractSchematicReader {
 
     private enum ParseStage {
@@ -294,6 +294,10 @@ class MCEditSchematicReader extends AbstractSchematicReader {
             if (state == null) {
                 state = palette[blockIdMeta];
                 blockStates.put(pt, state);
+            }
+
+            if (state == SchematicContainer.AIR_BLOCK_STATE) {
+                continue;
             }
 
             if (state == null) {

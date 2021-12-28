@@ -1,6 +1,7 @@
 package com.won983212.servermod.schematic.network;
 
 import com.won983212.servermod.Logger;
+import com.won983212.servermod.Settings;
 import com.won983212.servermod.item.SchematicItem;
 import com.won983212.servermod.network.IMessage;
 import com.won983212.servermod.network.NetworkDispatcher;
@@ -19,7 +20,6 @@ import java.util.*;
 import java.util.stream.Stream;
 
 public class ServerSchematicLoader extends SchematicNetwork {
-    public static final String USER_SCHEMATIC_DIR_NAME = "uploaded";
     private final Map<String, SchematicDownloadEntry> activeUploads;
 
 
@@ -28,7 +28,7 @@ public class ServerSchematicLoader extends SchematicNetwork {
     }
 
     public String getSchematicPath() {
-        return "schematics/" + USER_SCHEMATIC_DIR_NAME;
+        return "schematics/" + Settings.USER_SCHEMATIC_DIR_NAME;
     }
 
     public void tick() {
@@ -37,7 +37,7 @@ public class ServerSchematicLoader extends SchematicNetwork {
         for (String upload : activeUploads.keySet()) {
             SchematicDownloadEntry entry = activeUploads.get(upload);
 
-            if (entry.idleTime++ > SCHEMATIC_IDLE_TIMEOUT) {
+            if (entry.idleTime++ > Settings.SCHEMATIC_IDLE_TIMEOUT) {
                 Logger.warn("Schematic Upload timed out: " + upload);
                 deadEntries.add(upload);
             }
@@ -117,7 +117,7 @@ public class ServerSchematicLoader extends SchematicNetwork {
                 count = list.count();
             }
 
-            if (count >= MAX_SCHEMATICS) {
+            if (count >= Settings.MAX_SCHEMATICS) {
                 Stream<Path> list2 = Files.list(Paths.get(playerPath));
                 Optional<Path> lastFilePath = list2.filter(f -> !Files.isDirectory(f))
                         .min(Comparator.comparingLong(f -> f.toFile()
@@ -148,7 +148,7 @@ public class ServerSchematicLoader extends SchematicNetwork {
             entry.bytesUploaded += data.length;
 
             // Size Validations
-            if (data.length > SCHEMATIC_PACKET_SIZE) {
+            if (data.length > Settings.SCHEMATIC_PACKET_SIZE) {
                 Logger.warn("Oversized Upload Packet received: " + playerSchematicId);
                 cancelUpload(playerSchematicId);
                 return false;
