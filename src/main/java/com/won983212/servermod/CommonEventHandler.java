@@ -19,6 +19,7 @@ public class CommonEventHandler {
         }
 
         CommonModDist.SCHEMATIC_RECEIVER.tick();
+        CommonModDist.SERVER_SCHEDULER.tick();
     }
 
     @SubscribeEvent

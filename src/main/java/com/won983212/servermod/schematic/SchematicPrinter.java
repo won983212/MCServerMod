@@ -51,6 +51,7 @@ public class SchematicPrinter implements IElasticAsyncTask<Void> {
 
     private ItemStack blueprint;
     private IAsyncTask<SchematicContainer> schematicLoadingTask;
+    private TaskScheduler scheduler;
 
 
     private SchematicPrinter(World world, IProgressEvent event) {
@@ -100,7 +101,7 @@ public class SchematicPrinter implements IElasticAsyncTask<Void> {
     private boolean loadSchematic() {
         if (schematicLoadingTask == null) {
             schematicLoadingTask = SchematicFileParser.parseSchematicFromItemAsync(blueprint, (s, p) -> IProgressEvent.safeFire(event, s, p * 0.2));
-            TaskScheduler.addAsyncTask(schematicLoadingTask)
+            scheduler.addAsyncTask(schematicLoadingTask)
                     .thenAccept((c) -> {
                         BlockPos size = c.getSize();
                         this.total = (long) size.getX() * size.getY() * size.getZ();
@@ -109,6 +110,11 @@ public class SchematicPrinter implements IElasticAsyncTask<Void> {
                     });
         }
         return true;
+    }
+
+    @Override
+    public void setScheduler(TaskScheduler scheduler) {
+        this.scheduler = scheduler;
     }
 
     @Override

@@ -7,4 +7,7 @@ public interface IAsyncTask<T> {
     boolean tick();
 
     T getResult();
+
+    default void setScheduler(TaskScheduler scheduler){
+    }
 }

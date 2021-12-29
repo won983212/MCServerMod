@@ -2,9 +2,7 @@ package com.won983212.servermod.client;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.won983212.servermod.LegacyMapper;
-import com.won983212.servermod.ModKeys;
-import com.won983212.servermod.ServerMod;
+import com.won983212.servermod.*;
 import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
 import com.won983212.servermod.schematic.client.render.ChunkVertexBuffer;
 import com.won983212.servermod.schematic.parser.SchematicFileParser;
@@ -41,7 +39,7 @@ public class ClientEventHandler {
         if (event.phase == TickEvent.Phase.START) {
             return;
         }
-        TaskScheduler.tick();
+        CommonModDist.CLIENT_SCHEDULER.tick();
     }
 
     @SubscribeEvent
@@ -76,7 +74,7 @@ public class ClientEventHandler {
             AnimationTickHolder.reset();
             SchematicFileParser.clearCache();
             ClientDist.SCHEMATIC_HANDLER.unload();
-            TaskScheduler.cancelAllTask();
+            CommonModDist.CLIENT_SCHEDULER.cancelAllTask();
         }
     }
 

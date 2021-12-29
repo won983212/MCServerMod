@@ -1,5 +1,6 @@
 package com.won983212.servermod.server;
 
+import com.won983212.servermod.CommonModDist;
 import com.won983212.servermod.Logger;
 import com.won983212.servermod.ServerMod;
 import com.won983212.servermod.task.TaskScheduler;
@@ -16,6 +17,6 @@ public class ServerEventHandler {
         if (event.phase == TickEvent.Phase.START) {
             return;
         }
-        TaskScheduler.tick();
+        CommonModDist.SERVER_SCHEDULER.tick();
     }
 }

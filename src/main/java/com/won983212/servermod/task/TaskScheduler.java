@@ -8,20 +8,20 @@ import java.util.Queue;
 import java.util.Stack;
 
 public class TaskScheduler {
-    private static final Stack<Integer> GROUP_ID_CONTEXT = new Stack<>();
-    private static final Queue<QueuedAsyncTask<?>> TASK_WAITING_QUEUE = new LinkedList<>();
-    private static int count = 0;
-    private static int current = 0;
-    private static QueuedAsyncTask<?>[] tasks = new QueuedAsyncTask<?>[1 << 4];
+    private final Stack<Integer> groupIdContext = new Stack<>();
+    private final Queue<QueuedAsyncTask<?>> taskWaitingQueue = new LinkedList<>();
+    private int count = 0;
+    private int current = 0;
+    private QueuedAsyncTask<?>[] tasks = new QueuedAsyncTask<?>[1 << 4];
 
 
-    public static void cancelAllTask() {
+    public void cancelAllTask() {
         Arrays.fill(tasks, null);
         count = 0;
-        TASK_WAITING_QUEUE.clear();
+        taskWaitingQueue.clear();
     }
 
-    public static void cancelGroupTask(int groupId) {
+    public void cancelGroupTask(int groupId) {
         for (int i = 0; i < tasks.length; i++) {
             if (tasks[i] != null && tasks[i].getGroupId() == groupId) {
                 tasks[i] = null;
@@ -31,33 +31,34 @@ public class TaskScheduler {
         }
     }
 
-    public static void pushGroupIdContext(int id) {
-        GROUP_ID_CONTEXT.push(id);
+    public void pushGroupIdContext(int id) {
+        groupIdContext.push(id);
     }
 
-    public static void popGroupIdContext() {
-        GROUP_ID_CONTEXT.pop();
+    public void popGroupIdContext() {
+        groupIdContext.pop();
     }
 
-    public static <T> QueuedAsyncTask<T> addAsyncTask(IAsyncTask<T> task) {
+    public <T> QueuedAsyncTask<T> addAsyncTask(IAsyncTask<T> task) {
         if (tasks.length <= count) {
             grow();
         }
+        task.setScheduler(this);
         QueuedAsyncTask<T> gTask = new QueuedAsyncTask<T>(task);
-        if (!GROUP_ID_CONTEXT.isEmpty()) {
-            gTask.groupId(GROUP_ID_CONTEXT.peek());
+        if (!groupIdContext.isEmpty()) {
+            gTask.groupId(groupIdContext.peek());
         }
-        TASK_WAITING_QUEUE.offer(gTask);
+        taskWaitingQueue.offer(gTask);
         return gTask;
     }
 
-    private static void grow() {
+    private void grow() {
         QueuedAsyncTask<?>[] newTasks = new QueuedAsyncTask<?>[tasks.length << 1];
         System.arraycopy(tasks, 0, newTasks, 0, tasks.length);
         tasks = newTasks;
     }
 
-    public static void tick() {
+    public void tick() {
         pushWaitingTasks();
         if (count == 0) {
             return;
@@ -78,19 +79,19 @@ public class TaskScheduler {
         }
     }
 
-    private static void pushWaitingTasks() {
+    private void pushWaitingTasks() {
         if (tasks.length <= count) {
             return;
         }
-        for (int i = 0; i < tasks.length && !TASK_WAITING_QUEUE.isEmpty(); i++) {
+        for (int i = 0; i < tasks.length && !taskWaitingQueue.isEmpty(); i++) {
             if (tasks[i] == null) {
-                tasks[i] = TASK_WAITING_QUEUE.poll();
+                tasks[i] = taskWaitingQueue.poll();
                 count++;
             }
         }
     }
 
-    private static int next() {
+    private int next() {
         if (count == 1 && tasks[current] != null) {
             return current;
         }
