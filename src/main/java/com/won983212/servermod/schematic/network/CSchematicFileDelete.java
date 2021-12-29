@@ -1,6 +1,6 @@
 package com.won983212.servermod.schematic.network;
 
-import com.won983212.servermod.CommonModDist;
+import com.won983212.servermod.CommonMod;
 import com.won983212.servermod.network.IMessage;
 import com.won983212.servermod.network.NetworkDispatcher;
 import net.minecraft.entity.player.ServerPlayerEntity;
@@ -35,7 +35,7 @@ public class CSchematicFileDelete implements IMessage {
             if (player == null) {
                 return;
             }
-            if (CommonModDist.SCHEMATIC_RECEIVER.deleteSchematic(player, schematicFileName)) {
+            if (CommonMod.SCHEMATIC_RECEIVER.deleteSchematic(player, schematicFileName)) {
                 SSchematicDeleteResponse packet = new SSchematicDeleteResponse(schematicFileName);
                 NetworkDispatcher.send(PacketDistributor.PLAYER.with(() -> player), packet);
             }

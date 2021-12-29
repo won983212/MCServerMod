@@ -3,7 +3,7 @@ package com.won983212.servermod.client.gui;
 import com.google.common.collect.Iterables;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.won983212.servermod.ModTextures;
-import com.won983212.servermod.client.ClientDist;
+import com.won983212.servermod.client.ClientMod;
 import com.won983212.servermod.client.gui.component.HoveringCover;
 import com.won983212.servermod.client.gui.component.ScrollSelector;
 import com.won983212.servermod.network.NetworkDispatcher;
@@ -40,7 +40,7 @@ public class SchematicSelectionScreen extends PanelScreen {
     private void onAccept(HoveringCover btn) {
         SchematicFileValue file = schematicFiles.get(fileSelector.getSelectedIndex());
         if (btn == uploadBtn) {
-            ClientDist.SCHEMATIC_SENDER.startNewUpload(file.schematicFile);
+            ClientMod.SCHEMATIC_SENDER.startNewUpload(file.schematicFile);
             onClose();
         } else if (btn == deleteBtn) {
             if (file.needsUpload) {

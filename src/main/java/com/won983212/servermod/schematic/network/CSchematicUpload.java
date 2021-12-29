@@ -1,6 +1,6 @@
 package com.won983212.servermod.schematic.network;
 
-import com.won983212.servermod.CommonModDist;
+import com.won983212.servermod.CommonMod;
 import com.won983212.servermod.Logger;
 import com.won983212.servermod.network.IMessage;
 import com.won983212.servermod.network.NetworkDispatcher;
@@ -95,14 +95,14 @@ public class CSchematicUpload implements IMessage {
                     Logger.error("Schematic file must not be null at BEGIN!");
                     success = false;
                 } else {
-                    success = CommonModDist.SCHEMATIC_RECEIVER.handleNewUpload(player, schematicFile, size);
+                    success = CommonMod.SCHEMATIC_RECEIVER.handleNewUpload(player, schematicFile, size);
                 }
             }
             if (code == WRITE) {
-                success = CommonModDist.SCHEMATIC_RECEIVER.handleWriteRequest(player, schematic, data);
+                success = CommonMod.SCHEMATIC_RECEIVER.handleWriteRequest(player, schematic, data);
             }
             if (code == FINISH) {
-                success = CommonModDist.SCHEMATIC_RECEIVER.handleFinishedUpload(player, schematic);
+                success = CommonMod.SCHEMATIC_RECEIVER.handleFinishedUpload(player, schematic);
             }
             if (!success) {
                 NetworkDispatcher.send(PacketDistributor.PLAYER.with(() -> player),

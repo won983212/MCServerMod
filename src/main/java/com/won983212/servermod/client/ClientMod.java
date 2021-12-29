@@ -2,14 +2,17 @@ package com.won983212.servermod.client;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.won983212.servermod.CommonModDist;
-import com.won983212.servermod.LegacyMapper;
-import com.won983212.servermod.ModKeys;
-import com.won983212.servermod.ServerMod;
+import com.won983212.servermod.*;
+import com.won983212.servermod.client.gui.ConfigScreen;
+import com.won983212.servermod.client.gui.SchematicStatusScreen;
 import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
+import com.won983212.servermod.client.render.tile.RenderIndustrialAlarm;
+import com.won983212.servermod.schematic.client.SchematicHandler;
 import com.won983212.servermod.schematic.client.render.ChunkVertexBuffer;
+import com.won983212.servermod.schematic.network.ClientSchematicLoader;
 import com.won983212.servermod.schematic.parser.SchematicFileParser;
 import com.won983212.servermod.skin.SkinCacheCleaner;
+import com.won983212.servermod.tile.ModTiles;
 import com.won983212.servermod.utility.animate.AnimationTickHolder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
@@ -29,19 +32,41 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ExtensionPoint;
+import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 
 import java.awt.*;
 
 @Mod.EventBusSubscriber(modid = ServerMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
-public class ClientEventHandler {
+public class ClientMod extends CommonMod {
+    public static final SchematicHandler SCHEMATIC_HANDLER = new SchematicHandler();
+    public static final ClientSchematicLoader SCHEMATIC_SENDER = new ClientSchematicLoader();
+    public static final SchematicStatusScreen SCHEMATIC_UPLOAD_SCREEN = new SchematicStatusScreen();
+
+    static {
+        SCHEMATIC_UPLOAD_SCREEN.registerProgressProducer(SCHEMATIC_SENDER);
+        SCHEMATIC_UPLOAD_SCREEN.registerProgressProducer(SCHEMATIC_HANDLER.getRendererManager());
+    }
+
+    @Override
+    public void onCommonSetup(FMLCommonSetupEvent event) {
+        super.onCommonSetup(event);
+        ModLoadingContext.get().registerExtensionPoint(ExtensionPoint.CONFIGGUIFACTORY,
+                () -> (mc, screen) -> new ConfigScreen()
+        );
+        ClientRegistry.bindTileEntityRenderer(ModTiles.tileEntityIndustrialAlarm, RenderIndustrialAlarm::new);
+        ModKeys.registerKeys();
+    }
 
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
             return;
         }
-        CommonModDist.CLIENT_SCHEDULER.tick();
+        CommonMod.CLIENT_SCHEDULER.tick();
     }
 
     @SubscribeEvent
@@ -75,8 +100,8 @@ public class ClientEventHandler {
         if (event.getWorld().isClientSide()) {
             AnimationTickHolder.reset();
             SchematicFileParser.clearCache();
-            ClientDist.SCHEMATIC_HANDLER.unload();
-            CommonModDist.CLIENT_SCHEDULER.cancelAllTask();
+            ClientMod.SCHEMATIC_HANDLER.unload();
+            CommonMod.CLIENT_SCHEDULER.cancelAllTask();
         }
     }
 
@@ -91,8 +116,8 @@ public class ClientEventHandler {
         }
 
         AnimationTickHolder.tick();
-        ClientDist.SCHEMATIC_HANDLER.tick();
-        ClientDist.SCHEMATIC_SENDER.tick();
+        ClientMod.SCHEMATIC_HANDLER.tick();
+        ClientMod.SCHEMATIC_SENDER.tick();
     }
 
     @SubscribeEvent
@@ -104,7 +129,7 @@ public class ClientEventHandler {
         ms.translate(-cameraPos.x(), -cameraPos.y(), -cameraPos.z());
 
         SuperRenderTypeBuffer buffer = SuperRenderTypeBuffer.getInstance();
-        ClientDist.SCHEMATIC_HANDLER.render(ms, buffer);
+        ClientMod.SCHEMATIC_HANDLER.render(ms, buffer);
         buffer.draw();
         RenderSystem.enableCull();
 
@@ -120,8 +145,8 @@ public class ClientEventHandler {
         MatrixStack ms = event.getMatrixStack();
         IRenderTypeBuffer.Impl buffers = Minecraft.getInstance().renderBuffers().bufferSource();
         Point mousePos = getMousePosition();
-        ClientDist.SCHEMATIC_HANDLER.renderOverlay(ms, buffers, event.getPartialTicks());
-        ClientDist.SCHEMATIC_UPLOAD_SCREEN.render(ms, mousePos.x, mousePos.y, event.getPartialTicks());
+        ClientMod.SCHEMATIC_HANDLER.renderOverlay(ms, buffers, event.getPartialTicks());
+        ClientMod.SCHEMATIC_UPLOAD_SCREEN.render(ms, mousePos.x, mousePos.y, event.getPartialTicks());
     }
 
     @SubscribeEvent
@@ -133,7 +158,7 @@ public class ClientEventHandler {
         int key = e.getKey();
         boolean pressed = !(e.getAction() == 0);
 
-        ClientDist.SCHEMATIC_HANDLER.onKeyInput(key, pressed);
+        ClientMod.SCHEMATIC_HANDLER.onKeyInput(key, pressed);
         if (ModKeys.KEY_CLEAR_CACHE.isDown()) {
             SkinCacheCleaner.clearSkinCache();
         }
@@ -145,10 +170,10 @@ public class ClientEventHandler {
         boolean pressed = !(event.getAction() == 0);
 
         if (Minecraft.getInstance().screen == null) {
-            ClientDist.SCHEMATIC_HANDLER.onMouseInput(button, pressed);
+            ClientMod.SCHEMATIC_HANDLER.onMouseInput(button, pressed);
         } else {
             Point p = getMousePosition();
-            ClientDist.SCHEMATIC_UPLOAD_SCREEN.onMouseInput(button, pressed, p.x, p.y);
+            ClientMod.SCHEMATIC_UPLOAD_SCREEN.onMouseInput(button, pressed, p.x, p.y);
         }
     }
 
@@ -159,7 +184,7 @@ public class ClientEventHandler {
         }
 
         double delta = event.getScrollDelta();
-        event.setCanceled(ClientDist.SCHEMATIC_HANDLER.mouseScrolled(delta));
+        event.setCanceled(ClientMod.SCHEMATIC_HANDLER.mouseScrolled(delta));
     }
 
     private static Point getMousePosition() {

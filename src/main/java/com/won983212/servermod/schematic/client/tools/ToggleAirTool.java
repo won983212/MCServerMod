@@ -1,6 +1,6 @@
 package com.won983212.servermod.schematic.client.tools;
 
-import com.won983212.servermod.client.ClientDist;
+import com.won983212.servermod.client.ClientMod;
 import net.minecraft.item.ItemStack;
 
 public class ToggleAirTool extends SchematicToolBase {
@@ -20,7 +20,7 @@ public class ToggleAirTool extends SchematicToolBase {
 
     @Override
     public int getHighlightColor() {
-        if (ClientDist.SCHEMATIC_HANDLER.isIncludeAir()) {
+        if (ClientMod.SCHEMATIC_HANDLER.isIncludeAir()) {
             return 0xff4AA96C;
         } else {
             return 0xffF55C47;

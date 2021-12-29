@@ -2,7 +2,7 @@ package com.won983212.servermod.schematic.client.tools;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.won983212.servermod.ModTextures;
-import com.won983212.servermod.client.ClientDist;
+import com.won983212.servermod.client.ClientMod;
 import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
 import com.won983212.servermod.client.render.outliner.AABBOutline;
 import com.won983212.servermod.schematic.client.SchematicHandler;
@@ -37,7 +37,7 @@ public abstract class SchematicToolBase implements ISchematicTool {
 
     @Override
     public void init() {
-        schematicHandler = ClientDist.SCHEMATIC_HANDLER;
+        schematicHandler = ClientMod.SCHEMATIC_HANDLER;
         selectedPos = null;
         selectedFace = null;
         schematicSelected = false;

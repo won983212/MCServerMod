@@ -1,6 +1,6 @@
 package com.won983212.servermod.schematic.network;
 
-import com.won983212.servermod.client.ClientDist;
+import com.won983212.servermod.client.ClientMod;
 import com.won983212.servermod.network.IMessage;
 import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.fml.network.NetworkEvent;
@@ -47,10 +47,10 @@ public class SSchematicReceivedProgress implements IMessage {
     public void handle(Supplier<NetworkEvent.Context> context) {
         context.get().enqueueWork(() -> {
             if (code == SUCCESS) {
-                ClientDist.SCHEMATIC_SENDER.handleServerProgress(schematic, receivedProgress);
+                ClientMod.SCHEMATIC_SENDER.handleServerProgress(schematic, receivedProgress);
             }
             if (code == FAIL) {
-                ClientDist.SCHEMATIC_SENDER.handleFailState(schematic);
+                ClientMod.SCHEMATIC_SENDER.handleFailState(schematic);
             }
         });
         context.get().setPacketHandled(true);

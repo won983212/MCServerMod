@@ -1,6 +1,6 @@
 package com.won983212.servermod.schematic.network;
 
-import com.won983212.servermod.CommonModDist;
+import com.won983212.servermod.CommonMod;
 import com.won983212.servermod.Logger;
 import com.won983212.servermod.network.IMessage;
 import com.won983212.servermod.schematic.SchematicPrinter;
@@ -59,7 +59,7 @@ public class CSchematicPlace implements IMessage {
                     }
                 }).includeAir(includeAir).maxBatchPlacing(10000);
 
-                CommonModDist.SERVER_SCHEDULER.addAsyncTask(printer)
+                CommonMod.SERVER_SCHEDULER.addAsyncTask(printer)
                         .exceptionally((e) -> handleException(player, e));
                 sendSchematicMessage(player, "Schematic 설치를 시작합니다.");
             } catch (IllegalArgumentException e) {
