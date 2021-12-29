@@ -50,7 +50,7 @@ public class CSchematicPlace implements IMessage {
             try {
                 SchematicPrinter printer = SchematicPrinter.newPlacingSchematicTask(stack, world, (s, p) -> {
                     int percent = (int) Math.floor(p * 100);
-                    if (percent >= percentIndex[0] * 20) {
+                    if (percent >= percentIndex[0] * 10) {
                         percentIndex[0]++;
                         sendSchematicMessage(player, s + ": " + percent + "%");
                         if (percent == 100) {

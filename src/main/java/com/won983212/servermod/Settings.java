@@ -1,9 +1,9 @@
 package com.won983212.servermod;
 
 public class Settings {
-    public static final long CRITERIA_TIME_SCHEMATIC_PARSER = 50;
-    public static final long CRITERIA_TIME_SCHEMATIC_PRINTER = 50;
-    public static final long CRITERIA_TIME_SCHEMATIC_RENDERER = 50;
+    public static final long CRITERIA_TIME_SCHEMATIC_PARSER = 20;
+    public static final long CRITERIA_TIME_SCHEMATIC_PRINTER = 20;
+    public static final long CRITERIA_TIME_SCHEMATIC_RENDERER = 30;
 
     public static final int SCHEMATIC_IDLE_TIMEOUT = 600;
     public static final int MAX_SCHEMATICS = 256;

@@ -95,7 +95,7 @@ public class QueuedAsyncTask<T> {
                         batchCount = Math.min(increased, elasticTask.getMaxBatchCount());
                     }
                 } else if (batchCount > 1) {
-                    batchCount >>= 1;
+                    batchCount *= (double) elasticTask.getCriteriaTime() / lastElapsedTime;
                 }
                 return success;
             } else {

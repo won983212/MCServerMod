@@ -61,7 +61,7 @@ public class SchematicRendererManager implements IProgressEntryProducer {
 
     public void setCurrentSchematic(ItemStack activeSchematicItem) {
         if (activeSchematicItem == null) {
-            this.renderers = null;
+            renderers = null;
             return;
         }
 
@@ -79,6 +79,7 @@ public class SchematicRendererManager implements IProgressEntryProducer {
             return;
         }
 
+        Logger.debug("Set schematic: " + schematicFilePath);
         LoadingEntry loadingEntry = new LoadingEntry(schematicFilePath);
         loadingEntries.put(schematicFilePath, loadingEntry);
 
@@ -100,7 +101,7 @@ public class SchematicRendererManager implements IProgressEntryProducer {
                     })
                     .thenAccept((newRenderers) -> {
                         loadingEntries.remove(schematicFilePath);
-                        String currentSchematicFilePath = activeSchematicItem.getTag().getString("File");
+                        String currentSchematicFilePath = currentStack.getTag().getString("File");
                         if (currentSchematicFilePath.equals(schematicFilePath)) {
                             renderers = newRenderers;
                         }

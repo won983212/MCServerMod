@@ -26,7 +26,6 @@ import com.won983212.servermod.schematic.container.SchematicContainer;
 import com.won983212.servermod.schematic.parser.legacycompat.*;
 import com.won983212.servermod.task.StagedTaskProcessor;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
 import net.minecraft.nbt.*;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.util.Constants;
@@ -77,8 +76,8 @@ class MCEditSchematicReader extends AbstractSchematicReader {
         super(file);
         this.stageProcessor = new StagedTaskProcessor<>(ParseStage.class)
                 .stage(ParseStage.METADATA)
-                .nextStageEvent(() -> current = 0)
-                .completeEvent(() -> notifyProgress("읽는 중...", 1));
+                .onNextStage(() -> current = 0)
+                .onComplete(() -> notifyProgress("읽는 중...", 1));
         this.stageProcessor.addStageHandler(ParseStage.METADATA, this::parseMetadata);
         this.stageProcessor.addStageHandler(ParseStage.BLOCKS, this::parseBlocks);
         this.stageProcessor.addStageHandler(ParseStage.TILES, this::parseTileEntities);

@@ -6,7 +6,7 @@ import java.util.function.Supplier;
 public class StagedTaskProcessor<L extends Enum<L>> {
     private final EnumMap<L, Supplier<Boolean>> parsePasses;
     private final Class<L> stageEnumClass;
-    private L parseStage;
+    private L stage;
     private L lastStage;
     private Runnable onComplete;
     private Runnable onNextStage;
@@ -23,8 +23,17 @@ public class StagedTaskProcessor<L extends Enum<L>> {
         parsePasses.put(stage, handler);
     }
 
+    public boolean nextStage() {
+        int current = stage.ordinal();
+        if (current >= stageEnumClass.getEnumConstants().length) {
+            return false;
+        }
+        stage = stageEnumClass.getEnumConstants()[stage.ordinal() + 1];
+        return true;
+    }
+
     public StagedTaskProcessor<L> stage(L current) {
-        parseStage = current;
+        stage = current;
         return this;
     }
 
@@ -33,28 +42,35 @@ public class StagedTaskProcessor<L extends Enum<L>> {
         return this;
     }
 
-    public StagedTaskProcessor<L> completeEvent(Runnable runnable) {
+    public StagedTaskProcessor<L> onComplete(Runnable runnable) {
         this.onComplete = runnable;
         return this;
     }
 
-    public StagedTaskProcessor<L> nextStageEvent(Runnable runnable) {
+    public StagedTaskProcessor<L> onNextStage(Runnable runnable) {
         this.onNextStage = runnable;
         return this;
     }
 
     public boolean tick() {
-        Supplier<Boolean> pass = parsePasses.get(parseStage);
+        Supplier<Boolean> pass = parsePasses.get(stage);
+        if (pass == null) {
+            return false;
+        }
         if (!pass.get()) {
-            if (parseStage == lastStage) {
+            if (stage == lastStage) {
                 if (onComplete != null) {
                     onComplete.run();
                 }
                 return false;
             }
-            parseStage = stageEnumClass.getEnumConstants()[parseStage.ordinal() + 1];
-            if (onNextStage != null) {
-                onNextStage.run();
+            if (nextStage()) {
+                if (onNextStage != null) {
+                    onNextStage.run();
+                }
+            } else if (onComplete != null) {
+                onComplete.run();
+                return false;
             }
         }
         return true;

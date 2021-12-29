@@ -37,6 +37,14 @@ import java.awt.*;
 public class ClientEventHandler {
 
     @SubscribeEvent
+    public static void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase == TickEvent.Phase.START) {
+            return;
+        }
+        TaskScheduler.tick();
+    }
+
+    @SubscribeEvent
     public static void onTooltipShow(ItemTooltipEvent e) {
         if (e.getFlags().isAdvanced()) {
             Item item = e.getItemStack().getItem();

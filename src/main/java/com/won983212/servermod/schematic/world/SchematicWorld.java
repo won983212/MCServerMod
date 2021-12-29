@@ -3,7 +3,6 @@ package com.won983212.servermod.schematic.world;
 import com.won983212.servermod.Logger;
 import com.won983212.servermod.schematic.container.SchematicBlockStorage;
 import com.won983212.servermod.schematic.container.SchematicContainer;
-import com.won983212.servermod.schematic.world.chunk.WrappedChunkProvider;
 import net.minecraft.block.AbstractFurnaceBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -34,18 +33,11 @@ public class SchematicWorld extends WrappedWorld implements IServerWorld {
     protected final List<Entity> entities;
     protected final MutableBoundingBox bounds;
 
-    public final BlockPos anchor;
-
     public SchematicWorld(World original, BlockPos size) {
-        this(BlockPos.ZERO, size, original);
-    }
-
-    public SchematicWorld(BlockPos anchor, BlockPos size, World original) {
         super(original, new WrappedChunkProvider());
         this.storage = new SchematicBlockStorage(size);
         this.tileEntities = new HashMap<>();
         this.bounds = new MutableBoundingBox();
-        this.anchor = anchor;
         this.entities = new ArrayList<>();
     }
 
@@ -70,7 +62,7 @@ public class SchematicWorld extends WrappedWorld implements IServerWorld {
         if (tileEntities.containsKey(pos)) {
             return tileEntities.get(pos);
         }
-        if (!storage.isInBounds(pos.subtract(anchor))) {
+        if (!storage.isInBounds(pos)) {
             return null;
         }
 
@@ -95,9 +87,7 @@ public class SchematicWorld extends WrappedWorld implements IServerWorld {
     }
 
     @Override
-    public BlockState getBlockState(BlockPos globalPos) {
-        BlockPos pos = globalPos.subtract(anchor);
-
+    public BlockState getBlockState(BlockPos pos) {
         if (pos.getY() - bounds.y0 == -1) {
             return Blocks.GRASS_BLOCK.defaultBlockState();
         }
@@ -159,7 +149,7 @@ public class SchematicWorld extends WrappedWorld implements IServerWorld {
 
     @Override
     public boolean setBlock(BlockPos pos, BlockState arg1, int arg2) {
-        pos = pos.immutable().subtract(anchor);
+        pos = pos.immutable();
         bounds.expand(new MutableBoundingBox(pos, pos));
         storage.setBlock(pos, arg1);
 

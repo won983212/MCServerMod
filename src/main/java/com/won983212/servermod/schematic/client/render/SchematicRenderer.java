@@ -7,7 +7,6 @@ import com.won983212.servermod.client.render.SuperRenderTypeBuffer;
 import com.won983212.servermod.schematic.IProgressEvent;
 import com.won983212.servermod.schematic.client.SchematicTransformation;
 import com.won983212.servermod.schematic.world.SchematicWorld;
-import com.won983212.servermod.task.IAsyncNoResultTask;
 import com.won983212.servermod.task.IElasticAsyncTask;
 import com.won983212.servermod.utility.MatrixTransformStack;
 import com.won983212.servermod.utility.animate.AnimationTickHolder;
@@ -29,10 +28,8 @@ import java.util.List;
 public class SchematicRenderer {
     private final List<ChunkVertexBuffer> chunks = new ArrayList<>();
     protected SchematicWorld schematic;
-    private BlockPos anchor;
 
     public WorldRedrawingTask newDrawingSchematicWorldTask(SchematicWorld world, IProgressEvent event) {
-        this.anchor = world.anchor;
         this.schematic = world;
         return new WorldRedrawingTask(event);
     }
@@ -127,7 +124,7 @@ public class SchematicRenderer {
         public boolean elasticTick(int count) {
             for (int i = 0; i < count && current < total; ++i, next()) {
                 ChunkVertexBuffer chunk = new ChunkVertexBuffer(x, y, z);
-                if (!chunk.buildChunkBuffer(schematic, anchor)) {
+                if (!chunk.buildChunkBuffer(schematic, BlockPos.ZERO)) {
                     continue;
                 }
                 chunks.add(chunk);

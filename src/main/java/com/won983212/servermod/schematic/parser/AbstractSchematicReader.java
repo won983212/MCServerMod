@@ -1,6 +1,5 @@
 package com.won983212.servermod.schematic.parser;
 
-import com.won983212.servermod.Logger;
 import com.won983212.servermod.Settings;
 import com.won983212.servermod.schematic.IProgressEvent;
 import com.won983212.servermod.schematic.container.SchematicContainer;

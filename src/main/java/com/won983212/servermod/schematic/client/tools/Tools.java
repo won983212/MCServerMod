@@ -5,8 +5,6 @@ import com.won983212.servermod.utility.Lang;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public enum Tools {

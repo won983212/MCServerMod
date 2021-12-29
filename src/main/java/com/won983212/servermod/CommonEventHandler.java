@@ -2,7 +2,6 @@ package com.won983212.servermod;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.won983212.servermod.server.Commands;
-import com.won983212.servermod.task.TaskScheduler;
 import net.minecraft.command.CommandSource;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
@@ -20,7 +19,6 @@ public class CommonEventHandler {
         }
 
         CommonModDist.SCHEMATIC_RECEIVER.tick();
-        TaskScheduler.tick();
     }
 
     @SubscribeEvent

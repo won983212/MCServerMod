@@ -41,8 +41,8 @@ class SpongeSchematicReader extends AbstractSchematicReader {
         super(file);
         this.stageProcessor = new StagedTaskProcessor<>(ParseStage.class)
                 .stage(ParseStage.METADATA)
-                .nextStageEvent(() -> current = 0)
-                .completeEvent(() -> notifyProgress("읽는 중...", 1));
+                .onNextStage(() -> current = 0)
+                .onComplete(() -> notifyProgress("읽는 중...", 1));
         this.stageProcessor.addStageHandler(ParseStage.METADATA, this::readMetadata);
         this.stageProcessor.addStageHandler(ParseStage.TILES, this::readTileEntities);
         this.stageProcessor.addStageHandler(ParseStage.BLOCKS, this::readBlocks);

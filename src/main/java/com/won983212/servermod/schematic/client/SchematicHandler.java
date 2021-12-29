@@ -26,7 +26,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.gen.feature.template.PlacementSettings;
 
 import java.util.Arrays;
-import java.util.List;
 
 public class SchematicHandler {
 
